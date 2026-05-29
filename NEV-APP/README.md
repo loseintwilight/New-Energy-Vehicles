@@ -1,51 +1,114 @@
-<p align="center">
-	<img alt="logo" src="https://oscimg.oschina.net/oscnet/up-43e3941654fa3054c9684bf53d1b1d356a1.png">
-</p>
-<h1 align="center" style="margin: 30px 0 30px; font-weight: bold;">RuoYi v1.2.0</h1>
-<h4 align="center">基于UniApp开发的轻量级移动端框架</h4>
-<p align="center">
-	<a href="https://gitee.com/y_project/RuoYi-App/stargazers"><img src="https://gitee.com/y_project/RuoYi-App/badge/star.svg?theme=dark"></a>
-	<a href="https://gitee.com/y_project/RuoYi-App"><img src="https://img.shields.io/badge/RuoYi-v1.2.0-brightgreen.svg"></a>
-	<a href="https://gitee.com/y_project/RuoYi-App/blob/master/LICENSE"><img src="https://img.shields.io/github/license/mashape/apistatus.svg"></a>
-</p>
+# NEV-Life
 
-## 平台简介
+基于 uni-app 开发的新能源汽车生活服务平台，支持 H5、小程序、Android 和 iOS 多端运行。
 
-RuoYi App 移动解决方案，采用uniapp框架，一份代码多终端适配，同时支持APP、小程序、H5！实现了与[RuoYi-Vue](https://gitee.com/y_project/RuoYi-Vue)、[RuoYi-Cloud](https://gitee.com/y_project/RuoYi-Cloud)完美对接的移动解决方案！目前已经实现登录、我的、工作台、编辑资料、头像修改、密码修改、常见问题、关于我们等基础功能。
+## 项目简介
 
-* 提供了 [RuoYi-App-Vue2](https://gitee.com/y_project/RuoYi-App) 和 [RuoYi-App-Vue3](https://gitee.com/y_project/RuoYi-App/tree/vue3) 两个版本，分别基于 Vue2/Vuex 和 Vue3/Pinia 技术栈，以满足不同项目的技术选型需求。
-* 配套后端代码仓库地址[RuoYi-Vue](https://gitee.com/y_project/RuoYi-Vue) 或 [RuoYi-Cloud](https://github.com/yangzongzhuan/RuoYi-Cloud) 版本。
-* 应用框架基于[uniapp](https://uniapp.dcloud.net.cn/)，支持小程序、H5、Android和IOS。
-* 前端组件采用[uni-ui](https://github.com/dcloudio/uni-ui)，全端兼容的高性能UI框架。
-* 阿里云折扣场：[点我进入](http://aly.ruoyi.vip)，腾讯云秒杀场：[点我进入](http://txy.ruoyi.vip)&nbsp;&nbsp;
+NEV-Life 是一款专注于新能源汽车领域的移动端应用，提供充电服务、选车资讯等便捷功能。项目基于 RuoYi-App 移动框架开发，采用 Vue 2 + Vuex 技术栈。
 
+## 核心功能
 
-## 技术文档
+- **首页** — 应用入口，内容展示
+- **充电服务** — 附近充电站查询、充电记录、充电套餐等服务
+- **选车** — 新能源车型浏览与筛选
+- **我的** — 个人中心、编辑资料、修改头像、密码修改、应用设置等
 
-- 官网网站：[http://ruoyi.vip](http://ruoyi.vip)
-- 文档地址：[http://doc.ruoyi.vip](http://doc.ruoyi.vip)
-- H5页体验：[http://h5.ruoyi.vip](http://h5.ruoyi.vip)
-- QQ交流群： ①133713780(满)、②146013835(满)、③189091635
-- 小程序体验
+## 技术栈
 
-<img src="https://oscimg.oschina.net/oscnet/up-26c76dc90b92acdbd9ac8cd5252f07c8ad9.jpg" alt="小程序演示"/>
- 
-## 演示图
+| 技术 | 说明 | 版本 |
+|------|------|------|
+| [RuoYi-App](https://gitee.com/y_project/RuoYi-App) | 移动端开发框架 | v1.2.0 |
+| [uni-app](https://uniapp.dcloud.net.cn/) | 跨平台应用框架 | Vue 2 版 |
+| Vue | 前端 MVVM 框架 | 2.x |
+| Vuex | 状态管理模式 | 2.x |
+| [uni-ui](https://github.com/dcloudio/uni-ui) | 全端兼容 UI 组件库 | - |
+| [RuoYi-Vue](https://gitee.com/y_project/RuoYi-Vue) | 配套后端框架 | 3.x |
+| Scss | CSS 预处理 | - |
+| uni-request | 网络请求封装 | - |
 
-<table>
-    <tr>
-        <td><img src="https://oscimg.oschina.net/oscnet/up-21f6f842fdc94540469b4eb43fdadbaf7f8.png"/></td>
-        <td><img src="https://oscimg.oschina.net/oscnet/up-a6f23cf9a371a30165e135eff6d9ae89a9d.png"/></td>
-		<td><img src="https://oscimg.oschina.net/oscnet/up-ff5f62016bf6624c1ff27eee57499dccd44.png"/></td>
-    </tr>
-	<tr>
-        <td><img src="https://oscimg.oschina.net/oscnet/up-b9a582fdb26ec69d407fabd044d2c8494df.png"/></td>
-        <td><img src="https://oscimg.oschina.net/oscnet/up-96427ee08fca29d77934cfc8d1b1a637cef.png"/></td>
-		<td><img src="https://oscimg.oschina.net/oscnet/up-5fdadc582d24cccd7727030d397b63185a3.png"/></td>
-    </tr>
-	<tr>
-        <td><img src="https://oscimg.oschina.net/oscnet/up-0a36797b6bcc50c36d40c3c782665b89efc.png"/></td>
-        <td><img src="https://oscimg.oschina.net/oscnet/up-d77995cc00687cedd00d5ac7d68a07ea276.png"/></td>
-		<td><img src="https://oscimg.oschina.net/oscnet/up-fa8f5ab20becf59b4b38c1b92a9989e7109.png"/></td>
-    </tr>
-</table>
+### 内置 uni-ui 组件
+
+项目集成了丰富的 uni-ui 组件库，包括：`uni-badge`、`uni-card`、`uni-calendar`、`uni-collapse`、`uni-data-picker`、`uni-datetime-picker`、`uni-easyinput`、`uni-forms`、`uni-grid`、`uni-icons`、`uni-list`、`uni-nav-bar`、`uni-popup`、`uni-rate`、`uni-search-bar`、`uni-swipe-action`、`uni-tag` 等 40+ 组件。
+
+### 前后端对接
+
+- 后端可对接 [RuoYi-Vue](https://gitee.com/y_project/RuoYi-Vue)（SpringBoot + Vue 版）
+- 或 [RuoYi-Cloud](https://github.com/yangzongzhuan/RuoYi-Cloud)（SpringCloud 微服务版）
+- API 请求统一封装，已实现登录、注册、验证码、用户信息等接口对接
+
+## 项目结构
+
+```
+NEV-APP
+├─ api                    # 接口请求
+│  ├─ login.js            # 登录相关接口
+│  └─ system              # 系统模块接口
+├─ components             # 公共组件
+├─ pages                  # 页面文件
+│  ├─ index.vue           # 首页
+│  ├─ login.vue           # 登录
+│  ├─ register.vue        # 注册
+│  ├─ charge/index.vue    # 充电服务
+│  ├─ car/index.vue       # 选车
+│  ├─ mine/               # 我的模块
+│  │  ├─ index.vue        # 个人中心
+│  │  ├─ avatar/          # 修改头像
+│  │  ├─ info/            # 个人信息
+│  │  ├─ pwd/             # 修改密码
+│  │  ├─ setting/         # 应用设置
+│  │  ├─ help/            # 常见问题
+│  │  └─ about/           # 关于我们
+│  └─ common/             # 通用页面
+├─ plugins                # 插件（页签操作、认证、弹窗）
+├─ static                 # 静态资源
+│  ├─ images              # 图片
+│  ├─ scss                # 全局样式
+│  └─ font                # 图标字体
+├─ store                  # Vuex 状态管理
+├─ utils                  # 工具函数
+├─ pages.json             # 页面路由与 tabBar 配置
+├─ config.js              # 应用全局配置
+├─ manifest.json          # 应用配置（多端）
+├─ permission.js          # 登录拦截权限控制
+└─ main.js                # 应用入口
+```
+
+## 快速开始
+
+```bash
+# 安装依赖
+npm install
+
+# 启动 H5 开发服务
+npm run dev:h5
+
+# 启动微信小程序开发
+npm run dev:mp-weixin
+
+# 打包 H5
+npm run build:h5
+```
+
+## 配置说明
+
+应用配置在 `config.js` 中：
+
+```js
+baseUrl: 'https://vue.ruoyi.vip/prod-api'  // 后端接口地址
+```
+
+## 多端支持
+
+- H5：`npm run dev:h5`
+- 微信小程序：`npm run dev:mp-weixin`
+- App（Android/iOS）：使用 HBuilderX 运行到手机或模拟器
+
+## 登录账户
+
+开发环境可使用演示账户进行登录测试。
+
+## 参考资料
+
+- [uni-app 官方文档](https://uniapp.dcloud.net.cn/)
+- [uni-ui 组件库](https://uniapp.dcloud.net.cn/component/uni-ui/)
+- [Vue 2 文档](https://v2.cn.vuejs.org/)

@@ -16,6 +16,16 @@
       "navigationStyle": "custom"
     }
   }, {
+    "path": "pages/charge/index",
+    "style": {
+      "navigationBarTitleText": "充电服务"
+    }
+  }, {
+    "path": "pages/car/index",
+    "style": {
+      "navigationBarTitleText": "选车"
+    }
+  }, {
     "path": "pages/work/index",
     "style": {
       "navigationBarTitleText": "工作台"
@@ -82,10 +92,15 @@
         "selectedIconPath": "static/images/tabbar/home_.png",
         "text": "首页"
       }, {
-        "pagePath": "pages/work/index",
-        "iconPath": "static/images/tabbar/work.png",
-        "selectedIconPath": "static/images/tabbar/work_.png",
-        "text": "工作台"
+        "pagePath": "pages/charge/index",
+        "iconPath": "static/images/tabbar/停车充电服务.png",
+        "selectedIconPath": "static/images/tabbar/停车充电服务_.png",
+        "text": "充电服务"
+      }, {
+        "pagePath": "pages/car/index",
+        "iconPath": "static/images/tabbar/购车 (1).png",
+        "selectedIconPath": "static/images/tabbar/购车 (1)_.png",
+        "text": "选车"
       }, {
         "pagePath": "pages/mine/index",
         "iconPath": "static/images/tabbar/mine.png",

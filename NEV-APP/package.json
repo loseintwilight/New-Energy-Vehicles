@@ -1,0 +1,16 @@
+{
+  "name": "nev-app",
+  "version": "1.0.0",
+  "description": "基于 uni-app 开发的新能源汽车生活服务平台，支持 H5、小程序、Android 和 iOS 多端运行。",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "uview-ui": "^2.0.36"
+  }
+}

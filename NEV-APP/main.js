@@ -1,9 +1,13 @@
 import Vue from 'vue'
 import App from './App'
-import store from './store' // store
-import plugins from './plugins' // plugins
-import './permission' // permission
+import store from './store'
+import plugins from './plugins'
+import './permission'
 import { getDicts } from "@/api/system/dict/data"
+
+// uView UI 2.x
+import uView from 'uview-ui'
+Vue.use(uView)
 
 Vue.use(plugins)
 

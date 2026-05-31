@@ -1,4 +1,7 @@
 {
+  "easycom": {
+    "^u-(.*)": "uview-ui/components/u-$1/u-$1.vue"
+  },
   "pages": [{
     "path": "pages/login",
     "style": {
@@ -18,7 +21,68 @@
   }, {
     "path": "pages/charge/index",
     "style": {
-      "navigationBarTitleText": "充电服务"
+      "navigationBarTitleText": "充电服务",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/charge/detail",
+    "style": {
+      "navigationBarTitleText": "站点详情",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/charge/search",
+    "style": {
+      "navigationBarTitleText": "搜索站点",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/charge/reviews",
+    "style": {
+      "navigationBarTitleText": "用户评价",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/charge/settings",
+    "style": {
+      "navigationBarTitleText": "充电设置",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/charge/pile-list",
+    "style": {
+      "navigationBarTitleText": "充电桩列表",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/charge/fault",
+    "style": {
+      "navigationBarTitleText": "故障诊断",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/charge/city-select",
+    "style": {
+      "navigationBarTitleText": "选择城市",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/charge/notification",
+    "style": {
+      "navigationBarTitleText": "消息通知",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/charge/order",
+    "style": {
+      "navigationBarTitleText": "充电订单",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/charge/charging",
+    "style": {
+      "navigationBarTitleText": "充电中",
+      "navigationStyle": "custom"
     }
   }, {
     "path": "pages/car/index",

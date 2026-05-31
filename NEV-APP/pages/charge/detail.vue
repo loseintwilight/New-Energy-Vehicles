@@ -125,7 +125,7 @@
                 <view class="pdc-row">
                   <text class="pdc-label">桩 编 号</text>
                   <text class="pdc-value">{{ pile.pileCode }}</text>
-                  <image class="pdc-copy-img" src="/static/images/charge/copy.png" mode="aspectFit" @click="copyPileCode(pile.pileCode)"></image>
+                  <image class="pdc-copy-img" src="/static/images/charge/copy.png" mode="aspectFit"></image>
                 </view>
                 <view class="pdc-row">
                   <text class="pdc-label">桩 名 称</text>
@@ -518,15 +518,6 @@ export default {
     shareStation() {
       // 【功能待完善】分享充电站信息
       uni.showToast({ title: '分享功能开发中', icon: 'none' })
-    },
-
-    copyPileCode(code) {
-      uni.setClipboardData({
-        data: code,
-        success: () => {
-          uni.showToast({ title: '已复制', icon: 'success', duration: 1500 })
-        }
-      })
     },
 
     showAllPrices() {

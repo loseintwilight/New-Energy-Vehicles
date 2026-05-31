@@ -504,7 +504,7 @@ export default {
 
         setTimeout(() => {
           uni.redirectTo({
-            url: `/pages/charge/detail?stationId=${this.stationId}&name=${encodeURIComponent(this.stationName)}`
+            url: `/pages/charge/order?orderId=${this.orderId}&amount=${this.payData.total}`
           })
         }, 1000)
       } catch (e) {

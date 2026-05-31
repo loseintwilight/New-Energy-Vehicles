@@ -18,6 +18,8 @@
         "distribute" : {
             "android" : {
                 "permissions" : [
+                    "<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>",
                     "<uses-permission android:name=\"android.permission.CHANGE_NETWORK_STATE\"/>",
                     "<uses-permission android:name=\"android.permission.MOUNT_UNMOUNT_FILESYSTEMS\"/>",
                     "<uses-permission android:name=\"android.permission.VIBRATE\"/>",
@@ -36,7 +38,14 @@
                 ]
             },
             "ios" : {},
-            "sdkConfigs" : {}
+            "sdkConfigs" : {
+                "maps" : {
+                    "amap" : {
+                        "appkey_ios" : "34638d9d59b6bbc7b097e2c8fb5ad07c",
+                        "appkey_android" : "34638d9d59b6bbc7b097e2c8fb5ad07c"
+                    }
+                }
+            }
         }
     },
     "quickapp" : {},
@@ -48,6 +57,17 @@
             "minified" : true,
             "postcss" : true
         },
+        "permission" : {
+            "scope.userLocation" : {
+                "desc" : "你的位置信息将用于查找附近的充电站"
+            }
+        },
+        "requiredPrivateInfos" : [
+            "getLocation",
+            "chooseLocation",
+            "onLocationChange",
+            "startLocationUpdate"
+        ],
         "optimization" : {
             "subPackages" : true
         },
@@ -64,6 +84,15 @@
         "router" : {
             "mode" : "hash",
             "base" : "./"
+        },
+        "sdkConfigs" : {
+            "maps" : {
+                "amap" : {
+                    "key" : "34638d9d59b6bbc7b097e2c8fb5ad07c",
+                    "securityJsCode" : "",
+                    "serviceHost" : ""
+                }
+            }
         }
     }
 }

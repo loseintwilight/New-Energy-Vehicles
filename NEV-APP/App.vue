@@ -30,5 +30,5 @@
 
 <style lang="scss">
   @import 'uview-ui/index.scss';
-  @import '@/static/scss/index.scss'
+  @import '@/static/scss/index.scss';
 </style>

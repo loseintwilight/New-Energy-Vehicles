@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.business.mapper.StadChargingOrderMapper">
+
+    <resultMap type="StadChargingOrder" id="StadChargingOrderResult">
+        <result property="orderId"        column="order_id"        />
+        <result property="orderNo"        column="order_no"        />
+        <result property="userId"         column="user_id"         />
+        <result property="stationId"      column="station_id"      />
+        <result property="pileId"         column="pile_id"         />
+        <result property="pileCode"       column="pile_code"       />
+        <result property="rateId"         column="rate_id"         />
+        <result property="ratePeriodId"   column="rate_period_id"  />
+        <result property="startTime"      column="start_time"      />
+        <result property="endTime"        column="end_time"        />
+        <result property="duration"       column="duration"        />
+        <result property="startSoc"       column="start_soc"       />
+        <result property="endSoc"         column="end_soc"         />
+        <result property="totalEnergy"    column="total_energy"    />
+        <result property="energyPrice"    column="energy_price"    />
+        <result property="servicePrice"   column="service_price"   />
+        <result property="discountAmount" column="discount_amount" />
+        <result property="totalAmount"    column="total_amount"    />
+        <result property="rateDetail"     column="rate_detail"     />
+        <result property="orderStatus"    column="order_status"    />
+        <result property="payStatus"      column="pay_status"      />
+        <result property="paymentMethod"  column="payment_method"  />
+        <result property="transactionId"  column="transaction_id"  />
+        <result property="carbonEarned"   column="carbon_earned"   />
+        <result property="createTime"     column="create_time"     />
+        <result property="updateTime"     column="update_time"     />
+        <result property="stationName"    column="station_name"    />
+        <result property="nickName"       column="nick_name"       />
+    </resultMap>
+
+    <sql id="selectOrderVo">
+        select o.order_id, o.order_no, o.user_id, o.station_id, o.pile_id,
+               o.pile_code, o.rate_id, o.rate_period_id,
+               o.start_time, o.end_time, o.duration,
+               o.start_soc, o.end_soc, o.total_energy,
+               o.energy_price, o.service_price, o.discount_amount, o.total_amount,
+               o.rate_detail, o.order_status, o.pay_status, o.payment_method,
+               o.transaction_id, o.carbon_earned, o.create_time, o.update_time,
+               s.station_name, u.nick_name
+        from stad_charging_order o
+        left join stad_charging_station s on o.station_id = s.station_id
+        left join sys_user u on o.user_id = u.user_id
+    </sql>
+
+    <select id="selectStadChargingOrderById" parameterType="Long" resultMap="StadChargingOrderResult">
+        <include refid="selectOrderVo"/>
+        where o.order_id = #{orderId}
+    </select>
+
+    <select id="selectStadChargingOrderList" parameterType="StadChargingOrder" resultMap="StadChargingOrderResult">
+        <include refid="selectOrderVo"/>
+        <where>
+            <if test="orderNo != null and orderNo != ''">
+                AND o.order_no like concat('%', #{orderNo}, '%')
+            </if>
+            <if test="userId != null">
+                AND o.user_id = #{userId}
+            </if>
+            <if test="stationId != null">
+                AND o.station_id = #{stationId}
+            </if>
+            <if test="orderStatus != null and orderStatus != ''">
+                AND o.order_status = #{orderStatus}
+            </if>
+            <if test="payStatus != null and payStatus != ''">
+                AND o.pay_status = #{payStatus}
+            </if>
+            <if test="pileCode != null and pileCode != ''">
+                AND o.pile_code like concat('%', #{pileCode}, '%')
+            </if>
+        </where>
+        order by o.order_id desc
+    </select>
+
+    <insert id="insertStadChargingOrder" parameterType="StadChargingOrder" useGeneratedKeys="true" keyProperty="orderId">
+        insert into stad_charging_order
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="orderNo != null and orderNo != ''">order_no,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="stationId != null">station_id,</if>
+            <if test="pileId != null">pile_id,</if>
+            <if test="pileCode != null and pileCode != ''">pile_code,</if>
+            <if test="rateId != null">rate_id,</if>
+            <if test="ratePeriodId != null">rate_period_id,</if>
+            <if test="startTime != null">start_time,</if>
+            <if test="endTime != null">end_time,</if>
+            <if test="duration != null">duration,</if>
+            <if test="startSoc != null">start_soc,</if>
+            <if test="endSoc != null">end_soc,</if>
+            <if test="totalEnergy != null">total_energy,</if>
+            <if test="energyPrice != null">energy_price,</if>
+            <if test="servicePrice != null">service_price,</if>
+            <if test="discountAmount != null">discount_amount,</if>
+            <if test="totalAmount != null">total_amount,</if>
+            <if test="orderStatus != null">order_status,</if>
+            <if test="payStatus != null">pay_status,</if>
+            <if test="paymentMethod != null">payment_method,</if>
+            <if test="transactionId != null">transaction_id,</if>
+            <if test="carbonEarned != null">carbon_earned,</if>
+            <if test="createBy != null">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="orderNo != null and orderNo != ''">#{orderNo},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="stationId != null">#{stationId},</if>
+            <if test="pileId != null">#{pileId},</if>
+            <if test="pileCode != null and pileCode != ''">#{pileCode},</if>
+            <if test="rateId != null">#{rateId},</if>
+            <if test="ratePeriodId != null">#{ratePeriodId},</if>
+            <if test="startTime != null">#{startTime},</if>
+            <if test="endTime != null">#{endTime},</if>
+            <if test="duration != null">#{duration},</if>
+            <if test="startSoc != null">#{startSoc},</if>
+            <if test="endSoc != null">#{endSoc},</if>
+            <if test="totalEnergy != null">#{totalEnergy},</if>
+            <if test="energyPrice != null">#{energyPrice},</if>
+            <if test="servicePrice != null">#{servicePrice},</if>
+            <if test="discountAmount != null">#{discountAmount},</if>
+            <if test="totalAmount != null">#{totalAmount},</if>
+            <if test="orderStatus != null">#{orderStatus},</if>
+            <if test="payStatus != null">#{payStatus},</if>
+            <if test="paymentMethod != null">#{paymentMethod},</if>
+            <if test="transactionId != null">#{transactionId},</if>
+            <if test="carbonEarned != null">#{carbonEarned},</if>
+            <if test="createBy != null">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateStadChargingOrder" parameterType="StadChargingOrder">
+        update stad_charging_order
+        <set>
+            <if test="orderNo != null and orderNo != ''">order_no = #{orderNo},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="stationId != null">station_id = #{stationId},</if>
+            <if test="pileId != null">pile_id = #{pileId},</if>
+            <if test="pileCode != null">pile_code = #{pileCode},</if>
+            <if test="rateId != null">rate_id = #{rateId},</if>
+            <if test="ratePeriodId != null">rate_period_id = #{ratePeriodId},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="duration != null">duration = #{duration},</if>
+            <if test="startSoc != null">start_soc = #{startSoc},</if>
+            <if test="endSoc != null">end_soc = #{endSoc},</if>
+            <if test="totalEnergy != null">total_energy = #{totalEnergy},</if>
+            <if test="energyPrice != null">energy_price = #{energyPrice},</if>
+            <if test="servicePrice != null">service_price = #{servicePrice},</if>
+            <if test="discountAmount != null">discount_amount = #{discountAmount},</if>
+            <if test="totalAmount != null">total_amount = #{totalAmount},</if>
+            <if test="orderStatus != null">order_status = #{orderStatus},</if>
+            <if test="payStatus != null">pay_status = #{payStatus},</if>
+            <if test="paymentMethod != null">payment_method = #{paymentMethod},</if>
+            <if test="transactionId != null">transaction_id = #{transactionId},</if>
+            <if test="carbonEarned != null">carbon_earned = #{carbonEarned},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where order_id = #{orderId}
+    </update>
+
+    <delete id="deleteStadChargingOrderById" parameterType="Long">
+        delete from stad_charging_order where order_id = #{orderId}
+    </delete>
+
+    <delete id="deleteStadChargingOrderByIds" parameterType="Long">
+        delete from stad_charging_order where order_id in
+        <foreach item="orderId" collection="array" open="(" separator="," close=")">
+            #{orderId}
+        </foreach>
+    </delete>
+
+</mapper>

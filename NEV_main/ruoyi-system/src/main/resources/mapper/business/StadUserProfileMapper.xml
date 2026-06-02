@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.business.mapper.StadUserProfileMapper">
+
+    <resultMap type="StadUserProfile" id="StadUserProfileResult">
+        <result property="userId"      column="user_id"       />
+        <result property="idCard"      column="id_card"       />
+        <result property="totalEarned" column="total_earned"  />
+        <result property="totalSpent"  column="total_spent"   />
+        <result property="balance"     column="balance"       />
+        <result property="createTime"  column="create_time"   />
+        <result property="updateTime"  column="update_time"   />
+    </resultMap>
+
+    <sql id="selectUserProfileVo">
+        select user_id, id_card, total_earned, total_spent, balance, create_time, update_time
+        from stad_user_profile
+    </sql>
+
+    <select id="selectStadUserProfileById" parameterType="Long" resultMap="StadUserProfileResult">
+        <include refid="selectUserProfileVo"/>
+        where user_id = #{userId}
+    </select>
+
+    <select id="selectStadUserProfileList" parameterType="StadUserProfile" resultMap="StadUserProfileResult">
+        <include refid="selectUserProfileVo"/>
+        <where>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="idCard != null and idCard != ''">
+                AND id_card like concat('%', #{idCard}, '%')
+            </if>
+        </where>
+        order by user_id desc
+    </select>
+
+    <insert id="insertStadUserProfile" parameterType="StadUserProfile">
+        insert into stad_user_profile
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="idCard != null">id_card,</if>
+            <if test="totalEarned != null">total_earned,</if>
+            <if test="totalSpent != null">total_spent,</if>
+            <if test="balance != null">balance,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="idCard != null">#{idCard},</if>
+            <if test="totalEarned != null">#{totalEarned},</if>
+            <if test="totalSpent != null">#{totalSpent},</if>
+            <if test="balance != null">#{balance},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateStadUserProfile" parameterType="StadUserProfile">
+        update stad_user_profile
+        <set>
+            <if test="idCard != null">id_card = #{idCard},</if>
+            <if test="totalEarned != null">total_earned = #{totalEarned},</if>
+            <if test="totalSpent != null">total_spent = #{totalSpent},</if>
+            <if test="balance != null">balance = #{balance},</if>
+            update_time = sysdate()
+        </set>
+        where user_id = #{userId}
+    </update>
+
+    <delete id="deleteStadUserProfileById" parameterType="Long">
+        delete from stad_user_profile where user_id = #{userId}
+    </delete>
+
+    <delete id="deleteStadUserProfileByIds" parameterType="Long">
+        delete from stad_user_profile where user_id in
+        <foreach item="userId" collection="array" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+    </delete>
+
+</mapper>

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.business.mapper.StadMaintenanceShopMapper">
+
+    <resultMap type="StadMaintenanceShop" id="StadMaintenanceShopResult">
+        <result property="shopId"       column="shop_id"       />
+        <result property="shopName"     column="shop_name"     />
+        <result property="merchantId"   column="merchant_id"   />
+        <result property="province"     column="province"      />
+        <result property="city"         column="city"          />
+        <result property="district"     column="district"      />
+        <result property="address"      column="address"       />
+        <result property="longitude"    column="longitude"     />
+        <result property="latitude"     column="latitude"      />
+        <result property="contactName"  column="contact_name"  />
+        <result property="contactPhone" column="contact_phone" />
+        <result property="servicesInfo" column="services_info" />
+        <result property="rating"       column="rating"        />
+        <result property="description"  column="description"   />
+        <result property="status"       column="status"        />
+        <result property="createTime"   column="create_time"   />
+        <result property="updateTime"   column="update_time"   />
+        <result property="merchantName" column="merchant_name" />
+    </resultMap>
+
+    <sql id="selectShopVo">
+        select s.shop_id, s.shop_name, s.merchant_id, s.province, s.city,
+               s.district, s.address, s.longitude, s.latitude,
+               s.contact_name, s.contact_phone, s.services_info,
+               s.rating, s.description, s.status, s.create_time, s.update_time,
+               m.merchant_name
+        from stad_maintenance_shop s
+        left join stad_merchant m on s.merchant_id = m.merchant_id
+    </sql>
+
+    <select id="selectStadMaintenanceShopById" parameterType="Long" resultMap="StadMaintenanceShopResult">
+        <include refid="selectShopVo"/>
+        where s.shop_id = #{shopId}
+    </select>
+
+    <select id="selectStadMaintenanceShopList" parameterType="StadMaintenanceShop" resultMap="StadMaintenanceShopResult">
+        <include refid="selectShopVo"/>
+        <where>
+            <if test="shopName != null and shopName != ''">
+                AND s.shop_name like concat('%', #{shopName}, '%')
+            </if>
+            <if test="city != null and city != ''">
+                AND s.city like concat('%', #{city}, '%')
+            </if>
+            <if test="contactName != null and contactName != ''">
+                AND s.contact_name like concat('%', #{contactName}, '%')
+            </if>
+            <if test="status != null">
+                AND s.status = #{status}
+            </if>
+        </where>
+        order by s.shop_id desc
+    </select>
+
+    <insert id="insertStadMaintenanceShop" parameterType="StadMaintenanceShop" useGeneratedKeys="true" keyProperty="shopId">
+        insert into stad_maintenance_shop
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="shopName != null and shopName != ''">shop_name,</if>
+            <if test="merchantId != null">merchant_id,</if>
+            <if test="province != null and province != ''">province,</if>
+            <if test="city != null and city != ''">city,</if>
+            <if test="district != null">district,</if>
+            <if test="address != null and address != ''">address,</if>
+            <if test="longitude != null">longitude,</if>
+            <if test="latitude != null">latitude,</if>
+            <if test="contactName != null and contactName != ''">contact_name,</if>
+            <if test="contactPhone != null and contactPhone != ''">contact_phone,</if>
+            <if test="servicesInfo != null">services_info,</if>
+            <if test="rating != null">rating,</if>
+            <if test="description != null">description,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="shopName != null and shopName != ''">#{shopName},</if>
+            <if test="merchantId != null">#{merchantId},</if>
+            <if test="province != null and province != ''">#{province},</if>
+            <if test="city != null and city != ''">#{city},</if>
+            <if test="district != null">#{district},</if>
+            <if test="address != null and address != ''">#{address},</if>
+            <if test="longitude != null">#{longitude},</if>
+            <if test="latitude != null">#{latitude},</if>
+            <if test="contactName != null and contactName != ''">#{contactName},</if>
+            <if test="contactPhone != null and contactPhone != ''">#{contactPhone},</if>
+            <if test="servicesInfo != null">#{servicesInfo},</if>
+            <if test="rating != null">#{rating},</if>
+            <if test="description != null">#{description},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateStadMaintenanceShop" parameterType="StadMaintenanceShop">
+        update stad_maintenance_shop
+        <set>
+            <if test="shopName != null and shopName != ''">shop_name = #{shopName},</if>
+            <if test="merchantId != null">merchant_id = #{merchantId},</if>
+            <if test="province != null">province = #{province},</if>
+            <if test="city != null">city = #{city},</if>
+            <if test="district != null">district = #{district},</if>
+            <if test="address != null">address = #{address},</if>
+            <if test="longitude != null">longitude = #{longitude},</if>
+            <if test="latitude != null">latitude = #{latitude},</if>
+            <if test="contactName != null">contact_name = #{contactName},</if>
+            <if test="contactPhone != null">contact_phone = #{contactPhone},</if>
+            <if test="servicesInfo != null">services_info = #{servicesInfo},</if>
+            <if test="rating != null">rating = #{rating},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where shop_id = #{shopId}
+    </update>
+
+    <delete id="deleteStadMaintenanceShopById" parameterType="Long">
+        delete from stad_maintenance_shop where shop_id = #{shopId}
+    </delete>
+
+    <delete id="deleteStadMaintenanceShopByIds" parameterType="Long">
+        delete from stad_maintenance_shop where shop_id in
+        <foreach item="shopId" collection="array" open="(" separator="," close=")">
+            #{shopId}
+        </foreach>
+    </delete>
+
+</mapper>

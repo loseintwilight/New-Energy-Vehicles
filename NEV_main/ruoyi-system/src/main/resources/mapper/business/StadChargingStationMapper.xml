@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.business.mapper.StadChargingStationMapper">
+
+    <resultMap type="StadChargingStation" id="StadChargingStationResult">
+        <result property="stationId"       column="station_id"       />
+        <result property="stationName"     column="station_name"     />
+        <result property="stationCode"     column="station_code"     />
+        <result property="merchantId"      column="merchant_id"      />
+        <result property="province"         column="province"         />
+        <result property="city"             column="city"             />
+        <result property="district"         column="district"         />
+        <result property="address"          column="address"          />
+        <result property="longitude"        column="longitude"        />
+        <result property="latitude"         column="latitude"         />
+        <result property="geoHash"          column="geo_hash"         />
+        <result property="totalPiles"       column="total_piles"      />
+        <result property="availablePiles"   column="available_piles"  />
+        <result property="occupyingPiles"   column="occupying_piles"  />
+        <result property="openTime"         column="open_time"        />
+        <result property="closeTime"        column="close_time"       />
+        <result property="parkingFee"       column="parking_fee"      />
+        <result property="servicePhone"     column="service_phone"    />
+        <result property="facilitiesInfo"   column="facilities_info"  />
+        <result property="images"           column="images"           />
+        <result property="isInternal"       column="is_internal"      />
+        <result property="applyStatus"      column="apply_status"     />
+        <result property="auditRemark"      column="audit_remark"     />
+        <result property="auditTime"        column="audit_time"       />
+        <result property="stationStatus"    column="station_status"   />
+        <result property="createTime"       column="create_time"      />
+        <result property="updateTime"       column="update_time"      />
+        <result property="merchantName"     column="merchant_name"    />
+    </resultMap>
+
+    <sql id="selectStationVo">
+        select s.station_id, s.station_name, s.station_code, s.merchant_id,
+               s.province, s.city, s.district, s.address, s.longitude, s.latitude,
+               s.total_piles, s.available_piles, s.occupying_piles,
+               s.open_time, s.close_time, s.parking_fee, s.service_phone,
+               s.facilities_info, s.images, s.is_internal, s.apply_status,
+               s.audit_remark, s.audit_time, s.station_status,
+               s.create_time, s.update_time,
+               m.merchant_name
+        from stad_charging_station s
+        left join stad_merchant m on s.merchant_id = m.merchant_id
+    </sql>
+
+    <select id="selectStadChargingStationById" parameterType="Long" resultMap="StadChargingStationResult">
+        <include refid="selectStationVo"/>
+        where s.station_id = #{stationId}
+    </select>
+
+    <select id="selectStadChargingStationList" parameterType="StadChargingStation" resultMap="StadChargingStationResult">
+        <include refid="selectStationVo"/>
+        <where>
+            <if test="stationName != null and stationName != ''">
+                AND s.station_name like concat('%', #{stationName}, '%')
+            </if>
+            <if test="stationCode != null and stationCode != ''">
+                AND s.station_code like concat('%', #{stationCode}, '%')
+            </if>
+            <if test="city != null and city != ''">
+                AND s.city like concat('%', #{city}, '%')
+            </if>
+            <if test="stationStatus != null and stationStatus != ''">
+                AND s.station_status = #{stationStatus}
+            </if>
+            <if test="merchantId != null">
+                AND s.merchant_id = #{merchantId}
+            </if>
+        </where>
+        order by s.station_id desc
+    </select>
+
+    <insert id="insertStadChargingStation" parameterType="StadChargingStation" useGeneratedKeys="true" keyProperty="stationId">
+        insert into stad_charging_station
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="stationName != null and stationName != ''">station_name,</if>
+            <if test="stationCode != null and stationCode != ''">station_code,</if>
+            <if test="merchantId != null">merchant_id,</if>
+            <if test="province != null and province != ''">province,</if>
+            <if test="city != null and city != ''">city,</if>
+            <if test="district != null">district,</if>
+            <if test="address != null and address != ''">address,</if>
+            <if test="longitude != null">longitude,</if>
+            <if test="latitude != null">latitude,</if>
+            <if test="totalPiles != null">total_piles,</if>
+            <if test="availablePiles != null">available_piles,</if>
+            <if test="occupyingPiles != null">occupying_piles,</if>
+            <if test="openTime != null">open_time,</if>
+            <if test="closeTime != null">close_time,</if>
+            <if test="parkingFee != null">parking_fee,</if>
+            <if test="servicePhone != null">service_phone,</if>
+            <if test="facilitiesInfo != null">facilities_info,</if>
+            <if test="images != null">images,</if>
+            <if test="isInternal != null">is_internal,</if>
+            <if test="applyStatus != null">apply_status,</if>
+            <if test="stationStatus != null">station_status,</if>
+            <if test="createBy != null">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="stationName != null and stationName != ''">#{stationName},</if>
+            <if test="stationCode != null and stationCode != ''">#{stationCode},</if>
+            <if test="merchantId != null">#{merchantId},</if>
+            <if test="province != null and province != ''">#{province},</if>
+            <if test="city != null and city != ''">#{city},</if>
+            <if test="district != null">#{district},</if>
+            <if test="address != null and address != ''">#{address},</if>
+            <if test="longitude != null">#{longitude},</if>
+            <if test="latitude != null">#{latitude},</if>
+            <if test="totalPiles != null">#{totalPiles},</if>
+            <if test="availablePiles != null">#{availablePiles},</if>
+            <if test="occupyingPiles != null">#{occupyingPiles},</if>
+            <if test="openTime != null">#{openTime},</if>
+            <if test="closeTime != null">#{closeTime},</if>
+            <if test="parkingFee != null">#{parkingFee},</if>
+            <if test="servicePhone != null">#{servicePhone},</if>
+            <if test="facilitiesInfo != null">#{facilitiesInfo},</if>
+            <if test="images != null">#{images},</if>
+            <if test="isInternal != null">#{isInternal},</if>
+            <if test="applyStatus != null">#{applyStatus},</if>
+            <if test="stationStatus != null">#{stationStatus},</if>
+            <if test="createBy != null">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateStadChargingStation" parameterType="StadChargingStation">
+        update stad_charging_station
+        <set>
+            <if test="stationName != null and stationName != ''">station_name = #{stationName},</if>
+            <if test="stationCode != null and stationCode != ''">station_code = #{stationCode},</if>
+            <if test="merchantId != null">merchant_id = #{merchantId},</if>
+            <if test="province != null">province = #{province},</if>
+            <if test="city != null">city = #{city},</if>
+            <if test="district != null">district = #{district},</if>
+            <if test="address != null">address = #{address},</if>
+            <if test="longitude != null">longitude = #{longitude},</if>
+            <if test="latitude != null">latitude = #{latitude},</if>
+            <if test="totalPiles != null">total_piles = #{totalPiles},</if>
+            <if test="availablePiles != null">available_piles = #{availablePiles},</if>
+            <if test="occupyingPiles != null">occupying_piles = #{occupyingPiles},</if>
+            <if test="openTime != null">open_time = #{openTime},</if>
+            <if test="closeTime != null">close_time = #{closeTime},</if>
+            <if test="parkingFee != null">parking_fee = #{parkingFee},</if>
+            <if test="servicePhone != null">service_phone = #{servicePhone},</if>
+            <if test="facilitiesInfo != null">facilities_info = #{facilitiesInfo},</if>
+            <if test="images != null">images = #{images},</if>
+            <if test="isInternal != null">is_internal = #{isInternal},</if>
+            <if test="applyStatus != null">apply_status = #{applyStatus},</if>
+            <if test="auditRemark != null">audit_remark = #{auditRemark},</if>
+            <if test="auditTime != null">audit_time = #{auditTime},</if>
+            <if test="stationStatus != null">station_status = #{stationStatus},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where station_id = #{stationId}
+    </update>
+
+    <delete id="deleteStadChargingStationById" parameterType="Long">
+        delete from stad_charging_station where station_id = #{stationId}
+    </delete>
+
+    <delete id="deleteStadChargingStationByIds" parameterType="Long">
+        delete from stad_charging_station where station_id in
+        <foreach item="stationId" collection="array" open="(" separator="," close=")">
+            #{stationId}
+        </foreach>
+    </delete>
+
+</mapper>

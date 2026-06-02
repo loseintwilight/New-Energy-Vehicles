@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.business.mapper.StadUserFeedbackMapper">
+
+    <resultMap type="StadUserFeedback" id="StadUserFeedbackResult">
+        <result property="feedbackId" column="feedback_id"  />
+        <result property="userId"     column="user_id"      />
+        <result property="content"    column="content"      />
+        <result property="images"     column="images"       />
+        <result property="contact"    column="contact"      />
+        <result property="reply"      column="reply"        />
+        <result property="status"     column="status"       />
+        <result property="createTime" column="create_time"  />
+    </resultMap>
+
+    <sql id="selectUserFeedbackVo">
+        select feedback_id, user_id, content, images, contact, reply, status, create_time
+        from stad_user_feedback
+    </sql>
+
+    <select id="selectStadUserFeedbackById" parameterType="Long" resultMap="StadUserFeedbackResult">
+        <include refid="selectUserFeedbackVo"/>
+        where feedback_id = #{feedbackId}
+    </select>
+
+    <select id="selectStadUserFeedbackList" parameterType="StadUserFeedback" resultMap="StadUserFeedbackResult">
+        <include refid="selectUserFeedbackVo"/>
+        <where>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+        order by feedback_id desc
+    </select>
+
+    <insert id="insertStadUserFeedback" parameterType="StadUserFeedback" useGeneratedKeys="true" keyProperty="feedbackId">
+        insert into stad_user_feedback
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="content != null and content != ''">content,</if>
+            <if test="images != null">images,</if>
+            <if test="contact != null">contact,</if>
+            <if test="reply != null">reply,</if>
+            <if test="status != null">status,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="content != null and content != ''">#{content},</if>
+            <if test="images != null">#{images},</if>
+            <if test="contact != null">#{contact},</if>
+            <if test="reply != null">#{reply},</if>
+            <if test="status != null">#{status},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateStadUserFeedback" parameterType="StadUserFeedback">
+        update stad_user_feedback
+        <set>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="content != null and content != ''">content = #{content},</if>
+            <if test="images != null">images = #{images},</if>
+            <if test="contact != null">contact = #{contact},</if>
+            <if test="reply != null">reply = #{reply},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+        </set>
+        where feedback_id = #{feedbackId}
+    </update>
+
+    <delete id="deleteStadUserFeedbackById" parameterType="Long">
+        delete from stad_user_feedback where feedback_id = #{feedbackId}
+    </delete>
+
+    <delete id="deleteStadUserFeedbackByIds" parameterType="Long">
+        delete from stad_user_feedback where feedback_id in
+        <foreach item="feedbackId" collection="array" open="(" separator="," close=")">
+            #{feedbackId}
+        </foreach>
+    </delete>
+
+</mapper>

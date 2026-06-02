@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.business.mapper.StadMaintenanceOrderMapper">
+
+    <resultMap type="StadMaintenanceOrder" id="StadMaintenanceOrderResult">
+        <result property="orderId"        column="order_id"        />
+        <result property="orderNo"        column="order_no"        />
+        <result property="userId"         column="user_id"         />
+        <result property="shopId"         column="shop_id"         />
+        <result property="vehicleId"      column="vehicle_id"      />
+        <result property="serviceItem"    column="service_item"    />
+        <result property="servicePrice"   column="service_price"   />
+        <result property="totalAmount"    column="total_amount"    />
+        <result property="paidAmount"     column="paid_amount"     />
+        <result property="expectDate"     column="expect_date"     />
+        <result property="expectTimeSlot" column="expect_time_slot" />
+        <result property="orderStatus"    column="order_status"    />
+        <result property="cancelReason"   column="cancel_reason"   />
+        <result property="finishTime"     column="finish_time"     />
+        <result property="rating"         column="rating"          />
+        <result property="commentContent" column="comment_content" />
+        <result property="payStatus"      column="pay_status"      />
+        <result property="paymentMethod"  column="payment_method"  />
+        <result property="createTime"     column="create_time"     />
+        <result property="shopName"       column="shop_name"       />
+        <result property="nickName"       column="nick_name"       />
+    </resultMap>
+
+    <sql id="selectOrderVo">
+        select o.order_id, o.order_no, o.user_id, o.shop_id, o.vehicle_id,
+               o.service_item, o.service_price, o.total_amount, o.paid_amount,
+               o.expect_date, o.expect_time_slot, o.order_status, o.cancel_reason,
+               o.finish_time, o.rating, o.comment_content, o.pay_status,
+               o.payment_method, o.create_time,
+               s.shop_name, u.nick_name
+        from stad_maintenance_order o
+        left join stad_maintenance_shop s on o.shop_id = s.shop_id
+        left join sys_user u on o.user_id = u.user_id
+    </sql>
+
+    <select id="selectStadMaintenanceOrderById" parameterType="Long" resultMap="StadMaintenanceOrderResult">
+        <include refid="selectOrderVo"/>
+        where o.order_id = #{orderId}
+    </select>
+
+    <select id="selectStadMaintenanceOrderList" parameterType="StadMaintenanceOrder" resultMap="StadMaintenanceOrderResult">
+        <include refid="selectOrderVo"/>
+        <where>
+            <if test="orderNo != null and orderNo != ''">
+                AND o.order_no like concat('%', #{orderNo}, '%')
+            </if>
+            <if test="shopId != null">
+                AND o.shop_id = #{shopId}
+            </if>
+            <if test="serviceItem != null and serviceItem != ''">
+                AND o.service_item like concat('%', #{serviceItem}, '%')
+            </if>
+            <if test="orderStatus != null and orderStatus != ''">
+                AND o.order_status = #{orderStatus}
+            </if>
+            <if test="payStatus != null and payStatus != ''">
+                AND o.pay_status = #{payStatus}
+            </if>
+        </where>
+        order by o.order_id desc
+    </select>
+
+    <insert id="insertStadMaintenanceOrder" parameterType="StadMaintenanceOrder" useGeneratedKeys="true" keyProperty="orderId">
+        insert into stad_maintenance_order
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="orderNo != null and orderNo != ''">order_no,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="shopId != null">shop_id,</if>
+            <if test="vehicleId != null">vehicle_id,</if>
+            <if test="serviceItem != null and serviceItem != ''">service_item,</if>
+            <if test="servicePrice != null">service_price,</if>
+            <if test="totalAmount != null">total_amount,</if>
+            <if test="paidAmount != null">paid_amount,</if>
+            <if test="expectDate != null">expect_date,</if>
+            <if test="expectTimeSlot != null and expectTimeSlot != ''">expect_time_slot,</if>
+            <if test="orderStatus != null">order_status,</if>
+            <if test="payStatus != null">pay_status,</if>
+            <if test="paymentMethod != null">payment_method,</if>
+            <if test="createBy != null">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="orderNo != null and orderNo != ''">#{orderNo},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="shopId != null">#{shopId},</if>
+            <if test="vehicleId != null">#{vehicleId},</if>
+            <if test="serviceItem != null and serviceItem != ''">#{serviceItem},</if>
+            <if test="servicePrice != null">#{servicePrice},</if>
+            <if test="totalAmount != null">#{totalAmount},</if>
+            <if test="paidAmount != null">#{paidAmount},</if>
+            <if test="expectDate != null">#{expectDate},</if>
+            <if test="expectTimeSlot != null and expectTimeSlot != ''">#{expectTimeSlot},</if>
+            <if test="orderStatus != null">#{orderStatus},</if>
+            <if test="payStatus != null">#{payStatus},</if>
+            <if test="paymentMethod != null">#{paymentMethod},</if>
+            <if test="createBy != null">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateStadMaintenanceOrder" parameterType="StadMaintenanceOrder">
+        update stad_maintenance_order
+        <set>
+            <if test="orderNo != null and orderNo != ''">order_no = #{orderNo},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="shopId != null">shop_id = #{shopId},</if>
+            <if test="vehicleId != null">vehicle_id = #{vehicleId},</if>
+            <if test="serviceItem != null">service_item = #{serviceItem},</if>
+            <if test="servicePrice != null">service_price = #{servicePrice},</if>
+            <if test="totalAmount != null">total_amount = #{totalAmount},</if>
+            <if test="paidAmount != null">paid_amount = #{paidAmount},</if>
+            <if test="expectDate != null">expect_date = #{expectDate},</if>
+            <if test="expectTimeSlot != null">expect_time_slot = #{expectTimeSlot},</if>
+            <if test="orderStatus != null">order_status = #{orderStatus},</if>
+            <if test="cancelReason != null">cancel_reason = #{cancelReason},</if>
+            <if test="finishTime != null">finish_time = #{finishTime},</if>
+            <if test="rating != null">rating = #{rating},</if>
+            <if test="commentContent != null">comment_content = #{commentContent},</if>
+            <if test="payStatus != null">pay_status = #{payStatus},</if>
+            <if test="paymentMethod != null">payment_method = #{paymentMethod},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where order_id = #{orderId}
+    </update>
+
+    <delete id="deleteStadMaintenanceOrderById" parameterType="Long">
+        delete from stad_maintenance_order where order_id = #{orderId}
+    </delete>
+
+    <delete id="deleteStadMaintenanceOrderByIds" parameterType="Long">
+        delete from stad_maintenance_order where order_id in
+        <foreach item="orderId" collection="array" open="(" separator="," close=")">
+            #{orderId}
+        </foreach>
+    </delete>
+
+</mapper>

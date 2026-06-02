@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.business.mapper.StadChargingPileMapper">
+
+    <resultMap type="StadChargingPile" id="StadChargingPileResult">
+        <result property="pileId"           column="pile_id"            />
+        <result property="stationId"        column="station_id"         />
+        <result property="pileCode"         column="pile_code"          />
+        <result property="pileType"         column="pile_type"          />
+        <result property="accessType"       column="access_type"        />
+        <result property="powerKw"          column="power_kw"           />
+        <result property="connectorType"    column="connector_type"     />
+        <result property="pileStatus"       column="pile_status"        />
+        <result property="currentOrderNo"   column="current_order_no"   />
+        <result property="currentUserName"  column="current_user_name"  />
+        <result property="currentStartTime" column="current_start_time" />
+        <result property="lastHeartbeat"    column="last_heartbeat"     />
+        <result property="voltage"          column="voltage"            />
+        <result property="currentA"         column="current_a"          />
+        <result property="powerNow"         column="power_now"          />
+        <result property="energyTotal"      column="energy_total"       />
+        <result property="sortOrder"        column="sort_order"         />
+        <result property="createTime"       column="create_time"        />
+    </resultMap>
+
+    <sql id="selectChargingPileVo">
+        select pile_id, station_id, pile_code, pile_type, access_type, power_kw, connector_type,
+               pile_status, current_order_no, current_user_name, current_start_time, last_heartbeat,
+               voltage, current_a, power_now, energy_total, sort_order, create_time
+        from stad_charging_pile
+    </sql>
+
+    <select id="selectStadChargingPileById" parameterType="Long" resultMap="StadChargingPileResult">
+        <include refid="selectChargingPileVo"/> where pile_id = #{pileId}
+    </select>
+
+    <select id="selectStadChargingPileByStationId" parameterType="Long" resultMap="StadChargingPileResult">
+        <include refid="selectChargingPileVo"/> where station_id = #{stationId} order by sort_order asc
+    </select>
+
+    <select id="selectStadChargingPileList" parameterType="StadChargingPile" resultMap="StadChargingPileResult">
+        <include refid="selectChargingPileVo"/>
+        <where>
+            <if test="stationId != null">AND station_id = #{stationId}</if>
+            <if test="pileType != null and pileType != ''">AND pile_type = #{pileType}</if>
+            <if test="pileStatus != null and pileStatus != ''">AND pile_status = #{pileStatus}</if>
+            <if test="pileCode != null and pileCode != ''">AND pile_code like concat('%', #{pileCode}, '%')</if>
+        </where>
+        order by pile_id desc
+    </select>
+
+    <insert id="insertStadChargingPile" parameterType="StadChargingPile" useGeneratedKeys="true" keyProperty="pileId">
+        insert into stad_charging_pile
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="stationId != null">station_id,</if>
+            <if test="pileCode != null">pile_code,</if>
+            <if test="pileType != null">pile_type,</if>
+            <if test="accessType != null">access_type,</if>
+            <if test="powerKw != null">power_kw,</if>
+            <if test="connectorType != null">connector_type,</if>
+            <if test="pileStatus != null">pile_status,</if>
+            <if test="sortOrder != null">sort_order,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="stationId != null">#{stationId},</if>
+            <if test="pileCode != null">#{pileCode},</if>
+            <if test="pileType != null">#{pileType},</if>
+            <if test="accessType != null">#{accessType},</if>
+            <if test="powerKw != null">#{powerKw},</if>
+            <if test="connectorType != null">#{connectorType},</if>
+            <if test="pileStatus != null">#{pileStatus},</if>
+            <if test="sortOrder != null">#{sortOrder},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateStadChargingPile" parameterType="StadChargingPile">
+        update stad_charging_pile
+        <set>
+            <if test="stationId != null">station_id = #{stationId},</if>
+            <if test="pileCode != null">pile_code = #{pileCode},</if>
+            <if test="pileType != null">pile_type = #{pileType},</if>
+            <if test="accessType != null">access_type = #{accessType},</if>
+            <if test="powerKw != null">power_kw = #{powerKw},</if>
+            <if test="connectorType != null">connector_type = #{connectorType},</if>
+            <if test="pileStatus != null">pile_status = #{pileStatus},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+        </set>
+        where pile_id = #{pileId}
+    </update>
+
+    <delete id="deleteStadChargingPileById" parameterType="Long">
+        delete from stad_charging_pile where pile_id = #{pileId}
+    </delete>
+
+    <delete id="deleteStadChargingPileByIds" parameterType="Long">
+        delete from stad_charging_pile where pile_id in
+        <foreach item="pileId" collection="array" open="(" separator="," close=")">#{pileId}</foreach>
+    </delete>
+
+</mapper>

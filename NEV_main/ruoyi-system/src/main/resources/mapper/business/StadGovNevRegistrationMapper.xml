@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.business.mapper.StadGovNevRegistrationMapper">
+
+    <resultMap type="StadGovNevRegistration" id="StadGovNevRegistrationResult">
+        <result property="regId"            column="reg_id"             />
+        <result property="statDate"         column="stat_date"          />
+        <result property="city"             column="city"               />
+        <result property="district"         column="district"           />
+        <result property="newRegistrations" column="new_registrations"  />
+        <result property="totalVehicles"    column="total_vehicles"     />
+        <result property="evCount"          column="ev_count"           />
+        <result property="phevCount"        column="phev_count"         />
+        <result property="fcevCount"        column="fcev_count"         />
+        <result property="dataSource"       column="data_source"        />
+    </resultMap>
+
+    <sql id="selectGovNevRegistrationVo">
+        select reg_id, stat_date, city, district, new_registrations, total_vehicles, ev_count, phev_count, fcev_count, data_source
+        from stad_gov_nev_registration
+    </sql>
+
+    <select id="selectStadGovNevRegistrationById" parameterType="Long" resultMap="StadGovNevRegistrationResult">
+        <include refid="selectGovNevRegistrationVo"/> where reg_id = #{regId}
+    </select>
+
+    <select id="selectStadGovNevRegistrationList" parameterType="StadGovNevRegistration" resultMap="StadGovNevRegistrationResult">
+        <include refid="selectGovNevRegistrationVo"/>
+        <where>
+            <if test="city != null and city != ''">AND city = #{city}</if>
+            <if test="district != null and district != ''">AND district = #{district}</if>
+            <if test="statDate != null">AND stat_date = #{statDate}</if>
+        </where>
+        order by stat_date desc, city asc
+    </select>
+
+    <insert id="insertStadGovNevRegistration" parameterType="StadGovNevRegistration" useGeneratedKeys="true" keyProperty="regId">
+        insert into stad_gov_nev_registration
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="statDate != null">stat_date,</if>
+            <if test="city != null">city,</if>
+            <if test="district != null">district,</if>
+            <if test="newRegistrations != null">new_registrations,</if>
+            <if test="totalVehicles != null">total_vehicles,</if>
+            <if test="evCount != null">ev_count,</if>
+            <if test="phevCount != null">phev_count,</if>
+            <if test="fcevCount != null">fcev_count,</if>
+            <if test="dataSource != null">data_source,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="statDate != null">#{statDate},</if>
+            <if test="city != null">#{city},</if>
+            <if test="district != null">#{district},</if>
+            <if test="newRegistrations != null">#{newRegistrations},</if>
+            <if test="totalVehicles != null">#{totalVehicles},</if>
+            <if test="evCount != null">#{evCount},</if>
+            <if test="phevCount != null">#{phevCount},</if>
+            <if test="fcevCount != null">#{fcevCount},</if>
+            <if test="dataSource != null">#{dataSource},</if>
+        </trim>
+    </insert>
+
+    <update id="updateStadGovNevRegistration" parameterType="StadGovNevRegistration">
+        update stad_gov_nev_registration
+        <set>
+            <if test="statDate != null">stat_date = #{statDate},</if>
+            <if test="city != null">city = #{city},</if>
+            <if test="district != null">district = #{district},</if>
+            <if test="newRegistrations != null">new_registrations = #{newRegistrations},</if>
+            <if test="totalVehicles != null">total_vehicles = #{totalVehicles},</if>
+            <if test="evCount != null">ev_count = #{evCount},</if>
+            <if test="phevCount != null">phev_count = #{phevCount},</if>
+            <if test="fcevCount != null">fcev_count = #{fcevCount},</if>
+            <if test="dataSource != null">data_source = #{dataSource},</if>
+        </set>
+        where reg_id = #{regId}
+    </update>
+
+    <delete id="deleteStadGovNevRegistrationById" parameterType="Long">
+        delete from stad_gov_nev_registration where reg_id = #{regId}
+    </delete>
+
+    <delete id="deleteStadGovNevRegistrationByIds" parameterType="Long">
+        delete from stad_gov_nev_registration where reg_id in
+        <foreach item="regId" collection="array" open="(" separator="," close=")">#{regId}</foreach>
+    </delete>
+
+</mapper>

@@ -7,6 +7,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="StadUserAddress" id="StadUserAddressResult">
         <result property="addressId"    column="address_id"     />
         <result property="userId"       column="user_id"        />
+        <result property="nickName"     column="nick_name"      />
         <result property="contactName"   column="contact_name"   />
         <result property="contactPhone"  column="contact_phone"  />
         <result property="province"     column="province"       />
@@ -19,8 +20,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectUserAddressVo">
-        select address_id, user_id, contact_name, contact_phone, province, city, district, detail, is_default, create_time, update_time
-        from stad_user_address
+        select a.address_id, a.user_id, u.nick_name, a.contact_name, a.contact_phone, a.province, a.city, a.district, a.detail, a.is_default, a.create_time, a.update_time
+        from stad_user_address a
+        left join sys_user u on a.user_id = u.user_id
     </sql>
 
     <select id="selectStadUserAddressById" parameterType="Long" resultMap="StadUserAddressResult">

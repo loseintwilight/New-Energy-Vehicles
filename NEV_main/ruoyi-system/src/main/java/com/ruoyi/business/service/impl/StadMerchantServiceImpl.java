@@ -19,6 +19,11 @@ public class StadMerchantServiceImpl implements IStadMerchantService {
     }
 
     @Override
+    public StadMerchant selectStadMerchantByUserId(Long userId) {
+        return stadMerchantMapper.selectStadMerchantByUserId(userId);
+    }
+
+    @Override
     public List<StadMerchant> selectStadMerchantList(StadMerchant merchant) {
         return stadMerchantMapper.selectStadMerchantList(merchant);
     }
@@ -31,6 +36,11 @@ public class StadMerchantServiceImpl implements IStadMerchantService {
     @Override
     public int updateStadMerchant(StadMerchant merchant) {
         return stadMerchantMapper.updateStadMerchant(merchant);
+    }
+
+    @Override
+    public int auditStadMerchant(StadMerchant merchant) {
+        return stadMerchantMapper.auditStadMerchant(merchant);
     }
 
     @Override

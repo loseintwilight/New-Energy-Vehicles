@@ -7,14 +7,20 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="StadUserFavorite" id="StadUserFavoriteResult">
         <result property="favoriteId" column="favorite_id"  />
         <result property="userId"     column="user_id"      />
+        <result property="nickName"   column="nick_name"    />
         <result property="targetType" column="target_type"  />
         <result property="targetId"   column="target_id"    />
+        <result property="targetName" column="target_name"  />
         <result property="createTime" column="create_time"  />
     </resultMap>
 
     <sql id="selectUserFavoriteVo">
-        select favorite_id, user_id, target_type, target_id, create_time
-        from stad_user_favorite
+        select f.favorite_id, f.user_id, u.nick_name, f.target_type, f.target_id, f.create_time,
+               coalesce(v.model_name, s.station_name) as target_name
+        from stad_user_favorite f
+        left join sys_user u on f.user_id = u.user_id
+        left join stad_vehicle v on f.target_type = 'vehicle' and f.target_id = v.vehicle_id
+        left join stad_charging_station s on f.target_type = 'station' and f.target_id = s.station_id
     </sql>
 
     <select id="selectStadUserFavoriteById" parameterType="Long" resultMap="StadUserFavoriteResult">

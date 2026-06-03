@@ -7,6 +7,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="StadVehicleFinancePlan" id="StadVehicleFinancePlanResult">
         <result property="planId"         column="plan_id"          />
         <result property="vehicleId"      column="vehicle_id"       />
+        <result property="vehicleName"    column="vehicle_name"     />
         <result property="planType"       column="plan_type"        />
         <result property="planName"       column="plan_name"        />
         <result property="totalPrice"     column="total_price"      />
@@ -24,9 +25,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectVehicleFinancePlanVo">
-        select plan_id, vehicle_id, plan_type, plan_name, total_price, down_payment, monthly_payment,
-               months, interest_rate, total_interest, total_payable, provider, is_active, sort_order, create_time, update_time
-        from stad_vehicle_finance_plan
+        select f.plan_id, f.vehicle_id, v.model_name as vehicle_name, f.plan_type, f.plan_name, f.total_price, f.down_payment,
+               f.monthly_payment, f.months, f.interest_rate, f.total_interest, f.total_payable, f.provider, f.is_active, f.sort_order, f.create_time, f.update_time
+        from stad_vehicle_finance_plan f
+        left join stad_vehicle v on f.vehicle_id = v.vehicle_id
     </sql>
 
     <select id="selectStadVehicleFinancePlanById" parameterType="Long" resultMap="StadVehicleFinancePlanResult">

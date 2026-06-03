@@ -10,6 +10,7 @@ public class StadVehicleSpec extends BaseEntity {
 
     private Long specId;
     private Long vehicleId;
+    private String vehicleName;
     private Integer rangeKm;
     private BigDecimal batteryCapacity;
     private BigDecimal chargeTimeFast;
@@ -20,6 +21,8 @@ public class StadVehicleSpec extends BaseEntity {
     public void setSpecId(Long specId) { this.specId = specId; }
     public Long getVehicleId() { return vehicleId; }
     public void setVehicleId(Long vehicleId) { this.vehicleId = vehicleId; }
+    public String getVehicleName() { return vehicleName; }
+    public void setVehicleName(String vehicleName) { this.vehicleName = vehicleName; }
     public Integer getRangeKm() { return rangeKm; }
     public void setRangeKm(Integer rangeKm) { this.rangeKm = rangeKm; }
     public BigDecimal getBatteryCapacity() { return batteryCapacity; }

@@ -9,6 +9,7 @@ public class StadUserFeedback extends BaseEntity {
 
     private Long feedbackId;
     private Long userId;
+    private String nickName;
     private String content;
     private String images;
     private String contact;
@@ -20,6 +21,9 @@ public class StadUserFeedback extends BaseEntity {
 
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
+
+    public String getNickName() { return nickName; }
+    public void setNickName(String nickName) { this.nickName = nickName; }
 
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }

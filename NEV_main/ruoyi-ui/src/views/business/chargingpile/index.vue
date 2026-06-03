@@ -12,10 +12,10 @@
       </el-form-item>
       <el-form-item label="状态" prop="pileStatus">
         <el-select v-model="queryParams.pileStatus" placeholder="请选择" clearable>
-          <el-option label="空闲" value="idle" />
-          <el-option label="充电中" value="charging" />
-          <el-option label="故障" value="fault" />
-          <el-option label="离线" value="offline" />
+          <el-option label="空闲" value="0" />
+          <el-option label="充电中" value="1" />
+          <el-option label="离线" value="2" />
+          <el-option label="故障" value="3" />
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -37,18 +37,17 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="pileList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="pileList" @selection-change="handleSelectionChange" :default-sort="{prop: 'lastHeartbeat', order: 'descending'}">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="pileId" />
-      <el-table-column label="站ID" align="center" prop="stationId" />
       <el-table-column label="桩编号" align="center" prop="pileCode" />
       <el-table-column label="类型" align="center" prop="pileType" />
       <el-table-column label="功率(kW)" align="center" prop="powerKw" />
       <el-table-column label="接口" align="center" prop="connectorType" />
       <el-table-column label="状态" align="center" prop="pileStatus">
         <template slot-scope="scope">
-          <el-tag :type="scope.row.pileStatus === 'idle' ? 'success' : scope.row.pileStatus === 'charging' ? 'warning' : 'danger'">
-            {{ {'idle':'空闲','charging':'充电中','fault':'故障','offline':'离线'}[scope.row.pileStatus] || scope.row.pileStatus }}
+          <el-tag :type="scope.row.pileStatus === '0' ? 'success' : scope.row.pileStatus === '1' ? 'warning' : scope.row.pileStatus === '2' ? 'info' : 'danger'">
+            {{ {'0':'空闲','1':'充电中','2':'离线','3':'故障'}[scope.row.pileStatus] || scope.row.pileStatus }}
           </el-tag>
         </template>
       </el-table-column>
@@ -83,10 +82,10 @@
         </el-form-item>
         <el-form-item label="状态" prop="pileStatus">
           <el-radio-group v-model="form.pileStatus">
-            <el-radio label="idle">空闲</el-radio>
-            <el-radio label="charging">充电中</el-radio>
-            <el-radio label="fault">故障</el-radio>
-            <el-radio label="offline">离线</el-radio>
+            <el-radio label="0">空闲</el-radio>
+            <el-radio label="1">充电中</el-radio>
+            <el-radio label="2">离线</el-radio>
+            <el-radio label="3">故障</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="排序" prop="sortOrder">
@@ -122,7 +121,7 @@ export default {
   methods: {
     getList() { this.loading = true; listChargingPile(this.queryParams).then(response => { this.pileList = response.rows; this.total = response.total; this.loading = false }) },
     cancel() { this.open = false; this.reset() },
-    reset() { this.form = { stationId: undefined, pileCode: undefined, pileType: "DC", accessType: "DC", powerKw: undefined, connectorType: undefined, pileStatus: "idle", sortOrder: 0 }; this.resetForm("form") },
+    reset() { this.form = { stationId: undefined, pileCode: undefined, pileType: "DC", accessType: "DC", powerKw: undefined, connectorType: undefined, pileStatus: "0", sortOrder: 0 }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.pileId); this.single = selection.length != 1; this.multiple = !selection.length },

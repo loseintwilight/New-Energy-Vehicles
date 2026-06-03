@@ -13,8 +13,8 @@ public class StadChargingRate extends BaseEntity {
     private String rateName;
     private String pileType;
     private Integer isActive;
-    private Date effectiveFrom;
-    private Date effectiveTo;
+    private String effectiveFrom;
+    private String effectiveTo;
     private String description;
     private Integer sortOrder;
 
@@ -28,10 +28,10 @@ public class StadChargingRate extends BaseEntity {
     public void setPileType(String pileType) { this.pileType = pileType; }
     public Integer getIsActive() { return isActive; }
     public void setIsActive(Integer isActive) { this.isActive = isActive; }
-    public Date getEffectiveFrom() { return effectiveFrom; }
-    public void setEffectiveFrom(Date effectiveFrom) { this.effectiveFrom = effectiveFrom; }
-    public Date getEffectiveTo() { return effectiveTo; }
-    public void setEffectiveTo(Date effectiveTo) { this.effectiveTo = effectiveTo; }
+    public String getEffectiveFrom() { return effectiveFrom; }
+    public void setEffectiveFrom(String effectiveFrom) { this.effectiveFrom = effectiveFrom; }
+    public String getEffectiveTo() { return effectiveTo; }
+    public void setEffectiveTo(String effectiveTo) { this.effectiveTo = effectiveTo; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
     public Integer getSortOrder() { return sortOrder; }

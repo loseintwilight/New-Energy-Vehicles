@@ -19,16 +19,15 @@
       </el-form-item>
       <el-form-item label="订单状态" prop="orderStatus">
         <el-select v-model="queryParams.orderStatus" placeholder="订单状态" clearable>
-          <el-option label="充电中" value="充电中" />
-          <el-option label="已完成" value="已完成" />
-          <el-option label="已取消" value="已取消" />
+          <el-option label="充电中" value="0" />
+          <el-option label="已完成" value="1" />
+          <el-option label="已取消" value="2" />
         </el-select>
       </el-form-item>
       <el-form-item label="支付状态" prop="payStatus">
         <el-select v-model="queryParams.payStatus" placeholder="支付状态" clearable>
-          <el-option label="未支付" value="未支付" />
-          <el-option label="已支付" value="已支付" />
-          <el-option label="已退款" value="已退款" />
+          <el-option label="未支付" value="0" />
+          <el-option label="已支付" value="1" />
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -52,7 +51,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="orderList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="orderList" @selection-change="handleSelectionChange" :default-sort="{prop: 'createTime', order: 'descending'}">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="orderId" />
       <el-table-column label="订单号" align="center" prop="orderNo" show-overflow-tooltip width="200" />
@@ -63,12 +62,16 @@
       <el-table-column label="总金额" align="center" prop="totalAmount" />
       <el-table-column label="订单状态" align="center" prop="orderStatus">
         <template slot-scope="scope">
-          <el-tag :type="scope.row.orderStatus === '已完成' ? 'success' : scope.row.orderStatus === '充电中' ? 'primary' : 'info'">{{ scope.row.orderStatus }}</el-tag>
+          <el-tag :type="scope.row.orderStatus === '1' ? 'success' : scope.row.orderStatus === '0' ? 'primary' : 'info'">
+            {{ {'0':'充电中','1':'已完成','2':'已取消'}[scope.row.orderStatus] || scope.row.orderStatus }}
+          </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="支付状态" align="center" prop="payStatus">
         <template slot-scope="scope">
-          <el-tag :type="scope.row.payStatus === '已支付' ? 'success' : scope.row.payStatus === '未支付' ? 'danger' : 'warning'">{{ scope.row.payStatus }}</el-tag>
+          <el-tag :type="scope.row.payStatus === '1' ? 'success' : scope.row.payStatus === '0' ? 'danger' : 'warning'">
+            {{ {'0':'未支付','1':'已支付'}[scope.row.payStatus] || scope.row.payStatus }}
+          </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
@@ -171,18 +174,17 @@
           <el-col :span="12">
             <el-form-item label="订单状态" prop="orderStatus">
               <el-select v-model="form.orderStatus" placeholder="订单状态" style="width: 100%">
-                <el-option label="充电中" value="充电中" />
-                <el-option label="已完成" value="已完成" />
-                <el-option label="已取消" value="已取消" />
+                <el-option label="充电中" value="0" />
+                <el-option label="已完成" value="1" />
+                <el-option label="已取消" value="2" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="支付状态" prop="payStatus">
               <el-select v-model="form.payStatus" placeholder="支付状态" style="width: 100%">
-                <el-option label="未支付" value="未支付" />
-                <el-option label="已支付" value="已支付" />
-                <el-option label="已退款" value="已退款" />
+                <el-option label="未支付" value="0" />
+                <el-option label="已支付" value="1" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -285,8 +287,8 @@ export default {
         energyPrice: undefined,
         servicePrice: undefined,
         totalAmount: undefined,
-        orderStatus: "充电中",
-        payStatus: "未支付",
+        orderStatus: "0",
+        payStatus: "0",
         paymentMethod: undefined,
         transactionId: undefined,
         carbonEarned: 0

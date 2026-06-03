@@ -41,6 +41,9 @@
       ></map>
 
       <view class="map-controls">
+        <view class="ctrl-btn switch-loc-btn" @click="openLocationPicker">
+          <image class="switch-loc-icon" src="/static/images/charge/修改定位.png" mode="aspectFit"></image>
+        </view>
         <view class="ctrl-btn" @click="reLocate">
           <u-icon name="map" size="36" color="#07c160"></u-icon>
         </view>
@@ -229,6 +232,64 @@
         </view>
       </view>
     </uni-popup>
+
+    <uni-popup ref="locationPopup" type="center">
+      <view class="loc-picker-popup">
+        <text class="popup-title">修改当前位置</text>
+
+        <picker mode="region" :value="selectedRegion" @change="onRegionChange">
+          <view class="loc-region-picker">
+            <u-icon name="map" size="32" color="#1989fa"></u-icon>
+            <text v-if="regionText" class="region-text">{{ regionText }}</text>
+            <text v-else class="region-placeholder">请选择省 / 市 / 区</text>
+            <u-icon name="arrow-right" size="24" color="#999"></u-icon>
+          </view>
+        </picker>
+
+        <input
+          class="loc-addr-input"
+          v-model="locationSearchKey"
+          placeholder="输入街道/门牌号/地标名称，如：大学路3501号"
+          @confirm="searchLocation"
+        />
+
+        <view class="loc-btn-row">
+          <button class="loc-btn-primary" @click="searchLocation" :disabled="!canSearch">
+            <u-icon name="search" size="28" color="#fff"></u-icon>
+            <text>搜索</text>
+          </button>
+          <button class="loc-btn-secondary" @click="pickLocationOnMap">
+            <u-icon name="map" size="28" color="#1989fa"></u-icon>
+            <text>地图选点</text>
+          </button>
+        </view>
+
+        <view v-if="searchingAddr" class="loc-status">
+          <u-icon name="reload" size="28" color="#999"></u-icon>
+          <text>搜索中...</text>
+        </view>
+        <view v-else-if="searchedAddr && searchResults.length > 0" class="loc-status">
+          <text>搜索结果</text>
+        </view>
+        <scroll-view class="loc-city-list" scroll-y>
+          <view
+            v-for="(item, idx) in searchResults"
+            :key="idx"
+            class="loc-city-item"
+            @click="selectSearchResult(item)"
+          >
+            <view class="city-info">
+              <text class="city-name-text">{{ item.name }}</text>
+              <text class="city-desc">{{ item.address }}</text>
+            </view>
+          </view>
+          <view v-if="searchedAddr && searchResults.length === 0 && !searchingAddr" class="loc-empty">
+            <text>未找到匹配的地址，请尝试更详细的地址</text>
+          </view>
+        </scroll-view>
+        <button class="popup-close-btn" @click="closeLocationPicker">关闭</button>
+      </view>
+    </uni-popup>
   </view>
 </template>
 
@@ -295,38 +356,24 @@ export default {
         pageNum: 1,
         pageSize: 10,
         lat: 36.548,
-        lng: 116.801,
-        orderByColumn: 'distance',
-        isAsc: 'asc'
+        lng: 116.801
       },
 
       priceTipData: {},
 
       hotCities: [
-        { code: '370100', name: '济南市' },
-        { code: '370200', name: '青岛市' },
-        { code: '370600', name: '烟台市' },
-        { code: '370300', name: '淄博市' },
-        { code: '371300', name: '临沂市' }
+        { code: '370100', name: '济南市', lat: 36.6512, lng: 117.1201, desc: '省会' },
+        { code: '370200', name: '青岛市', lat: 36.0671, lng: 120.3826, desc: '沿海城市' },
+        { code: '370600', name: '烟台市', lat: 37.4645, lng: 121.4479, desc: '沿海城市' },
+        { code: '370300', name: '淄博市', lat: 36.8135, lng: 118.0548, desc: '工业城市' },
+        { code: '371300', name: '临沂市', lat: 35.1047, lng: 118.3565, desc: '' }
       ],
-      allCities: [
-        { code: '370100', name: '济南市' },
-        { code: '370200', name: '青岛市' },
-        { code: '370300', name: '淄博市' },
-        { code: '370400', name: '枣庄市' },
-        { code: '370500', name: '东营市' },
-        { code: '370600', name: '烟台市' },
-        { code: '370700', name: '潍坊市' },
-        { code: '370800', name: '济宁市' },
-        { code: '370900', name: '泰安市' },
-        { code: '371000', name: '威海市' },
-        { code: '371100', name: '日照市' },
-        { code: '371300', name: '临沂市' },
-        { code: '371400', name: '德州市' },
-        { code: '371500', name: '聊城市' },
-        { code: '371600', name: '滨州市' },
-        { code: '371700', name: '菏泽市' }
-      ]
+      locationSearchKey: '',
+      searchResults: [],
+      searchingAddr: false,
+      searchedAddr: false,
+      selectedRegion: [],
+      regionText: ''
     }
   },
 
@@ -351,35 +398,195 @@ export default {
 
   onReady() {
     this.mapCtx = uni.createMapContext('chargeMap', this)
+    // 分多次调用 moveToLocation，确保地图组件已经拿到GPS蓝点位置
+    // show-location=true 会让地图组件自己获取GPS位置显示蓝点
+    // moveToLocation() 会把地图中心移动到蓝点位置
+    const tryMoveToLocation = (delay) => {
+      setTimeout(() => {
+        if (this.mapCtx) {
+          this.mapCtx.moveToLocation()
+        }
+      }, delay)
+    }
+    tryMoveToLocation(400)
+    tryMoveToLocation(1000)
+    tryMoveToLocation(2000)
   },
 
   methods: {
     async initLocation() {
       this.locating = true
       try {
+        // 优先使用 isHighAccuracy 获取精准GPS
         const pos = await amap.getLocation()
-        this.queryParams.lat = pos.latitude
-        this.queryParams.lng = pos.longitude
-        this.mapCenter = { lat: pos.latitude, lng: pos.longitude }
+        this.setLocation(pos.latitude, pos.longitude)
         this.locationReady = true
-        this.$nextTick(() => {
-          if (this.mapCtx) {
-            this.mapCtx.moveToLocation()
-          }
-        })
       } catch (e) {
-        this.locationReady = false
+        console.log('[locate] highAccuracy failed:', e.errMsg || e)
+        // 退而求其次：不要求高精度，用网络定位
+        try {
+          const pos = await this.getNetworkLocation()
+          this.setLocation(pos.latitude, pos.longitude)
+          this.locationReady = true
+        } catch (e2) {
+          console.log('[locate] networkLocation failed:', e2.errMsg || e2)
+          this.locationReady = false
+        }
       }
       this.locating = false
+    },
+
+    getNetworkLocation() {
+      return new Promise((resolve, reject) => {
+        uni.getLocation({
+          type: 'gcj02',
+          timeout: 8000,
+          success: (res) => resolve({ latitude: res.latitude, longitude: res.longitude }),
+          fail: reject
+        })
+      })
+    },
+
+    setLocation(lat, lng) {
+      this.queryParams.lat = lat
+      this.queryParams.lng = lng
+      this.mapCenter = { lat, lng }
     },
 
     reLocate() {
       if (this.locating) return
       this.locating = true
-      this.initLocation().then(() => {
-        this.fetchStationList(true)
-      }).finally(() => {
-        this.locating = false
+      // 先让地图的蓝点自己定位
+      if (this.mapCtx) {
+        this.mapCtx.moveToLocation()
+      }
+      // 同时获取GPS坐标用于数据查询和地图中心
+      uni.getLocation({
+        type: 'gcj02',
+        isHighAccuracy: true,
+        timeout: 10000,
+        success: (res) => {
+          this.setLocation(res.latitude, res.longitude)
+          this.locationReady = true
+          this.queryParams.pageNum = 1
+          this.stationList = []
+          this.fetchStationList(true)
+          this.locating = false
+        },
+        fail: () => {
+          // 尝试不要求高精度
+          uni.getLocation({
+            type: 'gcj02',
+            timeout: 8000,
+            success: (res) => {
+              this.setLocation(res.latitude, res.longitude)
+              this.locationReady = true
+              this.queryParams.pageNum = 1
+              this.stationList = []
+              this.fetchStationList(true)
+              this.locating = false
+            },
+            fail: () => {
+              this.locating = false
+              // 保持当前地图状态不变，提示用户
+              uni.showModal({
+                title: '定位失败',
+                content: '请确保手机GPS已开启且在室外。您也可以手动搜索当前位置。',
+                confirmText: '手动输入地址',
+                cancelText: '取消',
+                success: (res) => {
+                  if (res.confirm) this.openLocationPicker()
+                }
+              })
+            }
+          })
+        }
+      })
+    },
+
+    openLocationPicker() {
+      this.locationSearchKey = ''
+      this.searchResults = []
+      this.searchingAddr = false
+      this.searchedAddr = false
+      this.selectedRegion = []
+      this.regionText = ''
+      this.$refs.locationPopup.open()
+    },
+
+    closeLocationPicker() {
+      this.$refs.locationPopup.close()
+    },
+
+    onRegionChange(e) {
+      this.selectedRegion = e.detail.value
+      this.regionText = e.detail.value.join('')
+      this.searchResults = []
+      this.searchedAddr = false
+    },
+
+    async searchLocation() {
+      const detail = this.locationSearchKey.trim()
+      if (!this.regionText || !detail) return
+      const fullAddr = this.regionText + detail
+      this.searchingAddr = true
+      this.searchedAddr = false
+      this.searchResults = []
+      try {
+        const result = await amap.geocode(fullAddr)
+        if (result) {
+          this.searchResults = [{
+            name: result.address || fullAddr,
+            address: result.district || result.city || '',
+            lat: result.latitude,
+            lng: result.longitude
+          }]
+        }
+      } catch (e) {
+        uni.showToast({ title: '搜索失败，请重试', icon: 'none' })
+      }
+      this.searchingAddr = false
+      this.searchedAddr = true
+    },
+
+    selectSearchResult(item) {
+      if (!item.lat || !item.lng) return
+      this.setLocation(item.lat, item.lng)
+      // 同时移动蓝点标记
+      if (this.mapCtx) {
+        this.mapCtx.moveToLocation({ latitude: item.lat, longitude: item.lng })
+      }
+      this.locationSearchKey = ''
+      this.searchResults = []
+      this.searchedAddr = false
+      this.queryParams.pageNum = 1
+      this.stationList = []
+      this.$refs.locationPopup.close()
+      this.fetchStationList(true)
+    },
+
+    pickLocationOnMap() {
+      this.$refs.locationPopup.close()
+      uni.chooseLocation({
+        success: (res) => {
+          if (res && res.latitude) {
+            this.setLocation(res.latitude, res.longitude)
+            if (this.mapCtx) {
+              this.mapCtx.moveToLocation({ latitude: res.latitude, longitude: res.longitude })
+            }
+            if (res.name) {
+              this.currentCity = res.name.includes('市') ? res.name.split('市')[0] + '市' :
+                res.name.includes('县') ? res.name : this.currentCity
+            }
+            this.queryParams.pageNum = 1
+            this.stationList = []
+            this.fetchStationList(true)
+          }
+        },
+        fail: () => {
+          // 用户取消，重新打开弹窗
+          this.$nextTick(() => this.openLocationPicker())
+        }
       })
     },
 
@@ -728,7 +935,7 @@ export default {
     },
 
     goNotice() {
-      uni.navigateTo({ url: '/pages/charge/notification' })
+      uni.navigateTo({ url: '/pages/mine/messages/index?tab=charge' })
     },
 
     toggleMoreFilter(key) {
@@ -757,6 +964,9 @@ export default {
   },
 
   computed: {
+    canSearch() {
+      return this.regionText && this.locationSearchKey.trim()
+    },
     availableCount() {
       return this.stationList.filter(s => s.freePiles > 0).length
     },
@@ -929,6 +1139,11 @@ export default {
       box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.06);
       border: 1rpx solid #f5f5f5;
       &:active { transform: scale(0.93); }
+
+      .switch-loc-icon {
+        width: 40rpx;
+        height: 40rpx;
+      }
     }
   }
 
@@ -1476,6 +1691,170 @@ export default {
         }
       }
     }
+  }
+}
+
+.loc-picker-popup {
+  width: 660rpx;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 36rpx 32rpx 24rpx;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+
+  .popup-title {
+    font-size: 34rpx;
+    font-weight: 600;
+    color: #333;
+    text-align: center;
+    margin-bottom: 20rpx;
+  }
+
+  .loc-region-picker {
+    display: flex;
+    align-items: center;
+    height: 80rpx;
+    background: #f5f6fa;
+    border-radius: 12rpx;
+    padding: 0 20rpx;
+    margin-bottom: 24rpx;
+
+    .region-text {
+      flex: 1;
+      font-size: 28rpx;
+      color: #333;
+      margin-left: 12rpx;
+    }
+
+    .region-placeholder {
+      flex: 1;
+      font-size: 28rpx;
+      color: #bbb;
+      margin-left: 12rpx;
+    }
+  }
+
+  .loc-addr-input {
+    width: 100%;
+    height: 80rpx;
+    background: #f5f6fa;
+    border-radius: 12rpx;
+    padding: 0 24rpx;
+    font-size: 28rpx;
+    color: #333;
+    margin-bottom: 24rpx;
+  }
+
+  .loc-btn-row {
+    display: flex;
+    gap: 16rpx;
+    margin-bottom: 24rpx;
+
+    .loc-btn-primary {
+      flex: 1;
+      height: 76rpx;
+      line-height: 76rpx;
+      background: linear-gradient(135deg, #1989fa, #1558b0);
+      color: #fff;
+      font-size: 28rpx;
+      border-radius: 40rpx;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6rpx;
+
+      text {
+        color: #fff;
+        font-size: 28rpx;
+      }
+
+      &[disabled] {
+        opacity: 0.5;
+      }
+    }
+
+    .loc-btn-secondary {
+      flex: 1;
+      height: 76rpx;
+      line-height: 76rpx;
+      background: #f5f6fa;
+      color: #1989fa;
+      font-size: 28rpx;
+      border-radius: 40rpx;
+      border: 1rpx solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6rpx;
+
+      text {
+        color: #1989fa;
+        font-size: 26rpx;
+      }
+    }
+  }
+
+  .loc-status {
+    padding: 0 0 12rpx 0;
+    font-size: 24rpx;
+    color: #999;
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+  }
+
+  .loc-city-list {
+    max-height: 360rpx;
+    margin-bottom: 20rpx;
+  }
+
+  .loc-city-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24rpx 16rpx;
+    border-bottom: 1rpx solid #f5f5f5;
+    transition: background 0.2s;
+
+    &:active { background: #f5f6fa; }
+
+    .city-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6rpx;
+    }
+
+    .city-name-text {
+      font-size: 30rpx;
+      color: #333;
+      font-weight: 500;
+    }
+
+    .city-desc {
+      font-size: 24rpx;
+      color: #999;
+    }
+  }
+
+  .loc-empty {
+    padding: 60rpx 0;
+    text-align: center;
+    color: #999;
+    font-size: 28rpx;
+  }
+
+  .popup-close-btn {
+    width: 100%;
+    height: 76rpx;
+    line-height: 76rpx;
+    background: #f5f6fa;
+    color: #666;
+    font-size: 30rpx;
+    border-radius: 40rpx;
+    border: none;
   }
 }
 

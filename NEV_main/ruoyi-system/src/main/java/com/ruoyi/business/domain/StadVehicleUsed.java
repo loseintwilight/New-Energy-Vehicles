@@ -10,6 +10,7 @@ public class StadVehicleUsed extends BaseEntity {
 
     private Long usedId;
     private Long vehicleId;
+    private String vehicleName;
     private Integer licenseYear;
     private Integer licenseMonth;
     private String licenseCity;
@@ -26,6 +27,8 @@ public class StadVehicleUsed extends BaseEntity {
     public void setUsedId(Long usedId) { this.usedId = usedId; }
     public Long getVehicleId() { return vehicleId; }
     public void setVehicleId(Long vehicleId) { this.vehicleId = vehicleId; }
+    public String getVehicleName() { return vehicleName; }
+    public void setVehicleName(String vehicleName) { this.vehicleName = vehicleName; }
     public Integer getLicenseYear() { return licenseYear; }
     public void setLicenseYear(Integer licenseYear) { this.licenseYear = licenseYear; }
     public Integer getLicenseMonth() { return licenseMonth; }

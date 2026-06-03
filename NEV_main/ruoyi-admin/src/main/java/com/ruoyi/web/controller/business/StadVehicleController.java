@@ -41,6 +41,12 @@ public class StadVehicleController extends BaseController {
         return success(stadVehicleService.selectStadVehicleById(vehicleId));
     }
 
+    @PreAuthorize("@ss.hasPermi('business:vehicle:query')")
+    @GetMapping(value = "/detail/{vehicleId}")
+    public AjaxResult detail(@PathVariable Long vehicleId) {
+        return success(stadVehicleService.selectStadVehicleDetailById(vehicleId));
+    }
+
     @PreAuthorize("@ss.hasPermi('business:vehicle:add')")
     @Log(title = "车辆管理", businessType = BusinessType.INSERT)
     @PostMapping

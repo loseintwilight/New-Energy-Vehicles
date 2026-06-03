@@ -30,12 +30,12 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="favoriteList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="favoriteList" @selection-change="handleSelectionChange" :default-sort="{prop: 'createTime', order: 'descending'}">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="favoriteId" />
-      <el-table-column label="用户ID" align="center" prop="userId" />
+      <el-table-column label="用户" align="center" prop="nickName" />
       <el-table-column label="收藏类型" align="center" prop="targetType" />
-      <el-table-column label="收藏对象ID" align="center" prop="targetId" />
+      <el-table-column label="收藏对象" align="center" prop="targetName" show-overflow-tooltip />
       <el-table-column label="收藏时间" align="center" prop="createTime" width="180">
         <template slot-scope="scope"><span>{{ parseTime(scope.row.createTime) }}</span></template>
       </el-table-column>

@@ -23,16 +23,15 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="periodList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="periodList" @selection-change="handleSelectionChange" :default-sort="{prop: 'periodId', order: 'ascending'}">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="periodId" />
-      <el-table-column label="费率ID" align="center" prop="rateId" />
       <el-table-column label="时段名称" align="center" prop="periodName" />
       <el-table-column label="开始" align="center" prop="startTime" width="80">
-        <template slot-scope="scope"><span>{{ parseTime(scope.row.startTime, '{h}:{i}') }}</span></template>
+        <template slot-scope="scope"><span>{{ scope.row.startTime ? scope.row.startTime.substring(0, 5) : '' }}</span></template>
       </el-table-column>
       <el-table-column label="结束" align="center" prop="endTime" width="80">
-        <template slot-scope="scope"><span>{{ parseTime(scope.row.endTime, '{h}:{i}') }}</span></template>
+        <template slot-scope="scope"><span>{{ scope.row.endTime ? scope.row.endTime.substring(0, 5) : '' }}</span></template>
       </el-table-column>
       <el-table-column label="电费(元)" align="center" prop="energyPrice" width="100" />
       <el-table-column label="服务费(元)" align="center" prop="serviceFee" width="100" />

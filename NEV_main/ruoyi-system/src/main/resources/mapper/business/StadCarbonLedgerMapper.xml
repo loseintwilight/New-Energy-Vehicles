@@ -7,6 +7,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="StadCarbonLedger" id="StadCarbonLedgerResult">
         <result property="ledgerId"     column="ledger_id"      />
         <result property="userId"       column="user_id"        />
+        <result property="nickName"     column="nick_name"      />
         <result property="recordType"   column="record_type"    />
         <result property="ruleId"       column="rule_id"        />
         <result property="points"       column="points"         />
@@ -18,8 +19,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectCarbonLedgerVo">
-        select ledger_id, user_id, record_type, rule_id, points, balance_after, source_type, source_id, remark, create_time
-        from stad_carbon_ledger
+        select l.ledger_id, l.user_id, u.nick_name, l.record_type, l.rule_id, l.points, l.balance_after, l.source_type, l.source_id, l.remark, l.create_time
+        from stad_carbon_ledger l
+        left join sys_user u on l.user_id = u.user_id
     </sql>
 
     <select id="selectStadCarbonLedgerById" parameterType="Long" resultMap="StadCarbonLedgerResult">

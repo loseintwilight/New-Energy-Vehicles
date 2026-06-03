@@ -22,6 +22,8 @@ public class StadVehicle extends BaseEntity {
     private Integer viewCount;
     private String status;
     private String merchantName;
+    private StadVehicleSpec vehicleSpec;
+    private java.util.List<StadVehicleFinancePlan> financePlans;
 
     public Long getVehicleId() { return vehicleId; }
     public void setVehicleId(Long vehicleId) { this.vehicleId = vehicleId; }
@@ -64,6 +66,12 @@ public class StadVehicle extends BaseEntity {
 
     public String getMerchantName() { return merchantName; }
     public void setMerchantName(String merchantName) { this.merchantName = merchantName; }
+
+    public StadVehicleSpec getVehicleSpec() { return vehicleSpec; }
+    public void setVehicleSpec(StadVehicleSpec vehicleSpec) { this.vehicleSpec = vehicleSpec; }
+
+    public java.util.List<StadVehicleFinancePlan> getFinancePlans() { return financePlans; }
+    public void setFinancePlans(java.util.List<StadVehicleFinancePlan> financePlans) { this.financePlans = financePlans; }
 
     @Override
     public String toString() {

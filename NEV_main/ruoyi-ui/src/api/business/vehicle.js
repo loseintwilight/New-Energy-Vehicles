@@ -15,6 +15,13 @@ export function getVehicle(vehicleId) {
   })
 }
 
+export function getVehicleDetail(vehicleId) {
+  return request({
+    url: '/business/vehicle/detail/' + vehicleId,
+    method: 'get'
+  })
+}
+
 export function addVehicle(data) {
   return request({
     url: '/business/vehicle',

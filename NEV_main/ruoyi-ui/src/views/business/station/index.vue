@@ -27,9 +27,10 @@
       </el-form-item>
       <el-form-item label="状态" prop="stationStatus">
         <el-select v-model="queryParams.stationStatus" placeholder="站点状态" clearable>
-          <el-option label="营业中" value="营业中" />
-          <el-option label="休息中" value="休息中" />
-          <el-option label="维护中" value="维护中" />
+          <el-option label="待审核" value="0" />
+          <el-option label="运营中" value="1" />
+          <el-option label="维护中" value="2" />
+          <el-option label="已停用" value="3" />
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -74,7 +75,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="stationList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="stationList" @selection-change="handleSelectionChange" :default-sort="{prop: 'createTime', order: 'descending'}">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="stationId" />
       <el-table-column label="站点名称" align="center" prop="stationName" show-overflow-tooltip />
@@ -86,7 +87,9 @@
       <el-table-column label="所属商户" align="center" prop="merchantName" />
       <el-table-column label="状态" align="center" prop="stationStatus">
         <template slot-scope="scope">
-          <el-tag :type="scope.row.stationStatus === '营业中' ? 'success' : scope.row.stationStatus === '休息中' ? 'info' : 'warning'">{{ scope.row.stationStatus }}</el-tag>
+          <el-tag :type="scope.row.stationStatus === '1' ? 'success' : scope.row.stationStatus === '2' ? 'warning' : scope.row.stationStatus === '0' ? 'info' : 'danger'">
+            {{ {'0':'待审核','1':'运营中','2':'维护中','3':'已停用'}[scope.row.stationStatus] || scope.row.stationStatus }}
+          </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
@@ -205,9 +208,10 @@
         </el-form-item>
         <el-form-item label="站点状态" prop="stationStatus">
           <el-radio-group v-model="form.stationStatus">
-            <el-radio label="营业中">营业中</el-radio>
-            <el-radio label="休息中">休息中</el-radio>
-            <el-radio label="维护中">维护中</el-radio>
+            <el-radio label="0">待审核</el-radio>
+            <el-radio label="1">运营中</el-radio>
+            <el-radio label="2">维护中</el-radio>
+            <el-radio label="3">已停用</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
@@ -290,7 +294,7 @@ export default {
         parkingFee: undefined,
         servicePhone: undefined,
         facilitiesInfo: undefined,
-        stationStatus: "营业中"
+        stationStatus: "1"
       }
       this.resetForm("form")
     },

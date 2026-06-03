@@ -26,13 +26,15 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="specList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="specList" @selection-change="handleSelectionChange" :default-sort="{prop: 'specId', order: 'ascending'}">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="specId" />
-      <el-table-column label="车辆ID" align="center" prop="vehicleId" />
+      <el-table-column label="车辆名称" align="center" prop="vehicleName" show-overflow-tooltip />
       <el-table-column label="续航(km)" align="center" prop="rangeKm" />
       <el-table-column label="电池容量" align="center" prop="batteryCapacity" />
-      <el-table-column label="快充时间" align="center" prop="chargeTimeFast" />
+      <el-table-column label="快充时间" align="center" prop="chargeTimeFast">
+        <template slot-scope="scope"><span>{{ scope.row.chargeTimeFast || '0' }}</span></template>
+      </el-table-column>
       <el-table-column label="慢充时间" align="center" prop="chargeTimeSlow" />
       <el-table-column label="年款" align="center" prop="modelYear" />
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">

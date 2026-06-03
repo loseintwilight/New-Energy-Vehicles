@@ -1,9 +1,6 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="80px">
-      <el-form-item label="充电站" prop="stationId">
-        <el-input v-model="queryParams.stationId" placeholder="请输入充电站ID" clearable @keyup.enter.native="handleQuery" />
-      </el-form-item>
       <el-form-item label="适用类型" prop="pileType">
         <el-select v-model="queryParams.pileType" placeholder="请选择" clearable>
           <el-option label="直流快充" value="DC" />
@@ -30,20 +27,25 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="rateList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="rateList" @selection-change="handleSelectionChange" :default-sort="{prop: 'effectiveFrom', order: 'descending'}">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="rateId" />
-      <el-table-column label="充电站ID" align="center" prop="stationId" />
       <el-table-column label="费率名称" align="center" prop="rateName" show-overflow-tooltip />
-      <el-table-column label="适用类型" align="center" prop="pileType" />
+      <el-table-column label="适用类型" align="center" prop="pileType">
+        <template slot-scope="scope">
+          <el-tag v-if="scope.row.pileType === 'DC'" type="warning">直流快充</el-tag>
+          <el-tag v-else-if="scope.row.pileType === 'AC'" type="primary">交流慢充</el-tag>
+          <el-tag v-else>全部类型</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="启用" align="center" prop="isActive">
         <template slot-scope="scope"><el-tag :type="scope.row.isActive === 1 ? 'success' : 'info'">{{ scope.row.isActive === 1 ? '启用' : '停用' }}</el-tag></template>
       </el-table-column>
       <el-table-column label="生效时间" align="center" prop="effectiveFrom" width="140">
-        <template slot-scope="scope"><span>{{ parseTime(scope.row.effectiveFrom, '{y}-{m}-{d}') }}</span></template>
+        <template slot-scope="scope"><span>{{ scope.row.effectiveFrom ? scope.row.effectiveFrom.substring(0, 10) : '' }}</span></template>
       </el-table-column>
       <el-table-column label="失效时间" align="center" prop="effectiveTo" width="140">
-        <template slot-scope="scope"><span>{{ parseTime(scope.row.effectiveTo, '{y}-{m}-{d}') }}</span></template>
+        <template slot-scope="scope"><span>{{ scope.row.effectiveTo ? scope.row.effectiveTo.substring(0, 10) : '' }}</span></template>
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
@@ -57,9 +59,6 @@
 
     <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="110px">
-        <el-form-item label="充电站ID" prop="stationId">
-          <el-input v-model="form.stationId" placeholder="请输入充电站ID" />
-        </el-form-item>
         <el-row>
           <el-col :span="12"><el-form-item label="费率名称" prop="rateName"><el-input v-model="form.rateName" placeholder="费率名称" /></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="适用类型" prop="pileType"><el-select v-model="form.pileType" placeholder="请选择" style="width:100%"><el-option label="直流快充" value="DC" /><el-option label="交流慢充" value="AC" /><el-option label="全部" value="ALL" /></el-select></el-form-item></el-col>
@@ -93,10 +92,9 @@ export default {
     return {
       loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0,
       rateList: [], title: "", open: false,
-      queryParams: { pageNum: 1, pageSize: 10, stationId: undefined, pileType: undefined },
+      queryParams: { pageNum: 1, pageSize: 10, pileType: undefined },
       form: {},
       rules: {
-        stationId: [{ required: true, message: "充电站ID不能为空", trigger: "blur" }],
         rateName: [{ required: true, message: "费率名称不能为空", trigger: "blur" }]
       }
     }
@@ -105,7 +103,7 @@ export default {
   methods: {
     getList() { this.loading = true; listChargingRate(this.queryParams).then(response => { this.rateList = response.rows; this.total = response.total; this.loading = false }) },
     cancel() { this.open = false; this.reset() },
-    reset() { this.form = { stationId: undefined, rateName: undefined, pileType: "ALL", isActive: 1, effectiveFrom: undefined, effectiveTo: undefined, description: undefined, sortOrder: 0 }; this.resetForm("form") },
+    reset() { this.form = { rateName: undefined, pileType: "ALL", isActive: 1, effectiveFrom: undefined, effectiveTo: undefined, description: undefined, sortOrder: 0 }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.rateId); this.single = selection.length != 1; this.multiple = !selection.length },

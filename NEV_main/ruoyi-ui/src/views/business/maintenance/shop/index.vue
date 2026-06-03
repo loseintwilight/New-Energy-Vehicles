@@ -36,7 +36,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="shopList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="shopList" @selection-change="handleSelectionChange" :default-sort="{prop: 'createTime', order: 'descending'}">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="shopId" />
       <el-table-column label="门店名称" align="center" prop="shopName" show-overflow-tooltip />

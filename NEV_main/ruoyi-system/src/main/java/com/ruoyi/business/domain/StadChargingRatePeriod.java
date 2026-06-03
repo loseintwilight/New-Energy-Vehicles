@@ -12,8 +12,8 @@ public class StadChargingRatePeriod extends BaseEntity {
     private Long periodId;
     private Long rateId;
     private String periodName;
-    private Date startTime;
-    private Date endTime;
+    private String startTime;
+    private String endTime;
     private BigDecimal energyPrice;
     private BigDecimal serviceFee;
     private BigDecimal totalPrice;
@@ -26,10 +26,10 @@ public class StadChargingRatePeriod extends BaseEntity {
     public void setRateId(Long rateId) { this.rateId = rateId; }
     public String getPeriodName() { return periodName; }
     public void setPeriodName(String periodName) { this.periodName = periodName; }
-    public Date getStartTime() { return startTime; }
-    public void setStartTime(Date startTime) { this.startTime = startTime; }
-    public Date getEndTime() { return endTime; }
-    public void setEndTime(Date endTime) { this.endTime = endTime; }
+    public String getStartTime() { return startTime; }
+    public void setStartTime(String startTime) { this.startTime = startTime; }
+    public String getEndTime() { return endTime; }
+    public void setEndTime(String endTime) { this.endTime = endTime; }
     public BigDecimal getEnergyPrice() { return energyPrice; }
     public void setEnergyPrice(BigDecimal energyPrice) { this.energyPrice = energyPrice; }
     public BigDecimal getServiceFee() { return serviceFee; }

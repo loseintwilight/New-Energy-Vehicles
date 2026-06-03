@@ -9,9 +9,8 @@
       </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="请选择" clearable>
-          <el-option label="待结算" value="pending" />
-          <el-option label="已结算" value="settled" />
-          <el-option label="已作废" value="cancelled" />
+          <el-option label="待结算" value="0" />
+          <el-option label="已结算" value="1" />
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -33,10 +32,9 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="settlementList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="settlementList" @selection-change="handleSelectionChange" :default-sort="{prop: 'settleDate', order: 'descending'}">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="settlementId" />
-      <el-table-column label="商户ID" align="center" prop="merchantId" />
       <el-table-column label="结算日期" align="center" prop="settleDate" width="120" />
       <el-table-column label="订单数" align="center" prop="totalOrders" />
       <el-table-column label="总电量" align="center" prop="totalEnergy" />
@@ -45,8 +43,8 @@
       <el-table-column label="结算金额" align="center" prop="settleAmount" />
       <el-table-column label="状态" align="center" prop="status">
         <template slot-scope="scope">
-          <el-tag :type="scope.row.status === 'settled' ? 'success' : scope.row.status === 'pending' ? 'warning' : 'info'">
-            {{ {'pending':'待结算','settled':'已结算','cancelled':'已作废'}[scope.row.status] || scope.row.status }}
+          <el-tag :type="scope.row.status === '1' ? 'success' : scope.row.status === '0' ? 'warning' : 'info'">
+            {{ {'0':'待结算','1':'已结算'}[scope.row.status] || scope.row.status }}
           </el-tag>
         </template>
       </el-table-column>
@@ -79,9 +77,8 @@
         </el-row>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
-            <el-radio label="pending">待结算</el-radio>
-            <el-radio label="settled">已结算</el-radio>
-            <el-radio label="cancelled">已作废</el-radio>
+            <el-radio label="0">待结算</el-radio>
+            <el-radio label="1">已结算</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
@@ -113,7 +110,7 @@ export default {
   methods: {
     getList() { this.loading = true; listChargingSettlement(this.queryParams).then(response => { this.settlementList = response.rows; this.total = response.total; this.loading = false }) },
     cancel() { this.open = false; this.reset() },
-    reset() { this.form = { merchantId: undefined, settleDate: undefined, totalOrders: 0, totalEnergy: undefined, totalAmount: undefined, platformCommission: undefined, settleAmount: undefined, status: "pending" }; this.resetForm("form") },
+    reset() { this.form = { merchantId: undefined, settleDate: undefined, totalOrders: 0, totalEnergy: undefined, totalAmount: undefined, platformCommission: undefined, settleAmount: undefined, status: "0" }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.settlementId); this.single = selection.length != 1; this.multiple = !selection.length },

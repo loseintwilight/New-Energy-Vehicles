@@ -46,6 +46,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where merchant_id = #{merchantId}
     </select>
 
+    <select id="selectStadMerchantByUserId" parameterType="Long" resultMap="StadMerchantResult">
+        <include refid="selectMerchantVo"/>
+        where user_id = #{userId}
+    </select>
+
     <select id="selectStadMerchantList" parameterType="StadMerchant" resultMap="StadMerchantResult">
         <include refid="selectMerchantVo"/>
         <where>
@@ -139,6 +144,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="withdrawnAmount != null">withdrawn_amount = #{withdrawnAmount},</if>
             <if test="bankName != null">bank_name = #{bankName},</if>
             <if test="bankAccount != null">bank_account = #{bankAccount},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where merchant_id = #{merchantId}
+    </update>
+
+    <update id="auditStadMerchant" parameterType="StadMerchant">
+        update stad_merchant
+        <set>
+            <if test="status != null">status = #{status},</if>
+            <if test="auditRemark != null">audit_remark = #{auditRemark},</if>
+            <if test="auditTime != null">audit_time = #{auditTime},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             update_time = sysdate()
         </set>

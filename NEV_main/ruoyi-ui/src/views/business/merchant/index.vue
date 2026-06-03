@@ -27,9 +27,9 @@
       </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="商户状态" clearable>
-          <el-option label="待审核" value="待审核" />
-          <el-option label="已通过" value="已通过" />
-          <el-option label="已拒绝" value="已拒绝" />
+          <el-option label="待审核" value="0" />
+          <el-option label="已入驻" value="1" />
+          <el-option label="已停用" value="2" />
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -74,7 +74,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="merchantList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="merchantList" @selection-change="handleSelectionChange" :default-sort="{prop: 'createTime', order: 'descending'}">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="merchantId" />
       <el-table-column label="商户名称" align="center" prop="merchantName" show-overflow-tooltip />
@@ -83,10 +83,12 @@
       <el-table-column label="联系电话" align="center" prop="contactPhone" width="130" />
       <el-table-column label="所在城市" align="center" prop="city" />
       <el-table-column label="状态" align="center" prop="status">
-        <template slot-scope="scope">
-          <el-tag :type="scope.row.status === '已通过' ? 'success' : scope.row.status === '待审核' ? 'warning' : 'danger'">{{ scope.row.status }}</el-tag>
-        </template>
-      </el-table-column>
+          <template slot-scope="scope">
+            <el-tag :type="scope.row.status === '1' ? 'success' : scope.row.status === '0' ? 'warning' : 'danger'">
+              {{ {'0':'待审核','1':'已入驻','2':'已停用'}[scope.row.status] || scope.row.status }}
+            </el-tag>
+          </template>
+        </el-table-column>
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.createTime) }}</span>
@@ -187,9 +189,9 @@
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
-            <el-radio label="待审核">待审核</el-radio>
-            <el-radio label="已通过">已通过</el-radio>
-            <el-radio label="已拒绝">已拒绝</el-radio>
+            <el-radio label="0">待审核</el-radio>
+            <el-radio label="1">已入驻</el-radio>
+            <el-radio label="2">已停用</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-row>
@@ -282,7 +284,7 @@ export default {
         businessLicense: undefined,
         legalPerson: undefined,
         idCard: undefined,
-        status: "待审核",
+        status: "0",
         bankName: undefined,
         bankAccount: undefined
       }

@@ -10,6 +10,7 @@ public class StadVehicleFinancePlan extends BaseEntity {
 
     private Long planId;
     private Long vehicleId;
+    private String vehicleName;
     private String planType;
     private String planName;
     private BigDecimal totalPrice;
@@ -27,6 +28,8 @@ public class StadVehicleFinancePlan extends BaseEntity {
     public void setPlanId(Long planId) { this.planId = planId; }
     public Long getVehicleId() { return vehicleId; }
     public void setVehicleId(Long vehicleId) { this.vehicleId = vehicleId; }
+    public String getVehicleName() { return vehicleName; }
+    public void setVehicleName(String vehicleName) { this.vehicleName = vehicleName; }
     public String getPlanType() { return planType; }
     public void setPlanType(String planType) { this.planType = planType; }
     public String getPlanName() { return planName; }

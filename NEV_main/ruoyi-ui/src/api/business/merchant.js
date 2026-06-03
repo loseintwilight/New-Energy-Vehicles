@@ -37,3 +37,11 @@ export function delMerchant(merchantIds) {
     method: 'delete'
   })
 }
+
+export function auditMerchant(merchantId, data) {
+  return request({
+    url: '/business/merchant/audit/' + merchantId,
+    method: 'put',
+    data: data
+  })
+}

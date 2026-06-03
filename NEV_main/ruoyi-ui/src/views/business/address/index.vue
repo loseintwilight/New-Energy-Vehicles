@@ -26,10 +26,10 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="addressList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="addressList" @selection-change="handleSelectionChange" :default-sort="{prop: 'addressId', order: 'ascending'}">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="addressId" />
-      <el-table-column label="用户ID" align="center" prop="userId" />
+      <el-table-column label="用户" align="center" prop="nickName" />
       <el-table-column label="联系人" align="center" prop="contactName" />
       <el-table-column label="联系电话" align="center" prop="contactPhone" width="130" />
       <el-table-column label="省份" align="center" prop="province" />

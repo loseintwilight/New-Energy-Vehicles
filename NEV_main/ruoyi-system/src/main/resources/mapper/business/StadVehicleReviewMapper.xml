@@ -7,7 +7,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="StadVehicleReview" id="StadVehicleReviewResult">
         <result property="reviewId"    column="review_id"     />
         <result property="vehicleId"   column="vehicle_id"    />
+        <result property="vehicleName" column="vehicle_name"  />
         <result property="userId"      column="user_id"       />
+        <result property="nickName"    column="nick_name"     />
         <result property="orderId"     column="order_id"      />
         <result property="rating"      column="rating"        />
         <result property="content"     column="content"       />
@@ -18,8 +20,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectVehicleReviewVo">
-        select review_id, vehicle_id, user_id, order_id, rating, content, image_url, is_anonymous, status, create_time
-        from stad_vehicle_review
+        select r.review_id, r.vehicle_id, v.model_name as vehicle_name, r.user_id, u.nick_name, r.order_id, r.rating, r.content, r.image_url, r.is_anonymous, r.status, r.create_time
+        from stad_vehicle_review r
+        left join stad_vehicle v on r.vehicle_id = v.vehicle_id
+        left join sys_user u on r.user_id = u.user_id
     </sql>
 
     <select id="selectStadVehicleReviewById" parameterType="Long" resultMap="StadVehicleReviewResult">

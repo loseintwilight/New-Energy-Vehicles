@@ -26,8 +26,10 @@
       </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="车辆状态" clearable>
-          <el-option label="上架" value="上架" />
-          <el-option label="下架" value="下架" />
+          <el-option label="待审核" value="0" />
+          <el-option label="在售" value="1" />
+          <el-option label="已售" value="2" />
+          <el-option label="下架" value="3" />
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -72,7 +74,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="vehicleList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="vehicleList" @selection-change="handleSelectionChange" :default-sort="{prop: 'createTime', order: 'descending'}">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="vehicleId" />
       <el-table-column label="车型" align="center" prop="vehicleType" />
@@ -84,7 +86,9 @@
       <el-table-column label="所属商户" align="center" prop="merchantName" />
       <el-table-column label="状态" align="center" prop="status">
         <template slot-scope="scope">
-          <el-tag :type="scope.row.status === '上架' ? 'success' : 'danger'">{{ scope.row.status }}</el-tag>
+          <el-tag :type="scope.row.status === '1' ? 'success' : scope.row.status === '0' ? 'warning' : scope.row.status === '2' ? 'info' : 'danger'">
+            {{ {'0':'待审核','1':'在售','2':'已售','3':'下架'}[scope.row.status] || scope.row.status }}
+          </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
@@ -94,20 +98,9 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-edit"
-            @click="handleUpdate(scope.row)"
-            v-hasPermi="['business:vehicle:edit']"
-          >修改</el-button>
-          <el-button
-            size="mini"
-            type="text"
-            icon="el-icon-delete"
-            @click="handleDelete(scope.row)"
-            v-hasPermi="['business:vehicle:remove']"
-          >删除</el-button>
+          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)" v-hasPermi="['business:vehicle:edit']">修改</el-button>
+          <el-button size="mini" type="text" icon="el-icon-view" @click="handleDetail(scope.row)" v-hasPermi="['business:vehicle:query']">详情</el-button>
+          <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)" v-hasPermi="['business:vehicle:remove']">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -155,8 +148,10 @@
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
-            <el-radio label="上架">上架</el-radio>
-            <el-radio label="下架">下架</el-radio>
+            <el-radio label="0">待审核</el-radio>
+            <el-radio label="1">在售</el-radio>
+            <el-radio label="2">已售</el-radio>
+            <el-radio label="3">下架</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="描述" prop="description">
@@ -168,11 +163,62 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+
+    <el-dialog :title="title" :visible.sync="openDetail" width="800px" append-to-body>
+      <el-tabs v-model="detailTab">
+        <el-tab-pane label="基本信息" name="base">
+          <el-form ref="detailForm" :model="detailData" label-width="100px">
+            <el-row>
+              <el-col :span="12"><el-form-item label="编号">{{ detailData.vehicleId }}</el-form-item></el-col>
+              <el-col :span="12"><el-form-item label="车型">{{ detailData.vehicleType }}</el-form-item></el-col>
+            </el-row>
+            <el-row>
+              <el-col :span="12"><el-form-item label="型号名称">{{ detailData.modelName }}</el-form-item></el-col>
+              <el-col :span="12"><el-form-item label="标题">{{ detailData.title }}</el-form-item></el-col>
+            </el-row>
+            <el-row>
+              <el-col :span="12"><el-form-item label="指导价">{{ detailData.guidePrice }}</el-form-item></el-col>
+              <el-col :span="12"><el-form-item label="原价">{{ detailData.originalPrice }}</el-form-item></el-col>
+            </el-row>
+            <el-row>
+              <el-col :span="12"><el-form-item label="颜色">{{ detailData.color }}</el-form-item></el-col>
+              <el-col :span="12"><el-form-item label="库存">{{ detailData.stock }}</el-form-item></el-col>
+            </el-row>
+            <el-row>
+              <el-col :span="12"><el-form-item label="商户">{{ detailData.merchantName }}</el-form-item></el-col>
+              <el-col :span="12"><el-form-item label="标签">{{ detailData.tags }}</el-form-item></el-col>
+            </el-row>
+            <el-form-item label="描述">{{ detailData.description }}</el-form-item>
+          </el-form>
+        </el-tab-pane>
+        <el-tab-pane label="车辆规格" name="spec">
+          <el-table v-loading="specLoading" :data="detailData.vehicleSpec ? [detailData.vehicleSpec] : []" border>
+            <el-table-column label="续航(km)" align="center" prop="rangeKm" />
+            <el-table-column label="电池容量" align="center" prop="batteryCapacity" />
+            <el-table-column label="快充(h)" align="center" prop="chargeTimeFast" />
+            <el-table-column label="慢充(h)" align="center" prop="chargeTimeSlow" />
+            <el-table-column label="年份" align="center" prop="modelYear" />
+          </el-table>
+        </el-tab-pane>
+        <el-tab-pane label="金融方案" name="finance">
+          <el-table v-loading="financeLoading" :data="detailData.financePlans || []" border>
+            <el-table-column label="方案名称" align="center" prop="planName" />
+            <el-table-column label="方案类型" align="center" prop="planType" />
+            <el-table-column label="总价" align="center" prop="totalPrice" />
+            <el-table-column label="首付" align="center" prop="downPayment" />
+            <el-table-column label="月供" align="center" prop="monthlyPayment" />
+            <el-table-column label="期数" align="center" prop="months" />
+            <el-table-column label="利率" align="center" prop="interestRate" />
+            <el-table-column label="机构" align="center" prop="provider" />
+          </el-table>
+        </el-tab-pane>
+      </el-tabs>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { listVehicle, getVehicle, delVehicle, addVehicle, updateVehicle } from "@/api/business/vehicle"
+import { listVehicle, getVehicle, delVehicle, addVehicle, updateVehicle, getVehicleDetail } from "@/api/business/vehicle"
 
 export default {
   name: "Vehicle",
@@ -187,6 +233,11 @@ export default {
       vehicleList: [],
       title: "",
       open: false,
+      openDetail: false,
+      detailTab: "base",
+      detailData: {},
+      specLoading: false,
+      financeLoading: false,
       queryParams: {
         pageNum: 1,
         pageSize: 10,
@@ -241,7 +292,7 @@ export default {
         merchantId: undefined,
         description: undefined,
         tags: undefined,
-        status: "上架"
+        status: "1"
       }
       this.resetForm("form")
     },
@@ -270,6 +321,15 @@ export default {
         this.form = response.data
         this.open = true
         this.title = "修改车辆"
+      })
+    },
+    handleDetail(row) {
+      this.detailTab = "base"
+      this.detailData = {}
+      getVehicleDetail(row.vehicleId).then(response => {
+        this.detailData = response.data
+        this.openDetail = true
+        this.title = "车辆详情 - " + response.data.modelName
       })
     },
     submitForm() {

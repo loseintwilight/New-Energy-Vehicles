@@ -11,7 +11,7 @@
       <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['business:govregistration:remove']">删除</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
-    <el-table v-loading="loading" :data="regList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="regList" @selection-change="handleSelectionChange" :default-sort="{prop: 'statDate', order: 'descending'}">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="regId" />
       <el-table-column label="统计日期" align="center" prop="statDate" width="120" />

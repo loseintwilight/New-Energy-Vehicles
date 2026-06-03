@@ -9,7 +9,9 @@ public class StadVehicleReview extends BaseEntity {
 
     private Long reviewId;
     private Long vehicleId;
+    private String vehicleName;
     private Long userId;
+    private String nickName;
     private Long orderId;
     private Integer rating;
     private String content;
@@ -21,8 +23,12 @@ public class StadVehicleReview extends BaseEntity {
     public void setReviewId(Long reviewId) { this.reviewId = reviewId; }
     public Long getVehicleId() { return vehicleId; }
     public void setVehicleId(Long vehicleId) { this.vehicleId = vehicleId; }
+    public String getVehicleName() { return vehicleName; }
+    public void setVehicleName(String vehicleName) { this.vehicleName = vehicleName; }
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
+    public String getNickName() { return nickName; }
+    public void setNickName(String nickName) { this.nickName = nickName; }
     public Long getOrderId() { return orderId; }
     public void setOrderId(Long orderId) { this.orderId = orderId; }
     public Integer getRating() { return rating; }

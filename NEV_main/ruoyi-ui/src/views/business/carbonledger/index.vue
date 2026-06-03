@@ -4,7 +4,7 @@
       <el-form-item label="用户ID" prop="userId"><el-input v-model="queryParams.userId" placeholder="用户ID" clearable @keyup.enter.native="handleQuery" /></el-form-item>
       <el-form-item label="记录类型" prop="recordType">
         <el-select v-model="queryParams.recordType" placeholder="类型" clearable>
-          <el-option label="获得" value="1" /><el-option label="消耗" value="2" /><el-option label="退款" value="3" />
+          <el-option label="获得" :value="0" /><el-option label="消耗" :value="1" /><el-option label="兑换" :value="2" /><el-option label="阅读" :value="3" />
         </el-select>
       </el-form-item>
       <el-form-item><el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button><el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button></el-form-item>
@@ -15,12 +15,12 @@
       <el-col :span="1.5"><el-button type="danger" plain icon="el-icon-delete" size="mini" :disabled="multiple" @click="handleDelete" v-hasPermi="['business:carbonledger:remove']">删除</el-button></el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
-    <el-table v-loading="loading" :data="ledgerList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="ledgerList" @selection-change="handleSelectionChange" :default-sort="{prop: 'createTime', order: 'descending'}">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="ledgerId" />
-      <el-table-column label="用户ID" align="center" prop="userId" />
+      <el-table-column label="用户" align="center" prop="nickName" />
       <el-table-column label="类型" align="center" prop="recordType">
-        <template slot-scope="scope"><el-tag :type="scope.row.recordType === 1 ? 'success' : 'warning'">{{ {1:'获得',2:'消耗',3:'退款'}[scope.row.recordType] || scope.row.recordType }}</el-tag></template>
+        <template slot-scope="scope"><el-tag :type="scope.row.recordType === 0 ? 'success' : scope.row.recordType === 1 ? 'warning' : scope.row.recordType === 2 ? 'primary' : 'info'">{{ {0:'获得',1:'消耗',2:'兑换',3:'阅读'}[scope.row.recordType] || scope.row.recordType }}</el-tag></template>
       </el-table-column>
       <el-table-column label="积分数" align="center" prop="points" />
       <el-table-column label="余额" align="center" prop="balanceAfter" />
@@ -38,7 +38,7 @@
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="用户ID" prop="userId"><el-input v-model="form.userId" /></el-form-item>
-        <el-form-item label="记录类型" prop="recordType"><el-radio-group v-model="form.recordType"><el-radio :label="1">获得</el-radio><el-radio :label="2">消耗</el-radio><el-radio :label="3">退款</el-radio></el-radio-group></el-form-item>
+        <el-form-item label="记录类型" prop="recordType"><el-radio-group v-model="form.recordType"><el-radio :label="0">获得</el-radio><el-radio :label="1">消耗</el-radio><el-radio :label="2">兑换</el-radio><el-radio :label="3">阅读</el-radio></el-radio-group></el-form-item>
         <el-row><el-col :span="12"><el-form-item label="积分数" prop="points"><el-input-number v-model="form.points" :min="0" style="width:100%" /></el-form-item></el-col><el-col :span="12"><el-form-item label="余额" prop="balanceAfter"><el-input-number v-model="form.balanceAfter" :min="0" style="width:100%" /></el-form-item></el-col></el-row>
         <el-form-item label="来源类型" prop="sourceType"><el-input v-model="form.sourceType" placeholder="来源类型：10-充电 20-回收 30-签到" /></el-form-item>
         <el-form-item label="备注" prop="remark"><el-input v-model="form.remark" type="textarea" :rows="2" /></el-form-item>
@@ -64,7 +64,7 @@ export default {
   methods: {
     getList() { this.loading = true; listCarbonLedger(this.queryParams).then(response => { this.ledgerList = response.rows; this.total = response.total; this.loading = false }) },
     cancel() { this.open = false; this.reset() },
-    reset() { this.form = { userId: undefined, recordType: 1, points: 0, balanceAfter: 0, sourceType: undefined, remark: undefined }; this.resetForm("form") },
+    reset() { this.form = { userId: undefined, recordType: 0, points: 0, balanceAfter: 0, sourceType: undefined, remark: undefined }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.ledgerId); this.single = selection.length != 1; this.multiple = !selection.length },

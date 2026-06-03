@@ -9,6 +9,7 @@ public class StadCarbonLedger extends BaseEntity {
 
     private Long ledgerId;
     private Long userId;
+    private String nickName;
     private Integer recordType;
     private Long ruleId;
     private Integer points;
@@ -21,6 +22,8 @@ public class StadCarbonLedger extends BaseEntity {
     public void setLedgerId(Long ledgerId) { this.ledgerId = ledgerId; }
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
+    public String getNickName() { return nickName; }
+    public void setNickName(String nickName) { this.nickName = nickName; }
     public Integer getRecordType() { return recordType; }
     public void setRecordType(Integer recordType) { this.recordType = recordType; }
     public Long getRuleId() { return ruleId; }

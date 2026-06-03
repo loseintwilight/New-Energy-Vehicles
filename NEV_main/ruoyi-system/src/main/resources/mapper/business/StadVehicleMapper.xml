@@ -23,6 +23,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="merchantName" column="merchant_name" />
     </resultMap>
 
+    <resultMap type="StadVehicle" id="StadVehicleDetailResult" extends="StadVehicleResult">
+        <association property="vehicleSpec" javaType="StadVehicleSpec" resultMap="com.ruoyi.business.mapper.StadVehicleSpecMapper.StadVehicleSpecResult" columnPrefix="spec_"/>
+        <collection property="financePlans" ofType="StadVehicleFinancePlan" resultMap="com.ruoyi.business.mapper.StadVehicleFinancePlanMapper.StadVehicleFinancePlanResult" columnPrefix="fp_"/>
+    </resultMap>
+
     <sql id="selectVehicleVo">
         select v.vehicle_id, v.vehicle_type, v.model_name, v.title, v.guide_price,
                v.original_price, v.color, v.stock, v.merchant_id, v.description,
@@ -34,6 +39,28 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <select id="selectStadVehicleById" parameterType="Long" resultMap="StadVehicleResult">
         <include refid="selectVehicleVo"/>
+        where v.vehicle_id = #{vehicleId}
+    </select>
+
+    <select id="selectStadVehicleDetailById" parameterType="Long" resultMap="StadVehicleDetailResult">
+        select v.vehicle_id, v.vehicle_type, v.model_name, v.title, v.guide_price,
+               v.original_price, v.color, v.stock, v.merchant_id, v.description,
+               v.tags, v.view_count, v.status, v.create_time, v.update_time,
+               m.merchant_name,
+               s.spec_id as spec_spec_id, s.range_km as spec_range_km,
+               s.battery_capacity as spec_battery_capacity, s.charge_time_fast as spec_charge_time_fast,
+               s.charge_time_slow as spec_charge_time_slow, s.model_year as spec_model_year,
+               s.create_time as spec_create_time,
+               fp.plan_id as fp_plan_id, fp.plan_type as fp_plan_type,
+               fp.plan_name as fp_plan_name, fp.total_price as fp_total_price,
+               fp.down_payment as fp_down_payment, fp.monthly_payment as fp_monthly_payment,
+               fp.months as fp_months, fp.interest_rate as fp_interest_rate,
+               fp.total_interest as fp_total_interest, fp.total_payable as fp_total_payable,
+               fp.provider as fp_provider, fp.is_active as fp_is_active, fp.sort_order as fp_sort_order
+        from stad_vehicle v
+        left join stad_merchant m on v.merchant_id = m.merchant_id
+        left join stad_vehicle_spec s on v.vehicle_id = s.vehicle_id
+        left join stad_vehicle_finance_plan fp on v.vehicle_id = fp.vehicle_id
         where v.vehicle_id = #{vehicleId}
     </select>
 

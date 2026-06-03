@@ -8,6 +8,12 @@ import defAva from '@/static/images/profile.jpg'
 
 const baseUrl = config.baseUrl
 
+const endTypeMap = {
+  'maintain_c': 'merchant',
+  'dealer_a': 'business',
+  'charger_b': 'charging'
+}
+
 const user = {
   state: {
     token: getToken(),
@@ -15,7 +21,9 @@ const user = {
     name: storage.get(constant.name),
     avatar: storage.get(constant.avatar),
     roles: storage.get(constant.roles),
-    permissions: storage.get(constant.permissions)
+    permissions: storage.get(constant.permissions),
+    phonenumber: storage.get(constant.phonenumber) || '',
+    currentEnd: storage.get(constant.currentEnd) || 'auto'
   },
 
   mutations: {
@@ -41,6 +49,14 @@ const user = {
     SET_PERMISSIONS: (state, permissions) => {
       state.permissions = permissions
       storage.set(constant.permissions, permissions)
+    },
+    SET_CURRENT_END: (state, currentEnd) => {
+      state.currentEnd = currentEnd
+      storage.set(constant.currentEnd, currentEnd)
+    },
+    SET_PHONENUMBER: (state, phonenumber) => {
+      state.phonenumber = phonenumber
+      storage.set(constant.phonenumber, phonenumber)
     }
   },
 
@@ -82,6 +98,13 @@ const user = {
           commit('SET_ID', userid)
           commit('SET_NAME', username)
           commit('SET_AVATAR', avatar)
+          commit('SET_PHONENUMBER', user.phonenumber || '')
+
+          if (state.currentEnd === 'auto') {
+            const endType = endTypeMap[username]
+            commit('SET_CURRENT_END', endType || 'user')
+          }
+
           resolve(res)
         }).catch(error => {
           reject(error)
@@ -96,6 +119,7 @@ const user = {
           commit('SET_TOKEN', '')
           commit('SET_ROLES', [])
           commit('SET_PERMISSIONS', [])
+          commit('SET_CURRENT_END', 'auto')
           removeToken()
           storage.clean()
           resolve()

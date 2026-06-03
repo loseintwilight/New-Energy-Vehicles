@@ -14,14 +14,14 @@
 		<view>
 			<view class="user-card">
 				<view class="user-left">
-					<img src="/static/images/index/touxiang.png" alt="头像" class="avatar-circle" />
+					<image :src="userAvatar || '/static/images/index/touxiang.png'" class="avatar-circle" />
 					<view class="user-info">
-						<text class="user-name">改革开放</text>
-						<text class="user-phone">138******78</text>
+						<text class="user-name">{{ userName || '未登录' }}</text>
+						<text class="user-phone">{{ userPhone || '请登录后查看' }}</text>
 					</view>
 				</view>
 				<view class="user-right">
-					<text class="points-num">1,280&nbsp;&nbsp;</text>
+					<text class="points-num">{{ carbonPoints }}&nbsp;&nbsp;</text>
 					<text class="points-label">我的碳积分</text>
 				</view>
 			</view>
@@ -29,25 +29,25 @@
 			<view class="nav-grid">
 				<view class="nav-item" @click="handleNavClick('充电服务')">
 					<view class="nav-icon icon-blue">
-						<img src="/static/images/index/charging.png" alt="充电服务" class="nav-icon-img" />
+						<image src="/static/images/index/charging.png" class="nav-icon-img" />
 					</view>
 					<text class="nav-text">去充电</text>
 				</view>
 				<view class="nav-item" @click="handleNavClick('购车')">
 					<view class="nav-icon icon-orange">
-						<img src="/static/images/index/car.png" alt="购车" class="nav-icon-img" />
+						<image src="/static/images/index/car.png" class="nav-icon-img" />
 					</view>
 					<text class="nav-text">购车</text>
 				</view>
 				<view class="nav-item" @click="handleNavClick('碳积分')">
 					<view class="nav-icon icon-green">
-						<img src="/static/images/index/CO2.png" alt="碳积分" class="nav-icon-img" />
+						<image src="/static/images/index/CO2.png" class="nav-icon-img" />
 					</view>
 					<text class="nav-text">碳积分</text>
 				</view>
 				<view class="nav-item" @click="handleNavClick('预约维保')">
 					<view class="nav-icon icon-purple">
-						<img src="/static/images/index/work.png" alt="预约维保" class="nav-icon-img" />
+						<image src="/static/images/index/work.png" class="nav-icon-img" />
 					</view>
 					<text class="nav-text">预约维保</text>
 				</view>
@@ -227,8 +227,26 @@
 					battery: '87.5kWh磷酸铁锂电池'
 				}]
 			};
-		},
 
+		},
+		computed: {
+			userName() {
+				return this.$store.state.user.name
+			},
+			userPhone() {
+				const phone = this.$store.state.user.phonenumber || ''
+				if (phone.length === 11) {
+					return phone.substring(0, 3) + '****' + phone.substring(7)
+				}
+				return phone
+			},
+			userAvatar() {
+				return this.$store.state.user.avatar
+			},
+			carbonPoints() {
+				return '1,280'
+			}
+		},
 		methods: {
 			switchTab(index) {
 				this.currentTab = index;
@@ -243,14 +261,20 @@
 				});
 			},
 			handleNavClick(title) {
+				const tabPages = ['充电服务', '购车'];
 				const pageMap = {
 					'充电服务': '/pages/charge/index',
 					'购车': '/pages/car/index',
-					'碳积分': '/pages/mine/index',
+					'碳积分': '/pages/mine/carbon/index',
 					'预约维保': '/pages/work/index'
 				};
-				if (pageMap[title]) {
-					uni.switchTab({ url: pageMap[title] });
+				const url = pageMap[title];
+				if (url) {
+					if (tabPages.includes(title)) {
+						uni.switchTab({ url });
+					} else {
+						uni.navigateTo({ url });
+					}
 				} else {
 					uni.showToast({ title: `即将跳转至${title}`, icon: "none" });
 				}

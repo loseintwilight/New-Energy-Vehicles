@@ -15,9 +15,8 @@
       </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="审核状态" clearable>
-          <el-option label="待审核" value="0" />
-          <el-option label="已通过" value="1" />
-          <el-option label="已拒绝" value="2" />
+          <el-option label="正常" value="0" />
+          <el-option label="隐藏" value="1" />
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -39,11 +38,11 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="reviewList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="reviewList" @selection-change="handleSelectionChange" :default-sort="{prop: 'createTime', order: 'descending'}">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="reviewId" />
-      <el-table-column label="车辆ID" align="center" prop="vehicleId" />
-      <el-table-column label="用户ID" align="center" prop="userId" />
+      <el-table-column label="车辆名称" align="center" prop="vehicleName" show-overflow-tooltip />
+      <el-table-column label="用户" align="center" prop="nickName" />
       <el-table-column label="评分" align="center" prop="rating">
         <template slot-scope="scope"><el-rate :value="Number(scope.row.rating)" disabled /></template>
       </el-table-column>
@@ -53,8 +52,8 @@
       </el-table-column>
       <el-table-column label="状态" align="center" prop="status">
         <template slot-scope="scope">
-          <el-tag :type="scope.row.status === '1' ? 'success' : scope.row.status === '0' ? 'warning' : 'danger'">
-            {{ {'0':'待审核','1':'已通过','2':'已拒绝'}[scope.row.status] || scope.row.status }}
+          <el-tag :type="scope.row.status === '1' ? 'danger' : 'success'">
+            {{ {'0':'正常','1':'隐藏'}[scope.row.status] || scope.row.status }}
           </el-tag>
         </template>
       </el-table-column>
@@ -96,9 +95,8 @@
         </el-form-item>
         <el-form-item label="审核状态" prop="status">
           <el-radio-group v-model="form.status">
-            <el-radio label="0">待审核</el-radio>
-            <el-radio label="1">已通过</el-radio>
-            <el-radio label="2">已拒绝</el-radio>
+            <el-radio label="0">正常</el-radio>
+            <el-radio label="1">隐藏</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>

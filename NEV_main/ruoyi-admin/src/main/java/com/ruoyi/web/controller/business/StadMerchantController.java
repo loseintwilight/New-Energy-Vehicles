@@ -1,6 +1,7 @@
 package com.ruoyi.web.controller.business;
 
 import java.util.List;
+import java.util.Date;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -62,5 +63,15 @@ public class StadMerchantController extends BaseController {
     @DeleteMapping("/{merchantIds}")
     public AjaxResult remove(@PathVariable Long[] merchantIds) {
         return toAjax(stadMerchantService.deleteStadMerchantByIds(merchantIds));
+    }
+
+    @PreAuthorize("@ss.hasPermi('business:merchant:audit')")
+    @Log(title = "商户审核", businessType = BusinessType.UPDATE)
+    @PutMapping("/audit/{merchantId}")
+    public AjaxResult audit(@PathVariable Long merchantId, @RequestBody StadMerchant merchant) {
+        merchant.setMerchantId(merchantId);
+        merchant.setUpdateBy(getUsername());
+        merchant.setAuditTime(new Date());
+        return toAjax(stadMerchantService.auditStadMerchant(merchant));
     }
 }

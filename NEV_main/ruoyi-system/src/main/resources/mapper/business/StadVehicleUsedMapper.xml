@@ -7,6 +7,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="StadVehicleUsed" id="StadVehicleUsedResult">
         <result property="usedId"          column="used_id"           />
         <result property="vehicleId"       column="vehicle_id"        />
+        <result property="vehicleName"     column="vehicle_name"      />
         <result property="licenseYear"     column="license_year"      />
         <result property="licenseMonth"    column="license_month"     />
         <result property="licenseCity"     column="license_city"      />
@@ -22,10 +23,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectVehicleUsedVo">
-        select used_id, vehicle_id, license_year, license_month, license_city, mileage,
-               transfer_count, battery_soh, battery_cycles, battery_diagnosis, battery_report,
-               valuation_price, valuation_info, create_time
-        from stad_vehicle_used
+        select u.used_id, u.vehicle_id, v.model_name as vehicle_name, u.license_year, u.license_month, u.license_city, u.mileage,
+               u.transfer_count, u.battery_soh, u.battery_cycles, u.battery_diagnosis, u.battery_report,
+               u.valuation_price, u.valuation_info, u.create_time
+        from stad_vehicle_used u
+        left join stad_vehicle v on u.vehicle_id = v.vehicle_id
     </sql>
 
     <select id="selectStadVehicleUsedById" parameterType="Long" resultMap="StadVehicleUsedResult">

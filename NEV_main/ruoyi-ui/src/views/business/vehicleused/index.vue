@@ -23,10 +23,10 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="usedList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="usedList" @selection-change="handleSelectionChange" :default-sort="{prop: 'createTime', order: 'descending'}">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="usedId" />
-      <el-table-column label="车辆ID" align="center" prop="vehicleId" />
+      <el-table-column label="车辆名称" align="center" prop="vehicleName" show-overflow-tooltip />
       <el-table-column label="上牌年份" align="center" prop="licenseYear" />
       <el-table-column label="上牌月份" align="center" prop="licenseMonth" />
       <el-table-column label="所在城市" align="center" prop="licenseCity" />

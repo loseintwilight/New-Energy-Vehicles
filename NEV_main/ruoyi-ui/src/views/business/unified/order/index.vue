@@ -38,7 +38,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="orderList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="orderList" @selection-change="handleSelectionChange" :default-sort="{prop: 'createTime', order: 'descending'}">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="orderId" />
       <el-table-column label="订单号" align="center" prop="orderNo" show-overflow-tooltip width="200" />
@@ -50,7 +50,6 @@
         </template>
       </el-table-column>
       <el-table-column label="用户" align="center" prop="nickName" />
-      <el-table-column label="车辆ID" align="center" prop="vehicleId" />
       <el-table-column label="车辆价格" align="center" prop="vehiclePrice" />
       <el-table-column label="总金额" align="center" prop="totalAmount" />
       <el-table-column label="已付" align="center" prop="paidAmount" />
@@ -58,7 +57,7 @@
       <el-table-column label="状态" align="center" prop="status">
         <template slot-scope="scope">
           <el-tag :type="scope.row.status === '2' ? 'success' : scope.row.status === '3' ? 'danger' : scope.row.status === '1' ? 'primary' : 'info'">
-            {{ {'0':'待付款','1':'已付款','2':'已完成','3':'已取消'}[scope.row.status] || scope.row.status }}
+            {{ scope.row.orderType === 'test_drive' ? ({'0':'待确认','1':'已确认','2':'已完成','3':'已取消'}[scope.row.status] || '无') : ({'0':'待付款','1':'已付款','2':'已完成','3':'已取消'}[scope.row.status] || '无') }}
           </el-tag>
         </template>
       </el-table-column>

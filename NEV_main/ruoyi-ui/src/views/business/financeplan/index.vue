@@ -1,9 +1,6 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="80px">
-      <el-form-item label="车辆ID" prop="vehicleId">
-        <el-input v-model="queryParams.vehicleId" placeholder="请输入车辆ID" clearable @keyup.enter.native="handleQuery" />
-      </el-form-item>
       <el-form-item label="方案类型" prop="planType">
         <el-select v-model="queryParams.planType" placeholder="请选择" clearable>
           <el-option label="贷款" value="loan" />
@@ -30,16 +27,22 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="planList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="planList" @selection-change="handleSelectionChange" :default-sort="{prop: 'planId', order: 'ascending'}">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="planId" />
-      <el-table-column label="车辆ID" align="center" prop="vehicleId" />
+      <el-table-column label="车辆名称" align="center" prop="vehicleName" show-overflow-tooltip />
       <el-table-column label="方案名称" align="center" prop="planName" show-overflow-tooltip />
       <el-table-column label="方案类型" align="center" prop="planType" />
       <el-table-column label="总价" align="center" prop="totalPrice" />
-      <el-table-column label="首付" align="center" prop="downPayment" />
-      <el-table-column label="月供" align="center" prop="monthlyPayment" />
-      <el-table-column label="期数" align="center" prop="months" />
+      <el-table-column label="首付" align="center" prop="downPayment">
+        <template slot-scope="scope">{{ scope.row.planName === '全款购车' ? scope.row.totalPrice : scope.row.downPayment }}</template>
+      </el-table-column>
+      <el-table-column label="月供" align="center" prop="monthlyPayment">
+        <template slot-scope="scope">{{ scope.row.planName === '全款购车' ? '0' : scope.row.monthlyPayment }}</template>
+      </el-table-column>
+      <el-table-column label="期数" align="center" prop="months">
+        <template slot-scope="scope">{{ scope.row.planName === '全款购车' ? '1' : scope.row.months }}</template>
+      </el-table-column>
       <el-table-column label="利率" align="center" prop="interestRate">
         <template slot-scope="scope">{{ scope.row.interestRate }}%</template>
       </el-table-column>
@@ -60,9 +63,6 @@
 
     <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="110px">
-        <el-form-item label="车辆ID" prop="vehicleId">
-          <el-input v-model="form.vehicleId" placeholder="请输入车辆ID" />
-        </el-form-item>
         <el-row>
           <el-col :span="12"><el-form-item label="方案名称" prop="planName"><el-input v-model="form.planName" placeholder="方案名称" /></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="方案类型" prop="planType"><el-select v-model="form.planType" placeholder="请选择" style="width:100%"><el-option label="贷款" value="loan" /><el-option label="租赁" value="lease" /><el-option label="分期" value="installment" /></el-select></el-form-item></el-col>
@@ -108,10 +108,9 @@ export default {
     return {
       loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0,
       planList: [], title: "", open: false,
-      queryParams: { pageNum: 1, pageSize: 10, vehicleId: undefined, planType: undefined },
+      queryParams: { pageNum: 1, pageSize: 10, planType: undefined },
       form: {},
       rules: {
-        vehicleId: [{ required: true, message: "车辆ID不能为空", trigger: "blur" }],
         planName: [{ required: true, message: "方案名称不能为空", trigger: "blur" }]
       }
     }
@@ -120,7 +119,7 @@ export default {
   methods: {
     getList() { this.loading = true; listFinancePlan(this.queryParams).then(response => { this.planList = response.rows; this.total = response.total; this.loading = false }) },
     cancel() { this.open = false; this.reset() },
-    reset() { this.form = { vehicleId: undefined, planName: undefined, planType: "loan", totalPrice: undefined, downPayment: undefined, monthlyPayment: undefined, months: undefined, interestRate: undefined, totalInterest: undefined, totalPayable: undefined, provider: undefined, isActive: 1, sortOrder: 0 }; this.resetForm("form") },
+    reset() { this.form = { planName: undefined, planType: "loan", totalPrice: undefined, downPayment: undefined, monthlyPayment: undefined, months: undefined, interestRate: undefined, totalInterest: undefined, totalPayable: undefined, provider: undefined, isActive: 1, sortOrder: 0 }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.planId); this.single = selection.length != 1; this.multiple = !selection.length },

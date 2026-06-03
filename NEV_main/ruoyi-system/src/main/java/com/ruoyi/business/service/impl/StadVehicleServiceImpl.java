@@ -19,6 +19,11 @@ public class StadVehicleServiceImpl implements IStadVehicleService {
     }
 
     @Override
+    public StadVehicle selectStadVehicleDetailById(Long vehicleId) {
+        return stadVehicleMapper.selectStadVehicleDetailById(vehicleId);
+    }
+
+    @Override
     public List<StadVehicle> selectStadVehicleList(StadVehicle vehicle) {
         return stadVehicleMapper.selectStadVehicleList(vehicle);
     }

@@ -7,6 +7,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="StadUserFeedback" id="StadUserFeedbackResult">
         <result property="feedbackId" column="feedback_id"  />
         <result property="userId"     column="user_id"      />
+        <result property="nickName"   column="nick_name"    />
         <result property="content"    column="content"      />
         <result property="images"     column="images"       />
         <result property="contact"    column="contact"      />
@@ -16,8 +17,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectUserFeedbackVo">
-        select feedback_id, user_id, content, images, contact, reply, status, create_time
-        from stad_user_feedback
+        select f.feedback_id, f.user_id, u.nick_name, f.content, f.images, f.contact, f.reply, f.status, f.create_time
+        from stad_user_feedback f
+        left join sys_user u on f.user_id = u.user_id
     </sql>
 
     <select id="selectStadUserFeedbackById" parameterType="Long" resultMap="StadUserFeedbackResult">

@@ -6,6 +6,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <resultMap type="StadUserProfile" id="StadUserProfileResult">
         <result property="userId"      column="user_id"       />
+        <result property="nickName"    column="nick_name"     />
         <result property="idCard"      column="id_card"       />
         <result property="totalEarned" column="total_earned"  />
         <result property="totalSpent"  column="total_spent"   />
@@ -15,8 +16,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectUserProfileVo">
-        select user_id, id_card, total_earned, total_spent, balance, create_time, update_time
-        from stad_user_profile
+        select p.user_id, u.nick_name, p.id_card, p.total_earned, p.total_spent, p.balance, p.create_time, p.update_time
+        from stad_user_profile p
+        left join sys_user u on p.user_id = u.user_id
     </sql>
 
     <select id="selectStadUserProfileById" parameterType="Long" resultMap="StadUserProfileResult">

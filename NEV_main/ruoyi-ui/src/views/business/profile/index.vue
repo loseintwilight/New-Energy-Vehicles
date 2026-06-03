@@ -23,9 +23,9 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="profileList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="profileList" @selection-change="handleSelectionChange" :default-sort="{prop: 'createTime', order: 'descending'}">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="用户ID" align="center" prop="userId" />
+      <el-table-column label="用户" align="center" prop="nickName" />
       <el-table-column label="身份证号" align="center" prop="idCard" show-overflow-tooltip />
       <el-table-column label="总获得积分" align="center" prop="totalEarned" />
       <el-table-column label="总消耗积分" align="center" prop="totalSpent" />

@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.business.mapper.StadVehicleMapper">
+
+    <resultMap type="StadVehicle" id="StadVehicleResult">
+        <result property="vehicleId"    column="vehicle_id"    />
+        <result property="vehicleType"  column="vehicle_type"  />
+        <result property="modelName"    column="model_name"    />
+        <result property="title"        column="title"         />
+        <result property="guidePrice"   column="guide_price"   />
+        <result property="originalPrice" column="original_price" />
+        <result property="color"        column="color"         />
+        <result property="stock"        column="stock"         />
+        <result property="merchantId"   column="merchant_id"   />
+        <result property="description"  column="description"   />
+        <result property="tags"         column="tags"          />
+        <result property="viewCount"    column="view_count"    />
+        <result property="status"       column="status"        />
+        <result property="createTime"   column="create_time"   />
+        <result property="updateTime"   column="update_time"   />
+        <result property="merchantName" column="merchant_name" />
+    </resultMap>
+
+    <resultMap type="StadVehicle" id="StadVehicleDetailResult" extends="StadVehicleResult">
+        <association property="vehicleSpec" javaType="StadVehicleSpec" resultMap="com.ruoyi.business.mapper.StadVehicleSpecMapper.StadVehicleSpecResult" columnPrefix="spec_"/>
+        <collection property="financePlans" ofType="StadVehicleFinancePlan" resultMap="com.ruoyi.business.mapper.StadVehicleFinancePlanMapper.StadVehicleFinancePlanResult" columnPrefix="fp_"/>
+    </resultMap>
+
+    <sql id="selectVehicleVo">
+        select v.vehicle_id, v.vehicle_type, v.model_name, v.title, v.guide_price,
+               v.original_price, v.color, v.stock, v.merchant_id, v.description,
+               v.tags, v.view_count, v.status, v.create_time, v.update_time,
+               m.merchant_name
+        from stad_vehicle v
+        left join stad_merchant m on v.merchant_id = m.merchant_id
+    </sql>
+
+    <select id="selectStadVehicleById" parameterType="Long" resultMap="StadVehicleResult">
+        <include refid="selectVehicleVo"/>
+        where v.vehicle_id = #{vehicleId}
+    </select>
+
+    <select id="selectStadVehicleDetailById" parameterType="Long" resultMap="StadVehicleDetailResult">
+        select v.vehicle_id, v.vehicle_type, v.model_name, v.title, v.guide_price,
+               v.original_price, v.color, v.stock, v.merchant_id, v.description,
+               v.tags, v.view_count, v.status, v.create_time, v.update_time,
+               m.merchant_name,
+               s.spec_id as spec_spec_id, s.range_km as spec_range_km,
+               s.battery_capacity as spec_battery_capacity, s.charge_time_fast as spec_charge_time_fast,
+               s.charge_time_slow as spec_charge_time_slow, s.model_year as spec_model_year,
+               s.create_time as spec_create_time,
+               fp.plan_id as fp_plan_id, fp.plan_type as fp_plan_type,
+               fp.plan_name as fp_plan_name, fp.total_price as fp_total_price,
+               fp.down_payment as fp_down_payment, fp.monthly_payment as fp_monthly_payment,
+               fp.months as fp_months, fp.interest_rate as fp_interest_rate,
+               fp.total_interest as fp_total_interest, fp.total_payable as fp_total_payable,
+               fp.provider as fp_provider, fp.is_active as fp_is_active, fp.sort_order as fp_sort_order
+        from stad_vehicle v
+        left join stad_merchant m on v.merchant_id = m.merchant_id
+        left join stad_vehicle_spec s on v.vehicle_id = s.vehicle_id
+        left join stad_vehicle_finance_plan fp on v.vehicle_id = fp.vehicle_id
+        where v.vehicle_id = #{vehicleId}
+    </select>
+
+    <select id="selectStadVehicleList" parameterType="StadVehicle" resultMap="StadVehicleResult">
+        <include refid="selectVehicleVo"/>
+        <where>
+            <if test="vehicleType != null and vehicleType != ''">
+                AND v.vehicle_type = #{vehicleType}
+            </if>
+            <if test="modelName != null and modelName != ''">
+                AND v.model_name like concat('%', #{modelName}, '%')
+            </if>
+            <if test="title != null and title != ''">
+                AND v.title like concat('%', #{title}, '%')
+            </if>
+            <if test="status != null and status != ''">
+                AND v.status = #{status}
+            </if>
+            <if test="merchantId != null">
+                AND v.merchant_id = #{merchantId}
+            </if>
+        </where>
+        order by v.vehicle_id desc
+    </select>
+
+    <insert id="insertStadVehicle" parameterType="StadVehicle" useGeneratedKeys="true" keyProperty="vehicleId">
+        insert into stad_vehicle
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="vehicleType != null and vehicleType != ''">vehicle_type,</if>
+            <if test="modelName != null and modelName != ''">model_name,</if>
+            <if test="title != null and title != ''">title,</if>
+            <if test="guidePrice != null">guide_price,</if>
+            <if test="originalPrice != null">original_price,</if>
+            <if test="color != null">color,</if>
+            <if test="stock != null">stock,</if>
+            <if test="merchantId != null">merchant_id,</if>
+            <if test="description != null">description,</if>
+            <if test="tags != null">tags,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="vehicleType != null and vehicleType != ''">#{vehicleType},</if>
+            <if test="modelName != null and modelName != ''">#{modelName},</if>
+            <if test="title != null and title != ''">#{title},</if>
+            <if test="guidePrice != null">#{guidePrice},</if>
+            <if test="originalPrice != null">#{originalPrice},</if>
+            <if test="color != null">#{color},</if>
+            <if test="stock != null">#{stock},</if>
+            <if test="merchantId != null">#{merchantId},</if>
+            <if test="description != null">#{description},</if>
+            <if test="tags != null">#{tags},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateStadVehicle" parameterType="StadVehicle">
+        update stad_vehicle
+        <set>
+            <if test="vehicleType != null and vehicleType != ''">vehicle_type = #{vehicleType},</if>
+            <if test="modelName != null and modelName != ''">model_name = #{modelName},</if>
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="guidePrice != null">guide_price = #{guidePrice},</if>
+            <if test="originalPrice != null">original_price = #{originalPrice},</if>
+            <if test="color != null">color = #{color},</if>
+            <if test="stock != null">stock = #{stock},</if>
+            <if test="merchantId != null">merchant_id = #{merchantId},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="tags != null">tags = #{tags},</if>
+            <if test="viewCount != null">view_count = #{viewCount},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where vehicle_id = #{vehicleId}
+    </update>
+
+    <delete id="deleteStadVehicleById" parameterType="Long">
+        delete from stad_vehicle where vehicle_id = #{vehicleId}
+    </delete>
+
+    <delete id="deleteStadVehicleByIds" parameterType="Long">
+        delete from stad_vehicle where vehicle_id in
+        <foreach item="vehicleId" collection="array" open="(" separator="," close=")">
+            #{vehicleId}
+        </foreach>
+    </delete>
+
+</mapper>

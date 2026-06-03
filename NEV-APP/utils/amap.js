@@ -8,26 +8,16 @@ export function getLocation() {
   return new Promise((resolve, reject) => {
     uni.getLocation({
       type: 'gcj02',
+      isHighAccuracy: true,
+      timeout: 10000,
       success: (res) => {
         resolve({
           latitude: res.latitude,
-          longitude: res.longitude
+          longitude: res.longitude,
+          accuracy: res.accuracy
         })
       },
-      fail: (e) => {
-        const msg = (e && e.errMsg) || ''
-        if (msg.indexOf('auth deny') !== -1) {
-          uni.showModal({
-            title: '定位权限被拒绝',
-            content: '请在设置中允许获取您的位置信息，以便为您推荐附近的充电站',
-            confirmText: '去设置',
-            success: (r) => { if (r.confirm) uni.openSetting() }
-          })
-        } else {
-          uni.showToast({ title: '定位失败，请检查GPS是否开启', icon: 'none' })
-        }
-        reject(e)
-      }
+      fail: (e) => reject(e)
     })
   })
 }
@@ -143,5 +133,35 @@ export default {
   navigateTo,
   openLocation,
   reverseGeocode,
-  searchNearby
+  searchNearby,
+  geocode
+}
+
+export function geocode(address) {
+  return new Promise((resolve) => {
+    uni.request({
+      url: 'https://restapi.amap.com/v3/geocode/geo',
+      data: {
+        key: AMAP_KEY,
+        address: address,
+        output: 'JSON'
+      },
+      success: (res) => {
+        if (res.data && res.data.status === '1' && res.data.geocodes && res.data.geocodes.length > 0) {
+          const geo = res.data.geocodes[0]
+          const location = geo.location.split(',')
+          resolve({
+            latitude: parseFloat(location[1]),
+            longitude: parseFloat(location[0]),
+            address: geo.formatted_address || address,
+            city: (geo.city || '').replace('市', '市'),
+            district: geo.district || ''
+          })
+        } else {
+          resolve(null)
+        }
+      },
+      fail: () => resolve(null)
+    })
+  })
 }

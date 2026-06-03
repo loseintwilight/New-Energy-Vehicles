@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.business.mapper.StadUserAddressMapper">
+
+    <resultMap type="StadUserAddress" id="StadUserAddressResult">
+        <result property="addressId"    column="address_id"     />
+        <result property="userId"       column="user_id"        />
+        <result property="nickName"     column="nick_name"      />
+        <result property="contactName"   column="contact_name"   />
+        <result property="contactPhone"  column="contact_phone"  />
+        <result property="province"     column="province"       />
+        <result property="city"         column="city"           />
+        <result property="district"     column="district"       />
+        <result property="detail"       column="detail"         />
+        <result property="isDefault"    column="is_default"     />
+        <result property="createTime"   column="create_time"    />
+        <result property="updateTime"   column="update_time"    />
+    </resultMap>
+
+    <sql id="selectUserAddressVo">
+        select a.address_id, a.user_id, u.nick_name, a.contact_name, a.contact_phone, a.province, a.city, a.district, a.detail, a.is_default, a.create_time, a.update_time
+        from stad_user_address a
+        left join sys_user u on a.user_id = u.user_id
+    </sql>
+
+    <select id="selectStadUserAddressById" parameterType="Long" resultMap="StadUserAddressResult">
+        <include refid="selectUserAddressVo"/>
+        where address_id = #{addressId}
+    </select>
+
+    <select id="selectStadUserAddressList" parameterType="StadUserAddress" resultMap="StadUserAddressResult">
+        <include refid="selectUserAddressVo"/>
+        <where>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="contactName != null and contactName != ''">
+                AND contact_name like concat('%', #{contactName}, '%')
+            </if>
+            <if test="city != null and city != ''">
+                AND city like concat('%', #{city}, '%')
+            </if>
+        </where>
+        order by address_id desc
+    </select>
+
+    <insert id="insertStadUserAddress" parameterType="StadUserAddress" useGeneratedKeys="true" keyProperty="addressId">
+        insert into stad_user_address
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="contactName != null and contactName != ''">contact_name,</if>
+            <if test="contactPhone != null">contact_phone,</if>
+            <if test="province != null">province,</if>
+            <if test="city != null">city,</if>
+            <if test="district != null">district,</if>
+            <if test="detail != null">detail,</if>
+            <if test="isDefault != null">is_default,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="contactName != null and contactName != ''">#{contactName},</if>
+            <if test="contactPhone != null">#{contactPhone},</if>
+            <if test="province != null">#{province},</if>
+            <if test="city != null">#{city},</if>
+            <if test="district != null">#{district},</if>
+            <if test="detail != null">#{detail},</if>
+            <if test="isDefault != null">#{isDefault},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateStadUserAddress" parameterType="StadUserAddress">
+        update stad_user_address
+        <set>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="contactName != null and contactName != ''">contact_name = #{contactName},</if>
+            <if test="contactPhone != null">contact_phone = #{contactPhone},</if>
+            <if test="province != null">province = #{province},</if>
+            <if test="city != null">city = #{city},</if>
+            <if test="district != null">district = #{district},</if>
+            <if test="detail != null">detail = #{detail},</if>
+            <if test="isDefault != null">is_default = #{isDefault},</if>
+            update_time = sysdate()
+        </set>
+        where address_id = #{addressId}
+    </update>
+
+    <delete id="deleteStadUserAddressById" parameterType="Long">
+        delete from stad_user_address where address_id = #{addressId}
+    </delete>
+
+    <delete id="deleteStadUserAddressByIds" parameterType="Long">
+        delete from stad_user_address where address_id in
+        <foreach item="addressId" collection="array" open="(" separator="," close=")">
+            #{addressId}
+        </foreach>
+    </delete>
+
+</mapper>

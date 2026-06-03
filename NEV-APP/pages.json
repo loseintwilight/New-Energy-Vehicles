@@ -19,12 +19,54 @@
       "navigationStyle": "custom"
     }
   }, {
+    "path": "pages/index/detail",
+    "style": {
+      "navigationBarTitleText": "详情",
+      "navigationStyle": "custom"
+    }
+  }, {
     "path": "pages/charge/index",
     "style": {
       "navigationBarTitleText": "充电服务",
       "navigationStyle": "custom"
     }
   }, {
+    "path": "pages/car/index",
+    "style": {
+      "navigationBarTitleText": "选车"
+    }
+  }, {
+    "path": "pages/car/new-car",
+    "style": {
+      "navigationBarTitleText": "全新现车"
+    }
+  }, {
+    "path": "pages/car/used-car",
+    "style": {
+      "navigationBarTitleText": "官方认证二手车"
+    }
+  }, {
+    "path": "pages/car/trade-in",
+    "style": {
+      "navigationBarTitleText": "以旧换新"
+    }
+  }, {
+    "path": "pages/car/order-new",
+    "style": {
+      "navigationBarTitleText": "订购新车"
+    }
+  }, {
+    "path": "pages/car/order-used",
+    "style": {
+      "navigationBarTitleText": "订购二手车"
+    }
+  }, {
+    "path": "pages/car/order-trade",
+    "style": {
+      "navigationBarTitleText": "以旧换新"
+    }
+  }, 
+  {
     "path": "pages/charge/detail",
     "style": {
       "navigationBarTitleText": "站点详情",
@@ -67,12 +109,6 @@
       "navigationStyle": "custom"
     }
   }, {
-    "path": "pages/charge/notification",
-    "style": {
-      "navigationBarTitleText": "消息通知",
-      "navigationStyle": "custom"
-    }
-  }, {
     "path": "pages/charge/order",
     "style": {
       "navigationBarTitleText": "充电订单",
@@ -84,15 +120,11 @@
       "navigationBarTitleText": "充电中",
       "navigationStyle": "custom"
     }
-  }, {
-    "path": "pages/car/index",
-    "style": {
-      "navigationBarTitleText": "选车"
-    }
-  }, {
+  },{
     "path": "pages/work/index",
     "style": {
-      "navigationBarTitleText": "工作台"
+      "navigationBarTitleText": "工作台",
+      "navigationStyle": "custom"
     }
   }, {
     "path": "pages/mine/index",
@@ -125,6 +157,18 @@
       "navigationBarTitleText": "应用设置"
     }
   }, {
+    "path": "pages/mine/switch/index",
+    "style": {
+      "navigationBarTitleText": "端切换",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/carbon/index",
+    "style": {
+      "navigationBarTitleText": "碳积分",
+      "navigationStyle": "custom"
+    }
+  },{
     "path": "pages/mine/help/index",
     "style": {
       "navigationBarTitleText": "常见问题"
@@ -135,6 +179,56 @@
       "navigationBarTitleText": "关于我们"
     }
   }, {
+    "path": "pages/mine/myCar/index",
+    "style": {
+      "navigationBarTitleText": "我的车辆"
+    }
+  }, {
+    "path": "pages/mine/charging/index",
+    "style": {
+      "navigationBarTitleText": "充电记录"
+    }
+  }, {
+    "path": "pages/mine/reservation/index",
+    "style": {
+      "navigationBarTitleText": "预约记录"
+    }
+  }, {
+    "path": "pages/mine/messages/index",
+    "style": {
+      "navigationBarTitleText": "消息通知"
+    }
+  }, {
+    "path": "pages/mine/customer/index",
+    "style": {
+      "navigationBarTitleText": "在线客服"
+    }
+  }, {
+    "path": "pages/mine/orders/index",
+    "style": {
+      "navigationBarTitleText": "我的订单"
+    }
+  }, {
+    "path": "pages/mine/favorites/index",
+    "style": {
+      "navigationBarTitleText": "我的收藏"
+    }
+  }, {
+    "path": "pages/mine/coupons/index",
+    "style": {
+      "navigationBarTitleText": "优惠券"
+    }
+  }, {
+    "path": "pages/mine/wallet/index",
+    "style": {
+      "navigationBarTitleText": "钱包"
+    }
+  }, {
+    "path": "pages/mine/feedback/index",
+    "style": {
+      "navigationBarTitleText": "意见反馈"
+    }
+  }, {
     "path": "pages/common/webview/index",
     "style": {
       "navigationBarTitleText": "浏览网页"
@@ -143,6 +237,229 @@
     "path": "pages/common/textview/index",
     "style": {
       "navigationBarTitleText": "浏览文本"
+    }
+  }, {
+    "path": "pages/mine/service/shopList/index",
+    "style": {
+      "navigationBarTitleText": "门店列表"
+    }
+  }, {
+    "path": "pages/mine/service/shopEdit/index",
+    "style": {
+      "navigationBarTitleText": "创建门店"
+    }
+  }, {
+    "path": "pages/mine/service/orderList/index",
+    "style": {
+      "navigationBarTitleText": "订单管理"
+    }
+  }, {
+    "path": "pages/mine/service/dataSettings/index",
+    "style": {
+      "navigationBarTitleText": "数据统计"
+    }
+  }, {
+    "path": "pages/mine/service/shopComment/index",
+    "style": {
+      "navigationBarTitleText": "门店评价"
+    }
+  }, {
+    "path": "pages/mine/charge-pile/dashboard",
+    "style": {
+      "navigationBarTitleText": "充电桩管理台",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/charge-pile/after-sale",
+    "style": {
+      "navigationBarTitleText": "售后管理",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/charge-pile/customer-manage",
+    "style": {
+      "navigationBarTitleText": "客户管理",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/charge-pile/data-overview",
+    "style": {
+      "navigationBarTitleText": "数据概览",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/charge-pile/merchant-info",
+    "style": {
+      "navigationBarTitleText": "商户信息",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/charge-pile/operation-report",
+    "style": {
+      "navigationBarTitleText": "运营报告",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/charge-pile/order-detail",
+    "style": {
+      "navigationBarTitleText": "订单详情",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/charge-pile/order-list",
+    "style": {
+      "navigationBarTitleText": "订单管理",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/charge-pile/pile-add",
+    "style": {
+      "navigationBarTitleText": "添加充电桩",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/charge-pile/pile-detail",
+    "style": {
+      "navigationBarTitleText": "充电桩详情",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/charge-pile/pile-list",
+    "style": {
+      "navigationBarTitleText": "充电桩管理",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/charge-pile/rate-edit",
+    "style": {
+      "navigationBarTitleText": "编辑费率",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/charge-pile/rate-list",
+    "style": {
+      "navigationBarTitleText": "费率管理",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/charge-pile/settlement-center",
+    "style": {
+      "navigationBarTitleText": "结算中心",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/charge-pile/station-add",
+    "style": {
+      "navigationBarTitleText": "添加站点",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/charge-pile/station-detail",
+    "style": {
+      "navigationBarTitleText": "站点详情",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/charge-pile/station-list",
+    "style": {
+      "navigationBarTitleText": "站点管理",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/charge-pile/system-settings",
+    "style": {
+      "navigationBarTitleText": "系统设置",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/vehicle/after-sale",
+    "style": {
+      "navigationBarTitleText": "售后管理",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/vehicle/finance-edit",
+    "style": {
+      "navigationBarTitleText": "编辑财务",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/vehicle/finance-list",
+    "style": {
+      "navigationBarTitleText": "财务管理",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/vehicle/price-manage",
+    "style": {
+      "navigationBarTitleText": "价格管理",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/vehicle/review-detail",
+    "style": {
+      "navigationBarTitleText": "评价详情",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/vehicle/review-list",
+    "style": {
+      "navigationBarTitleText": "评价管理",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/vehicle/stock-detail",
+    "style": {
+      "navigationBarTitleText": "库存详情",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/vehicle/stock-manage",
+    "style": {
+      "navigationBarTitleText": "库存管理",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/vehicle/vehicle-add",
+    "style": {
+      "navigationBarTitleText": "添加车辆",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/vehicle/vehicle-dashboard",
+    "style": {
+      "navigationBarTitleText": "车辆管理台",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/vehicle/vehicle-desc-edit",
+    "style": {
+      "navigationBarTitleText": "编辑车辆描述",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/vehicle/vehicle-detail",
+    "style": {
+      "navigationBarTitleText": "车辆详情",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/vehicle/vehicle-list",
+    "style": {
+      "navigationBarTitleText": "车辆管理",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/vehicle/vehicle-order-detail",
+    "style": {
+      "navigationBarTitleText": "订单详情",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/vehicle/vehicle-order-list",
+    "style": {
+      "navigationBarTitleText": "订单管理",
+      "navigationStyle": "custom"
     }
   }],
   "tabBar": {

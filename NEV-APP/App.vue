@@ -18,6 +18,13 @@
       },
       initConfig() {
         this.globalData.config = config
+        this.globalData.messageCount = 2
+        this.globalData.orderStatus = {
+          unpaid: 1,
+          pending: 1,
+          completed: 2,
+          cancelled: 1
+        }
       },
       checkLogin() {
         if (!getToken()) {

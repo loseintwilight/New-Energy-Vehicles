@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.business.mapper.StadVehicleSpecMapper">
+
+    <resultMap type="StadVehicleSpec" id="StadVehicleSpecResult">
+        <result property="specId"          column="spec_id"          />
+        <result property="vehicleId"       column="vehicle_id"       />
+        <result property="vehicleName"     column="vehicle_name"     />
+        <result property="rangeKm"         column="range_km"         />
+        <result property="batteryCapacity" column="battery_capacity" />
+        <result property="chargeTimeFast"  column="charge_time_fast" />
+        <result property="chargeTimeSlow"  column="charge_time_slow" />
+        <result property="modelYear"       column="model_year"       />
+        <result property="createTime"      column="create_time"      />
+    </resultMap>
+
+    <sql id="selectVehicleSpecVo">
+        select s.spec_id, s.vehicle_id, v.model_name as vehicle_name, s.range_km, s.battery_capacity, s.charge_time_fast, s.charge_time_slow, s.model_year, s.create_time
+        from stad_vehicle_spec s
+        left join stad_vehicle v on s.vehicle_id = v.vehicle_id
+    </sql>
+
+    <select id="selectStadVehicleSpecById" parameterType="Long" resultMap="StadVehicleSpecResult">
+        <include refid="selectVehicleSpecVo"/>
+        where spec_id = #{specId}
+    </select>
+
+    <select id="selectStadVehicleSpecByVehicleId" parameterType="Long" resultMap="StadVehicleSpecResult">
+        <include refid="selectVehicleSpecVo"/>
+        where vehicle_id = #{vehicleId}
+    </select>
+
+    <select id="selectStadVehicleSpecList" parameterType="StadVehicleSpec" resultMap="StadVehicleSpecResult">
+        <include refid="selectVehicleSpecVo"/>
+        <where>
+            <if test="vehicleId != null">
+                AND vehicle_id = #{vehicleId}
+            </if>
+            <if test="modelYear != null">
+                AND model_year = #{modelYear}
+            </if>
+        </where>
+        order by spec_id desc
+    </select>
+
+    <insert id="insertStadVehicleSpec" parameterType="StadVehicleSpec" useGeneratedKeys="true" keyProperty="specId">
+        insert into stad_vehicle_spec
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="vehicleId != null">vehicle_id,</if>
+            <if test="rangeKm != null">range_km,</if>
+            <if test="batteryCapacity != null">battery_capacity,</if>
+            <if test="chargeTimeFast != null">charge_time_fast,</if>
+            <if test="chargeTimeSlow != null">charge_time_slow,</if>
+            <if test="modelYear != null">model_year,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="vehicleId != null">#{vehicleId},</if>
+            <if test="rangeKm != null">#{rangeKm},</if>
+            <if test="batteryCapacity != null">#{batteryCapacity},</if>
+            <if test="chargeTimeFast != null">#{chargeTimeFast},</if>
+            <if test="chargeTimeSlow != null">#{chargeTimeSlow},</if>
+            <if test="modelYear != null">#{modelYear},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateStadVehicleSpec" parameterType="StadVehicleSpec">
+        update stad_vehicle_spec
+        <set>
+            <if test="vehicleId != null">vehicle_id = #{vehicleId},</if>
+            <if test="rangeKm != null">range_km = #{rangeKm},</if>
+            <if test="batteryCapacity != null">battery_capacity = #{batteryCapacity},</if>
+            <if test="chargeTimeFast != null">charge_time_fast = #{chargeTimeFast},</if>
+            <if test="chargeTimeSlow != null">charge_time_slow = #{chargeTimeSlow},</if>
+            <if test="modelYear != null">model_year = #{modelYear},</if>
+        </set>
+        where spec_id = #{specId}
+    </update>
+
+    <delete id="deleteStadVehicleSpecById" parameterType="Long">
+        delete from stad_vehicle_spec where spec_id = #{specId}
+    </delete>
+
+    <delete id="deleteStadVehicleSpecByIds" parameterType="Long">
+        delete from stad_vehicle_spec where spec_id in
+        <foreach item="specId" collection="array" open="(" separator="," close=")">
+            #{specId}
+        </foreach>
+    </delete>
+
+</mapper>

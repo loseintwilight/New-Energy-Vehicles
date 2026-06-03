@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.business.mapper.StadMerchantMapper">
+
+    <resultMap type="StadMerchant" id="StadMerchantResult">
+        <result property="merchantId"       column="merchant_id"       />
+        <result property="userId"           column="user_id"           />
+        <result property="merchantName"     column="merchant_name"     />
+        <result property="merchantType"     column="merchant_type"     />
+        <result property="contactName"      column="contact_name"      />
+        <result property="contactPhone"     column="contact_phone"     />
+        <result property="province"         column="province"          />
+        <result property="city"             column="city"              />
+        <result property="address"          column="address"           />
+        <result property="openTime"         column="open_time"         />
+        <result property="closeTime"        column="close_time"        />
+        <result property="businessLicense"  column="business_license"  />
+        <result property="legalPerson"      column="legal_person"      />
+        <result property="idCard"           column="id_card"           />
+        <result property="status"           column="status"            />
+        <result property="auditRemark"      column="audit_remark"      />
+        <result property="auditTime"        column="audit_time"        />
+        <result property="totalIncome"      column="total_income"      />
+        <result property="settledAmount"    column="settled_amount"    />
+        <result property="pendingAmount"    column="pending_amount"    />
+        <result property="withdrawnAmount"  column="withdrawn_amount"  />
+        <result property="bankName"         column="bank_name"         />
+        <result property="bankAccount"      column="bank_account"      />
+        <result property="createTime"       column="create_time"       />
+        <result property="updateTime"       column="update_time"       />
+    </resultMap>
+
+    <sql id="selectMerchantVo">
+        select merchant_id, user_id, merchant_name, merchant_type, contact_name,
+               contact_phone, province, city, address, open_time, close_time,
+               business_license, legal_person, id_card, status, audit_remark,
+               audit_time, total_income, settled_amount, pending_amount,
+               withdrawn_amount, bank_name, bank_account, create_time, update_time
+        from stad_merchant
+    </sql>
+
+    <select id="selectStadMerchantById" parameterType="Long" resultMap="StadMerchantResult">
+        <include refid="selectMerchantVo"/>
+        where merchant_id = #{merchantId}
+    </select>
+
+    <select id="selectStadMerchantByUserId" parameterType="Long" resultMap="StadMerchantResult">
+        <include refid="selectMerchantVo"/>
+        where user_id = #{userId}
+    </select>
+
+    <select id="selectStadMerchantList" parameterType="StadMerchant" resultMap="StadMerchantResult">
+        <include refid="selectMerchantVo"/>
+        <where>
+            <if test="merchantName != null and merchantName != ''">
+                AND merchant_name like concat('%', #{merchantName}, '%')
+            </if>
+            <if test="merchantType != null and merchantType != ''">
+                AND merchant_type = #{merchantType}
+            </if>
+            <if test="contactName != null and contactName != ''">
+                AND contact_name like concat('%', #{contactName}, '%')
+            </if>
+            <if test="contactPhone != null and contactPhone != ''">
+                AND contact_phone like concat('%', #{contactPhone}, '%')
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="city != null and city != ''">
+                AND city like concat('%', #{city}, '%')
+            </if>
+        </where>
+        order by merchant_id desc
+    </select>
+
+    <insert id="insertStadMerchant" parameterType="StadMerchant" useGeneratedKeys="true" keyProperty="merchantId">
+        insert into stad_merchant
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="merchantName != null and merchantName != ''">merchant_name,</if>
+            <if test="merchantType != null and merchantType != ''">merchant_type,</if>
+            <if test="contactName != null and contactName != ''">contact_name,</if>
+            <if test="contactPhone != null and contactPhone != ''">contact_phone,</if>
+            <if test="province != null and province != ''">province,</if>
+            <if test="city != null and city != ''">city,</if>
+            <if test="address != null">address,</if>
+            <if test="openTime != null">open_time,</if>
+            <if test="closeTime != null">close_time,</if>
+            <if test="businessLicense != null">business_license,</if>
+            <if test="legalPerson != null">legal_person,</if>
+            <if test="idCard != null">id_card,</if>
+            <if test="status != null">status,</if>
+            <if test="bankName != null">bank_name,</if>
+            <if test="bankAccount != null">bank_account,</if>
+            <if test="createBy != null">create_by,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="merchantName != null and merchantName != ''">#{merchantName},</if>
+            <if test="merchantType != null and merchantType != ''">#{merchantType},</if>
+            <if test="contactName != null and contactName != ''">#{contactName},</if>
+            <if test="contactPhone != null and contactPhone != ''">#{contactPhone},</if>
+            <if test="province != null and province != ''">#{province},</if>
+            <if test="city != null and city != ''">#{city},</if>
+            <if test="address != null">#{address},</if>
+            <if test="openTime != null">#{openTime},</if>
+            <if test="closeTime != null">#{closeTime},</if>
+            <if test="businessLicense != null">#{businessLicense},</if>
+            <if test="legalPerson != null">#{legalPerson},</if>
+            <if test="idCard != null">#{idCard},</if>
+            <if test="status != null">#{status},</if>
+            <if test="bankName != null">#{bankName},</if>
+            <if test="bankAccount != null">#{bankAccount},</if>
+            <if test="createBy != null">#{createBy},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateStadMerchant" parameterType="StadMerchant">
+        update stad_merchant
+        <set>
+            <if test="merchantName != null and merchantName != ''">merchant_name = #{merchantName},</if>
+            <if test="merchantType != null and merchantType != ''">merchant_type = #{merchantType},</if>
+            <if test="contactName != null and contactName != ''">contact_name = #{contactName},</if>
+            <if test="contactPhone != null and contactPhone != ''">contact_phone = #{contactPhone},</if>
+            <if test="province != null">province = #{province},</if>
+            <if test="city != null">city = #{city},</if>
+            <if test="address != null">address = #{address},</if>
+            <if test="openTime != null">open_time = #{openTime},</if>
+            <if test="closeTime != null">close_time = #{closeTime},</if>
+            <if test="businessLicense != null">business_license = #{businessLicense},</if>
+            <if test="legalPerson != null">legal_person = #{legalPerson},</if>
+            <if test="idCard != null">id_card = #{idCard},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="auditRemark != null">audit_remark = #{auditRemark},</if>
+            <if test="auditTime != null">audit_time = #{auditTime},</if>
+            <if test="totalIncome != null">total_income = #{totalIncome},</if>
+            <if test="settledAmount != null">settled_amount = #{settledAmount},</if>
+            <if test="pendingAmount != null">pending_amount = #{pendingAmount},</if>
+            <if test="withdrawnAmount != null">withdrawn_amount = #{withdrawnAmount},</if>
+            <if test="bankName != null">bank_name = #{bankName},</if>
+            <if test="bankAccount != null">bank_account = #{bankAccount},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where merchant_id = #{merchantId}
+    </update>
+
+    <update id="auditStadMerchant" parameterType="StadMerchant">
+        update stad_merchant
+        <set>
+            <if test="status != null">status = #{status},</if>
+            <if test="auditRemark != null">audit_remark = #{auditRemark},</if>
+            <if test="auditTime != null">audit_time = #{auditTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = sysdate()
+        </set>
+        where merchant_id = #{merchantId}
+    </update>
+
+    <delete id="deleteStadMerchantById" parameterType="Long">
+        delete from stad_merchant where merchant_id = #{merchantId}
+    </delete>
+
+    <delete id="deleteStadMerchantByIds" parameterType="Long">
+        delete from stad_merchant where merchant_id in
+        <foreach item="merchantId" collection="array" open="(" separator="," close=")">
+            #{merchantId}
+        </foreach>
+    </delete>
+
+</mapper>

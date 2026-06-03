@@ -80,7 +80,7 @@
             "port" : 9090,
             "https" : false
         },
-        "title" : "RuoYi-App",
+        "title" : "新能源汽车全生命周期服务平台",
         "router" : {
             "mode" : "hash",
             "base" : "./"

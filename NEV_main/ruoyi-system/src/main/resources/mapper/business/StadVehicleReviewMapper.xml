@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.business.mapper.StadVehicleReviewMapper">
+
+    <resultMap type="StadVehicleReview" id="StadVehicleReviewResult">
+        <result property="reviewId"    column="review_id"     />
+        <result property="vehicleId"   column="vehicle_id"    />
+        <result property="vehicleName" column="vehicle_name"  />
+        <result property="userId"      column="user_id"       />
+        <result property="nickName"    column="nick_name"     />
+        <result property="orderId"     column="order_id"      />
+        <result property="rating"      column="rating"        />
+        <result property="content"     column="content"       />
+        <result property="imageUrl"    column="image_url"     />
+        <result property="isAnonymous" column="is_anonymous"  />
+        <result property="status"      column="status"        />
+        <result property="createTime"  column="create_time"   />
+    </resultMap>
+
+    <sql id="selectVehicleReviewVo">
+        select r.review_id, r.vehicle_id, v.model_name as vehicle_name, r.user_id, u.nick_name, r.order_id, r.rating, r.content, r.image_url, r.is_anonymous, r.status, r.create_time
+        from stad_vehicle_review r
+        left join stad_vehicle v on r.vehicle_id = v.vehicle_id
+        left join sys_user u on r.user_id = u.user_id
+    </sql>
+
+    <select id="selectStadVehicleReviewById" parameterType="Long" resultMap="StadVehicleReviewResult">
+        <include refid="selectVehicleReviewVo"/>
+        where review_id = #{reviewId}
+    </select>
+
+    <select id="selectStadVehicleReviewByVehicleId" parameterType="Long" resultMap="StadVehicleReviewResult">
+        <include refid="selectVehicleReviewVo"/>
+        where vehicle_id = #{vehicleId} order by review_id desc
+    </select>
+
+    <select id="selectStadVehicleReviewList" parameterType="StadVehicleReview" resultMap="StadVehicleReviewResult">
+        <include refid="selectVehicleReviewVo"/>
+        <where>
+            <if test="vehicleId != null">
+                AND vehicle_id = #{vehicleId}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="rating != null">
+                AND rating = #{rating}
+            </if>
+        </where>
+        order by review_id desc
+    </select>
+
+    <insert id="insertStadVehicleReview" parameterType="StadVehicleReview" useGeneratedKeys="true" keyProperty="reviewId">
+        insert into stad_vehicle_review
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="vehicleId != null">vehicle_id,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="orderId != null">order_id,</if>
+            <if test="rating != null">rating,</if>
+            <if test="content != null">content,</if>
+            <if test="imageUrl != null">image_url,</if>
+            <if test="isAnonymous != null">is_anonymous,</if>
+            <if test="status != null">status,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="vehicleId != null">#{vehicleId},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="orderId != null">#{orderId},</if>
+            <if test="rating != null">#{rating},</if>
+            <if test="content != null">#{content},</if>
+            <if test="imageUrl != null">#{imageUrl},</if>
+            <if test="isAnonymous != null">#{isAnonymous},</if>
+            <if test="status != null">#{status},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateStadVehicleReview" parameterType="StadVehicleReview">
+        update stad_vehicle_review
+        <set>
+            <if test="vehicleId != null">vehicle_id = #{vehicleId},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="orderId != null">order_id = #{orderId},</if>
+            <if test="rating != null">rating = #{rating},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="imageUrl != null">image_url = #{imageUrl},</if>
+            <if test="isAnonymous != null">is_anonymous = #{isAnonymous},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+        </set>
+        where review_id = #{reviewId}
+    </update>
+
+    <delete id="deleteStadVehicleReviewById" parameterType="Long">
+        delete from stad_vehicle_review where review_id = #{reviewId}
+    </delete>
+
+    <delete id="deleteStadVehicleReviewByIds" parameterType="Long">
+        delete from stad_vehicle_review where review_id in
+        <foreach item="reviewId" collection="array" open="(" separator="," close=")">
+            #{reviewId}
+        </foreach>
+    </delete>
+
+</mapper>

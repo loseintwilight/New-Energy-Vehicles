@@ -4,74 +4,43 @@
 
 <script>
 import * as echarts from 'echarts'
-require('echarts/theme/macarons') // echarts theme
+require('echarts/theme/macarons')
 import resize from './mixins/resize'
 
 export default {
   mixins: [resize],
   props: {
-    className: {
-      type: String,
-      default: 'chart'
-    },
-    width: {
-      type: String,
-      default: '100%'
-    },
-    height: {
-      type: String,
-      default: '300px'
-    }
+    className: { type: String, default: 'chart' },
+    width: { type: String, default: '100%' },
+    height: { type: String, default: '300px' },
+    chartData: { type: Array, default: () => [] }
   },
-  data() {
-    return {
-      chart: null
-    }
+  data() { return { chart: null } },
+  watch: {
+    chartData: { deep: true, handler(val) { this.setOptions(val) } }
   },
-  mounted() {
-    this.$nextTick(() => {
-      this.initChart()
-    })
-  },
-  beforeDestroy() {
-    if (!this.chart) {
-      return
-    }
-    this.chart.dispose()
-    this.chart = null
-  },
+  mounted() { this.$nextTick(() => { this.initChart() }) },
+  beforeDestroy() { if (this.chart) { this.chart.dispose(); this.chart = null } },
   methods: {
     initChart() {
       this.chart = echarts.init(this.$el, 'macarons')
-
+      this.setOptions(this.chartData)
+    },
+    setOptions(data) {
+      const pieData = (data || []).map(d => ({ value: d.value, name: d.name }))
       this.chart.setOption({
-        tooltip: {
-          trigger: 'item',
-          formatter: '{a} <br/>{b} : {c} ({d}%)'
-        },
-        legend: {
-          left: 'center',
-          bottom: '10',
-          data: ['Industries', 'Technology', 'Forex', 'Gold', 'Forecasts']
-        },
-        series: [
-          {
-            name: 'WEEKLY WRITE ARTICLES',
-            type: 'pie',
-            roseType: 'radius',
-            radius: [15, 95],
-            center: ['50%', '38%'],
-            data: [
-              { value: 320, name: 'Industries' },
-              { value: 240, name: 'Technology' },
-              { value: 149, name: 'Forex' },
-              { value: 100, name: 'Gold' },
-              { value: 59, name: 'Forecasts' }
-            ],
-            animationEasing: 'cubicInOut',
-            animationDuration: 2600
-          }
-        ]
+        title: { text: '车型分布', left: 'center', textStyle: { fontSize: 14, color: '#303133' } },
+        tooltip: { trigger: 'item', formatter: '{b}: {c} 辆 ({d}%)' },
+        series: [{
+          name: '车型', type: 'pie',
+          radius: ['40%', '70%'],
+          center: ['50%', '55%'],
+          roseType: 'radius',
+          data: pieData.length ? pieData : [{ value: 1, name: '暂无数据' }],
+          itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+          emphasis: { label: { fontSize: 14, fontWeight: 'bold' } },
+          label: { show: false }
+        }]
       })
     }
   }

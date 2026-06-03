@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.business.mapper.StadChargingRatePeriodMapper">
+
+    <resultMap type="StadChargingRatePeriod" id="StadChargingRatePeriodResult">
+        <result property="periodId"     column="period_id"      />
+        <result property="rateId"       column="rate_id"        />
+        <result property="periodName"   column="period_name"    />
+        <result property="startTime"    column="start_time"     />
+        <result property="endTime"      column="end_time"       />
+        <result property="energyPrice"  column="energy_price"   />
+        <result property="serviceFee"   column="service_fee"    />
+        <result property="totalPrice"   column="total_price"    />
+        <result property="discountRate" column="discount_rate"  />
+        <result property="sortOrder"    column="sort_order"     />
+        <result property="createTime"   column="create_time"    />
+    </resultMap>
+
+    <sql id="selectChargingRatePeriodVo">
+        select period_id, rate_id, period_name, start_time, end_time, energy_price, service_fee, total_price, discount_rate, sort_order, create_time
+        from stad_charging_rate_period
+    </sql>
+
+    <select id="selectStadChargingRatePeriodById" parameterType="Long" resultMap="StadChargingRatePeriodResult">
+        <include refid="selectChargingRatePeriodVo"/> where period_id = #{periodId}
+    </select>
+
+    <select id="selectStadChargingRatePeriodByRateId" parameterType="Long" resultMap="StadChargingRatePeriodResult">
+        <include refid="selectChargingRatePeriodVo"/> where rate_id = #{rateId} order by sort_order asc
+    </select>
+
+    <select id="selectStadChargingRatePeriodList" parameterType="StadChargingRatePeriod" resultMap="StadChargingRatePeriodResult">
+        <include refid="selectChargingRatePeriodVo"/>
+        <where>
+            <if test="rateId != null">AND rate_id = #{rateId}</if>
+            <if test="periodName != null and periodName != ''">AND period_name like concat('%', #{periodName}, '%')</if>
+        </where>
+        order by sort_order asc
+    </select>
+
+    <insert id="insertStadChargingRatePeriod" parameterType="StadChargingRatePeriod" useGeneratedKeys="true" keyProperty="periodId">
+        insert into stad_charging_rate_period
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="rateId != null">rate_id,</if>
+            <if test="periodName != null">period_name,</if>
+            <if test="startTime != null">start_time,</if>
+            <if test="endTime != null">end_time,</if>
+            <if test="energyPrice != null">energy_price,</if>
+            <if test="serviceFee != null">service_fee,</if>
+            <if test="totalPrice != null">total_price,</if>
+            <if test="discountRate != null">discount_rate,</if>
+            <if test="sortOrder != null">sort_order,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="rateId != null">#{rateId},</if>
+            <if test="periodName != null">#{periodName},</if>
+            <if test="startTime != null">#{startTime},</if>
+            <if test="endTime != null">#{endTime},</if>
+            <if test="energyPrice != null">#{energyPrice},</if>
+            <if test="serviceFee != null">#{serviceFee},</if>
+            <if test="totalPrice != null">#{totalPrice},</if>
+            <if test="discountRate != null">#{discountRate},</if>
+            <if test="sortOrder != null">#{sortOrder},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateStadChargingRatePeriod" parameterType="StadChargingRatePeriod">
+        update stad_charging_rate_period
+        <set>
+            <if test="rateId != null">rate_id = #{rateId},</if>
+            <if test="periodName != null">period_name = #{periodName},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="energyPrice != null">energy_price = #{energyPrice},</if>
+            <if test="serviceFee != null">service_fee = #{serviceFee},</if>
+            <if test="totalPrice != null">total_price = #{totalPrice},</if>
+            <if test="discountRate != null">discount_rate = #{discountRate},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+        </set>
+        where period_id = #{periodId}
+    </update>
+
+    <delete id="deleteStadChargingRatePeriodById" parameterType="Long">
+        delete from stad_charging_rate_period where period_id = #{periodId}
+    </delete>
+
+    <delete id="deleteStadChargingRatePeriodByIds" parameterType="Long">
+        delete from stad_charging_rate_period where period_id in
+        <foreach item="periodId" collection="array" open="(" separator="," close=")">#{periodId}</foreach>
+    </delete>
+
+</mapper>

@@ -4,97 +4,56 @@
 
 <script>
 import * as echarts from 'echarts'
-require('echarts/theme/macarons') // echarts theme
+require('echarts/theme/macarons')
 import resize from './mixins/resize'
-
-const animationDuration = 6000
 
 export default {
   mixins: [resize],
   props: {
-    className: {
-      type: String,
-      default: 'chart'
-    },
-    width: {
-      type: String,
-      default: '100%'
-    },
-    height: {
-      type: String,
-      default: '300px'
-    }
+    className: { type: String, default: 'chart' },
+    width: { type: String, default: '100%' },
+    height: { type: String, default: '300px' },
+    chartData: { type: Array, default: () => [] }
   },
-  data() {
-    return {
-      chart: null
-    }
+  data() { return { chart: null } },
+  watch: {
+    chartData: { deep: true, handler(val) { this.setOptions(val) } }
   },
-  mounted() {
-    this.$nextTick(() => {
-      this.initChart()
-    })
-  },
-  beforeDestroy() {
-    if (!this.chart) {
-      return
-    }
-    this.chart.dispose()
-    this.chart = null
-  },
+  mounted() { this.$nextTick(() => { this.initChart() }) },
+  beforeDestroy() { if (this.chart) { this.chart.dispose(); this.chart = null } },
   methods: {
     initChart() {
       this.chart = echarts.init(this.$el, 'macarons')
-
+      this.setOptions(this.chartData)
+    },
+    setOptions(data) {
+      const names = (data || []).map(d => d.name)
+      const powers = (data || []).map(d => Number(d.power))
       this.chart.setOption({
+        title: { text: '充电站功率排行', left: 'center', textStyle: { fontSize: 14, color: '#303133' } },
         tooltip: {
           trigger: 'axis',
-          axisPointer: { // 坐标轴指示器，坐标轴触发有效
-            type: 'shadow' // 默认为直线，可选为：'line' | 'shadow'
+          axisPointer: { type: 'shadow' },
+          formatter: function(params) {
+            const p = params[0]
+            return p.name + '<br/>' + p.marker + '总功率: ' + p.value + ' kW'
           }
         },
-        grid: {
-          top: 10,
-          left: '2%',
-          right: '2%',
-          bottom: '3%',
-          containLabel: true
-        },
-        xAxis: [{
-          type: 'category',
-          data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-          axisTick: {
-            alignWithLabel: true
-          }
-        }],
-        yAxis: [{
-          type: 'value',
-          axisTick: {
-            show: false
-          }
-        }],
+        xAxis: { type: 'category', data: names.length ? names : ['暂无'], axisLabel: { rotate: 30, fontSize: 10 } },
+        yAxis: { type: 'value', name: '总功率(kW)' },
         series: [{
-          name: 'pageA',
-          type: 'bar',
-          stack: 'vistors',
-          barWidth: '60%',
-          data: [79, 52, 200, 334, 390, 330, 220],
-          animationDuration
-        }, {
-          name: 'pageB',
-          type: 'bar',
-          stack: 'vistors',
-          barWidth: '60%',
-          data: [80, 52, 200, 334, 390, 330, 220],
-          animationDuration
-        }, {
-          name: 'pageC',
-          type: 'bar',
-          stack: 'vistors',
-          barWidth: '60%',
-          data: [30, 52, 200, 334, 390, 330, 220],
-          animationDuration
-        }]
+          name: '总功率', type: 'bar',
+          data: powers.length ? powers : [0],
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: '#36a3f7' },
+              { offset: 1, color: '#83bff6' }
+            ]),
+            borderRadius: [4, 4, 0, 0]
+          },
+          barWidth: '50%'
+        }],
+        grid: { left: '3%', right: '4%', bottom: '20%', containLabel: true }
       })
     }
   }

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.business.mapper.StadVehicleUsedMapper">
+
+    <resultMap type="StadVehicleUsed" id="StadVehicleUsedResult">
+        <result property="usedId"          column="used_id"           />
+        <result property="vehicleId"       column="vehicle_id"        />
+        <result property="vehicleName"     column="vehicle_name"      />
+        <result property="licenseYear"     column="license_year"      />
+        <result property="licenseMonth"    column="license_month"     />
+        <result property="licenseCity"     column="license_city"      />
+        <result property="mileage"         column="mileage"           />
+        <result property="transferCount"   column="transfer_count"    />
+        <result property="batterySoh"      column="battery_soh"       />
+        <result property="batteryCycles"   column="battery_cycles"    />
+        <result property="batteryDiagnosis" column="battery_diagnosis" />
+        <result property="batteryReport"   column="battery_report"    />
+        <result property="valuationPrice"  column="valuation_price"   />
+        <result property="valuationInfo"   column="valuation_info"    />
+        <result property="createTime"      column="create_time"       />
+    </resultMap>
+
+    <sql id="selectVehicleUsedVo">
+        select u.used_id, u.vehicle_id, v.model_name as vehicle_name, u.license_year, u.license_month, u.license_city, u.mileage,
+               u.transfer_count, u.battery_soh, u.battery_cycles, u.battery_diagnosis, u.battery_report,
+               u.valuation_price, u.valuation_info, u.create_time
+        from stad_vehicle_used u
+        left join stad_vehicle v on u.vehicle_id = v.vehicle_id
+    </sql>
+
+    <select id="selectStadVehicleUsedById" parameterType="Long" resultMap="StadVehicleUsedResult">
+        <include refid="selectVehicleUsedVo"/>
+        where used_id = #{usedId}
+    </select>
+
+    <select id="selectStadVehicleUsedByVehicleId" parameterType="Long" resultMap="StadVehicleUsedResult">
+        <include refid="selectVehicleUsedVo"/>
+        where vehicle_id = #{vehicleId}
+    </select>
+
+    <select id="selectStadVehicleUsedList" parameterType="StadVehicleUsed" resultMap="StadVehicleUsedResult">
+        <include refid="selectVehicleUsedVo"/>
+        <where>
+            <if test="vehicleId != null">
+                AND vehicle_id = #{vehicleId}
+            </if>
+            <if test="licenseCity != null and licenseCity != ''">
+                AND license_city like concat('%', #{licenseCity}, '%')
+            </if>
+        </where>
+        order by used_id desc
+    </select>
+
+    <insert id="insertStadVehicleUsed" parameterType="StadVehicleUsed" useGeneratedKeys="true" keyProperty="usedId">
+        insert into stad_vehicle_used
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="vehicleId != null">vehicle_id,</if>
+            <if test="licenseYear != null">license_year,</if>
+            <if test="licenseMonth != null">license_month,</if>
+            <if test="licenseCity != null">license_city,</if>
+            <if test="mileage != null">mileage,</if>
+            <if test="transferCount != null">transfer_count,</if>
+            <if test="batterySoh != null">battery_soh,</if>
+            <if test="batteryCycles != null">battery_cycles,</if>
+            <if test="batteryDiagnosis != null">battery_diagnosis,</if>
+            <if test="batteryReport != null">battery_report,</if>
+            <if test="valuationPrice != null">valuation_price,</if>
+            <if test="valuationInfo != null">valuation_info,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="vehicleId != null">#{vehicleId},</if>
+            <if test="licenseYear != null">#{licenseYear},</if>
+            <if test="licenseMonth != null">#{licenseMonth},</if>
+            <if test="licenseCity != null">#{licenseCity},</if>
+            <if test="mileage != null">#{mileage},</if>
+            <if test="transferCount != null">#{transferCount},</if>
+            <if test="batterySoh != null">#{batterySoh},</if>
+            <if test="batteryCycles != null">#{batteryCycles},</if>
+            <if test="batteryDiagnosis != null">#{batteryDiagnosis},</if>
+            <if test="batteryReport != null">#{batteryReport},</if>
+            <if test="valuationPrice != null">#{valuationPrice},</if>
+            <if test="valuationInfo != null">#{valuationInfo},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateStadVehicleUsed" parameterType="StadVehicleUsed">
+        update stad_vehicle_used
+        <set>
+            <if test="vehicleId != null">vehicle_id = #{vehicleId},</if>
+            <if test="licenseYear != null">license_year = #{licenseYear},</if>
+            <if test="licenseMonth != null">license_month = #{licenseMonth},</if>
+            <if test="licenseCity != null">license_city = #{licenseCity},</if>
+            <if test="mileage != null">mileage = #{mileage},</if>
+            <if test="transferCount != null">transfer_count = #{transferCount},</if>
+            <if test="batterySoh != null">battery_soh = #{batterySoh},</if>
+            <if test="batteryCycles != null">battery_cycles = #{batteryCycles},</if>
+            <if test="batteryDiagnosis != null">battery_diagnosis = #{batteryDiagnosis},</if>
+            <if test="batteryReport != null">battery_report = #{batteryReport},</if>
+            <if test="valuationPrice != null">valuation_price = #{valuationPrice},</if>
+            <if test="valuationInfo != null">valuation_info = #{valuationInfo},</if>
+        </set>
+        where used_id = #{usedId}
+    </update>
+
+    <delete id="deleteStadVehicleUsedById" parameterType="Long">
+        delete from stad_vehicle_used where used_id = #{usedId}
+    </delete>
+
+    <delete id="deleteStadVehicleUsedByIds" parameterType="Long">
+        delete from stad_vehicle_used where used_id in
+        <foreach item="usedId" collection="array" open="(" separator="," close=")">
+            #{usedId}
+        </foreach>
+    </delete>
+
+</mapper>

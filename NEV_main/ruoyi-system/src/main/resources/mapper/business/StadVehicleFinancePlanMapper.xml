@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.business.mapper.StadVehicleFinancePlanMapper">
+
+    <resultMap type="StadVehicleFinancePlan" id="StadVehicleFinancePlanResult">
+        <result property="planId"         column="plan_id"          />
+        <result property="vehicleId"      column="vehicle_id"       />
+        <result property="vehicleName"    column="vehicle_name"     />
+        <result property="planType"       column="plan_type"        />
+        <result property="planName"       column="plan_name"        />
+        <result property="totalPrice"     column="total_price"      />
+        <result property="downPayment"    column="down_payment"     />
+        <result property="monthlyPayment" column="monthly_payment"  />
+        <result property="months"         column="months"           />
+        <result property="interestRate"   column="interest_rate"    />
+        <result property="totalInterest"  column="total_interest"   />
+        <result property="totalPayable"   column="total_payable"    />
+        <result property="provider"       column="provider"         />
+        <result property="isActive"       column="is_active"        />
+        <result property="sortOrder"      column="sort_order"       />
+        <result property="createTime"     column="create_time"      />
+        <result property="updateTime"     column="update_time"      />
+    </resultMap>
+
+    <sql id="selectVehicleFinancePlanVo">
+        select f.plan_id, f.vehicle_id, v.model_name as vehicle_name, f.plan_type, f.plan_name, f.total_price, f.down_payment,
+               f.monthly_payment, f.months, f.interest_rate, f.total_interest, f.total_payable, f.provider, f.is_active, f.sort_order, f.create_time, f.update_time
+        from stad_vehicle_finance_plan f
+        left join stad_vehicle v on f.vehicle_id = v.vehicle_id
+    </sql>
+
+    <select id="selectStadVehicleFinancePlanById" parameterType="Long" resultMap="StadVehicleFinancePlanResult">
+        <include refid="selectVehicleFinancePlanVo"/>
+        where plan_id = #{planId}
+    </select>
+
+    <select id="selectStadVehicleFinancePlanByVehicleId" parameterType="Long" resultMap="StadVehicleFinancePlanResult">
+        <include refid="selectVehicleFinancePlanVo"/>
+        where vehicle_id = #{vehicleId} order by sort_order asc
+    </select>
+
+    <select id="selectStadVehicleFinancePlanList" parameterType="StadVehicleFinancePlan" resultMap="StadVehicleFinancePlanResult">
+        <include refid="selectVehicleFinancePlanVo"/>
+        <where>
+            <if test="vehicleId != null">
+                AND vehicle_id = #{vehicleId}
+            </if>
+            <if test="planType != null and planType != ''">
+                AND plan_type = #{planType}
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+        </where>
+        order by sort_order asc
+    </select>
+
+    <insert id="insertStadVehicleFinancePlan" parameterType="StadVehicleFinancePlan" useGeneratedKeys="true" keyProperty="planId">
+        insert into stad_vehicle_finance_plan
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="vehicleId != null">vehicle_id,</if>
+            <if test="planType != null and planType != ''">plan_type,</if>
+            <if test="planName != null and planName != ''">plan_name,</if>
+            <if test="totalPrice != null">total_price,</if>
+            <if test="downPayment != null">down_payment,</if>
+            <if test="monthlyPayment != null">monthly_payment,</if>
+            <if test="months != null">months,</if>
+            <if test="interestRate != null">interest_rate,</if>
+            <if test="totalInterest != null">total_interest,</if>
+            <if test="totalPayable != null">total_payable,</if>
+            <if test="provider != null">provider,</if>
+            <if test="isActive != null">is_active,</if>
+            <if test="sortOrder != null">sort_order,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="vehicleId != null">#{vehicleId},</if>
+            <if test="planType != null and planType != ''">#{planType},</if>
+            <if test="planName != null and planName != ''">#{planName},</if>
+            <if test="totalPrice != null">#{totalPrice},</if>
+            <if test="downPayment != null">#{downPayment},</if>
+            <if test="monthlyPayment != null">#{monthlyPayment},</if>
+            <if test="months != null">#{months},</if>
+            <if test="interestRate != null">#{interestRate},</if>
+            <if test="totalInterest != null">#{totalInterest},</if>
+            <if test="totalPayable != null">#{totalPayable},</if>
+            <if test="provider != null">#{provider},</if>
+            <if test="isActive != null">#{isActive},</if>
+            <if test="sortOrder != null">#{sortOrder},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateStadVehicleFinancePlan" parameterType="StadVehicleFinancePlan">
+        update stad_vehicle_finance_plan
+        <set>
+            <if test="vehicleId != null">vehicle_id = #{vehicleId},</if>
+            <if test="planType != null">plan_type = #{planType},</if>
+            <if test="planName != null">plan_name = #{planName},</if>
+            <if test="totalPrice != null">total_price = #{totalPrice},</if>
+            <if test="downPayment != null">down_payment = #{downPayment},</if>
+            <if test="monthlyPayment != null">monthly_payment = #{monthlyPayment},</if>
+            <if test="months != null">months = #{months},</if>
+            <if test="interestRate != null">interest_rate = #{interestRate},</if>
+            <if test="totalInterest != null">total_interest = #{totalInterest},</if>
+            <if test="totalPayable != null">total_payable = #{totalPayable},</if>
+            <if test="provider != null">provider = #{provider},</if>
+            <if test="isActive != null">is_active = #{isActive},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            update_time = sysdate()
+        </set>
+        where plan_id = #{planId}
+    </update>
+
+    <delete id="deleteStadVehicleFinancePlanById" parameterType="Long">
+        delete from stad_vehicle_finance_plan where plan_id = #{planId}
+    </delete>
+
+    <delete id="deleteStadVehicleFinancePlanByIds" parameterType="Long">
+        delete from stad_vehicle_finance_plan where plan_id in
+        <foreach item="planId" collection="array" open="(" separator="," close=")">
+            #{planId}
+        </foreach>
+    </delete>
+
+</mapper>

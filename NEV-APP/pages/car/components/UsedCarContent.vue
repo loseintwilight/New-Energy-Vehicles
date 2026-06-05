@@ -5,7 +5,7 @@
         v-for="car in filteredList"
         :key="car.vehicleId"
         class="car-card"
-        @click="goDetail(car)"
+        @click="goOrder(car)"
       >
         <view class="card-img-wrap">
           <image class="card-img" :src="car.image" mode="aspectFill"></image>
@@ -63,33 +63,99 @@
 </template>
 
 <script>
+import { getUsedCarList, getUsedCarDetail, getInspectionReport, getVehicleSpecs, getCarReviews } from '@/api/car/car'
+
 export default {
   props: {
-    filter: { type: Number, default: 0 }
+    filter: { type: Object, default: () => ({ color: '', model: '', sortDir: null }) }
   },
   emits: ['go-order'],
 
   data() {
     return {
-      carList: [
-        { vehicleId: 'Z220516001', modelName: '小米SU7 后驱 标准版', typeLabel: '官方认证二手车', tags: '优惠5%', image: '/static/images/car/car1.png', color: '海湾蓝', exteriorHex: '#4A7DB4', interiorColor: '极夜黑', interiorHex: '#1a1a1a', wheel: '19英寸钻石轮毂', rangeKm: 700, guidePrice: 20.51, originalPrice: 21.59, firstLicenseDate: '2025-03', mileage: 0.8, transferCount: 0, deliveryTime: '7天内提车' },
-        { vehicleId: 'Z220516002', modelName: '小米SU7 后驱 长续航版', typeLabel: '官方认证二手车', tags: '优惠5%', image: '/static/images/car/car2.png', color: '星环灰', exteriorHex: '#8C8C8C', interiorColor: '银河灰', interiorHex: '#5A5A5A', wheel: '20英寸梅花轮毂', rangeKm: 830, guidePrice: 23.36, originalPrice: 24.59, firstLicenseDate: '2025-01', mileage: 1.2, transferCount: 1, deliveryTime: '7天内提车' }
-      ]
+      carList: []
     }
+  },
+
+  created() {
+    this.fetchCarList()
   },
 
   computed: {
     filteredList() {
       let list = [...this.carList]
-      if (this.filter === 1) list.sort((a, b) => a.guidePrice - b.guidePrice)
-      else if (this.filter === 2) list.sort((a, b) => b.guidePrice - a.guidePrice)
+      if (this.filter.color) {
+        list = list.filter(car => car.color === this.filter.color)
+      }
+      if (this.filter.model) {
+        list = list.filter(car => car.description === this.filter.model)
+      }
+      if (this.filter.sortDir === 'asc') list.sort((a, b) => a.guidePrice - b.guidePrice)
+      else if (this.filter.sortDir === 'desc') list.sort((a, b) => b.guidePrice - a.guidePrice)
       return list
     }
   },
 
   methods: {
+    fetchCarList() {
+      getUsedCarList().then(res => {
+        this.carList = (res.rows || []).map(item => ({
+          vehicleId: item.vehicleId,
+          modelName: item.modelName,
+          title: item.title,
+          guidePrice: item.guidePrice,
+          originalPrice: item.originalPrice,
+          color: item.color || '海湾蓝',
+          tags: item.tags || '',
+          mileage: item.mileage,
+          transferCount: item.transferCount,
+          batterySoh: item.batterySoh,
+          licenseCity: item.licenseCity || '北京',
+          firstLicenseDate: item.licenseYear ? (item.licenseYear + '-' + String(item.licenseMonth || 1).padStart(2, '0')) : '未知',
+          image: item.image || '/static/images/car/car1.png',
+          typeLabel: '官方认证二手车',
+          exteriorHex: item.exteriorHex || '#4A7DB4',
+          interiorColor: item.interiorColor || '极夜黑',
+          interiorHex: item.interiorHex || '#1a1a1a',
+          wheel: item.wheel || '19英寸钻石轮毂',
+          rangeKm: item.rangeKm || 700,
+          deliveryTime: item.publishTime ? '已发布' : '在售',
+          inspectionLevel: 'S级',
+          description: item.description || ''
+        }))
+      }).catch(() => {
+        this.carList = []
+      })
+    },
     goDetail(car) {
-      uni.showToast({ title: car.modelName, icon: 'none' })
+      getUsedCarDetail(car.vehicleId).then(res => {
+        const detail = res.data || {}
+        const modelName = detail.modelName || car.modelName
+        getVehicleSpecs(car.vehicleId).then(sres => {
+          const spec = sres.data || {}
+          getInspectionReport(car.vehicleId).then(ires => {
+            const inspection = ires.data || {}
+            let msg = `${modelName}\n`
+            msg += `首次上牌：${car.firstLicenseDate}\n`
+            msg += `里程：${car.mileage}万km | 过户${car.transferCount}次\n`
+            if (inspection.batterySoh) msg += `电池健康：${inspection.batterySoh}%\n`
+            if (spec.rangeKm) msg += `续航：${spec.rangeKm}km\n`
+            if (spec.batteryCapacity) msg += `电池容量：${spec.batteryCapacity}kWh\n`
+            msg += `检测评级：${detail.inspectionLevel || 'S级'}`
+            uni.showModal({
+              title: '二手车详情',
+              content: msg,
+              showCancel: false
+            })
+          }).catch(() => {
+            uni.showToast({ title: modelName, icon: 'none' })
+          })
+        }).catch(() => {
+          uni.showToast({ title: modelName, icon: 'none' })
+        })
+      }).catch(() => {
+        uni.showToast({ title: car.modelName, icon: 'none' })
+      })
     },
     goOrder(car) {
       const m = {
@@ -103,8 +169,8 @@ export default {
         firstLicenseDate: car.firstLicenseDate,
         mileage: car.mileage,
         transferCount: car.transferCount,
-        batterySoh: 98,
-        inspectionLevel: 'S级',
+        batterySoh: car.batterySoh || 98,
+        inspectionLevel: car.inspectionLevel || 'S级',
         color: car.color,
         exteriorHex: car.exteriorHex,
         interiorColor: car.interiorColor,
@@ -112,7 +178,7 @@ export default {
         wheel: car.wheel,
         rangeKm: car.rangeKm,
         deliveryTime: car.deliveryTime,
-        licenseCity: '北京'
+        licenseCity: car.licenseCity || '北京'
       }
       this.$emit('go-order', m)
     }

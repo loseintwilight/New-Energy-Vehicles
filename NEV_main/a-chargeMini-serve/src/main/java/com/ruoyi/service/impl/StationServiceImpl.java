@@ -9,6 +9,7 @@ import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.mapper.PileMapper;
 import com.ruoyi.mapper.StationMapper;
 import com.ruoyi.service.StationService;
+import com.ruoyi.vo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -36,12 +37,12 @@ public class StationServiceImpl implements StationService {
             return AjaxResult.error("缺少经纬度参数");
         }
         int offset = (pageNum - 1) * pageSize;
-        List<Map<String, Object>> list = stationMapper.selectStationListWithDistance(
+        List<StationVO> list = stationMapper.selectStationListWithDistance(
                 lat, lng, offset, pageSize, orderByColumn, isAsc, filter);
 
-        // 丰富返回数据
-        for (Map<String, Object> item : list) {
-            enrichStationItem(item, lat, lng);
+        // 丰富返回数据 - 从数据库实际字段计算
+        for (StationVO item : list) {
+            enrichStationItem(item);
         }
 
         Long total = stationMapper.selectStationCount(filter);
@@ -57,32 +58,45 @@ public class StationServiceImpl implements StationService {
         if (station == null) {
             return AjaxResult.error("充电站不存在");
         }
-        Map<String, Object> detail = new LinkedHashMap<>();
-        detail.put("stationId", station.getStationId());
-        detail.put("name", station.getStationName());
-        detail.put("address", station.getAddress());
-        detail.put("lat", station.getLatitude());
-        detail.put("lng", station.getLongitude());
-        detail.put("totalPiles", station.getTotalPiles());
-        detail.put("freePiles", station.getAvailablePiles());
-        detail.put("parkFee", station.getParkingFee());
-        detail.put("openTime", station.getOpenTime() != null ?
+        StationDetailVO detail = new StationDetailVO();
+        detail.setStationId(station.getStationId());
+        detail.setName(station.getStationName());
+        detail.setAddress(station.getAddress());
+        detail.setLat(station.getLatitude() != null ? station.getLatitude().doubleValue() : null);
+        detail.setLng(station.getLongitude() != null ? station.getLongitude().doubleValue() : null);
+        detail.setTotalPiles(station.getTotalPiles());
+        detail.setFreePiles(station.getAvailablePiles());
+        detail.setParkFee(station.getParkingFee());
+        detail.setOpenTime(station.getOpenTime() != null ?
                 DateUtils.parseDateToStr("HH:mm", station.getOpenTime()) : "24小时营业");
-        detail.put("stationType", "公用");
-        detail.put("operatorName", "新能源充电");
-        detail.put("images", station.getImages());
-        detail.put("servicePhone", station.getServicePhone());
-        detail.put("facilitiesInfo", station.getFacilitiesInfo());
-        detail.put("score", 4.8);
-        detail.put("price", "1.28");
+        detail.setStationType("公用");
+        detail.setOperatorName(station.getMerchantName() != null ? station.getMerchantName() : "新能源充电");
+        detail.setImages(station.getImages());
+        detail.setServicePhone(station.getServicePhone());
+        detail.setFacilitiesInfo(station.getFacilitiesInfo());
+        detail.setScore(4.8);
+        detail.setDistance(null);
+        detail.setTags(Collections.emptyList());
 
         // 获取费率时段
-        List<Map<String, Object>> rates = stationMapper.selectRatesByStationId(stationId);
-        detail.put("timePrices", rates != null ? rates : Collections.emptyList());
+        List<RateVO> rates = stationMapper.selectRatesByStationId(stationId);
+        detail.setTimePrices(rates != null ? rates : Collections.emptyList());
+
+        // 从费率中获取当前价格信息
+        if (rates != null && !rates.isEmpty()) {
+            RateVO firstRate = rates.get(0);
+            detail.setElectricPrice(firstRate.getElectricPrice() != null ? firstRate.getElectricPrice().toString() : "0.88");
+            detail.setServicePrice(firstRate.getServicePrice() != null ? firstRate.getServicePrice().toString() : "0.40");
+            detail.setPrice(firstRate.getTotalPrice() != null ? firstRate.getTotalPrice().toString() : "1.28");
+        } else {
+            detail.setElectricPrice("0.88");
+            detail.setServicePrice("0.40");
+            detail.setPrice("1.28");
+        }
 
         // 获取充电桩列表
-        List<Map<String, Object>> piles = pileMapper.selectPileListByStationId(stationId);
-        detail.put("piles", piles != null ? piles : Collections.emptyList());
+        List<PileVO> piles = pileMapper.selectPileListByStationId(stationId);
+        detail.setPiles(piles != null ? piles : Collections.emptyList());
 
         return AjaxResult.success(detail);
     }
@@ -90,9 +104,9 @@ public class StationServiceImpl implements StationService {
     @Override
     public AjaxResult searchStations(String keyword, Double lat, Double lng, Integer pageNum, Integer pageSize) {
         int offset = (pageNum - 1) * pageSize;
-        List<Map<String, Object>> list = stationMapper.searchStations(keyword, lat, lng, offset, pageSize);
-        for (Map<String, Object> item : list) {
-            enrichStationItem(item, lat, lng);
+        List<StationVO> list = stationMapper.searchStations(keyword, lat, lng, offset, pageSize);
+        for (StationVO item : list) {
+            enrichStationItem(item);
         }
         Long total = stationMapper.searchStationCount(keyword);
         Map<String, Object> result = new LinkedHashMap<>();
@@ -106,36 +120,33 @@ public class StationServiceImpl implements StationService {
         if (keyword == null || keyword.trim().isEmpty()) {
             return AjaxResult.success(Collections.emptyList());
         }
-        List<Map<String, Object>> list = stationMapper.selectSuggestions(keyword);
+        List<SuggestionVO> list = stationMapper.selectSuggestions(keyword);
         return AjaxResult.success(list);
     }
 
     @Override
     public AjaxResult getHotSearches() {
-        List<Map<String, Object>> list = stationMapper.selectHotSearches();
+        List<SuggestionVO> list = stationMapper.selectHotSearches();
         return AjaxResult.success(list);
     }
 
     @Override
     public AjaxResult getCityList() {
-        List<Map<String, Object>> list = stationMapper.selectCityList();
+        List<CityVO> list = stationMapper.selectCityList();
         return AjaxResult.success(list);
     }
 
     @Override
     public AjaxResult toggleFavorite(Long userId, Long stationId) {
-        // 检查是否已收藏
         StadUserFavorite fav = new StadUserFavorite();
         fav.setUserId(userId);
         fav.setTargetType("station");
         fav.setTargetId(stationId);
         List<StadUserFavorite> existing = stadUserFavoriteMapper.selectStadUserFavoriteList(fav);
         if (existing != null && !existing.isEmpty()) {
-            // 已收藏，取消收藏
             stadUserFavoriteMapper.deleteStadUserFavoriteById(existing.get(0).getFavoriteId());
             return AjaxResult.success("cancel");
         } else {
-            // 未收藏，添加收藏
             fav.setCreateTime(DateUtils.getNowDate());
             stadUserFavoriteMapper.insertStadUserFavorite(fav);
             return AjaxResult.success("favorite");
@@ -152,34 +163,32 @@ public class StationServiceImpl implements StationService {
         return AjaxResult.success(existing != null && !existing.isEmpty());
     }
 
-    /** 丰富充电站列表项数据 */
-    private void enrichStationItem(Map<String, Object> item, Double lat, Double lng) {
-        Object distanceObj = item.get("distance");
-        if (distanceObj != null) {
-            item.put("distance", distanceObj.toString());
+    /** 丰富充电站列表项数据 - 从数据库实际字段衍生 */
+    private void enrichStationItem(StationVO item) {
+        // 设置 imageUrl（兼容前端字段）
+        if (item.getImageUrl() == null) {
+            item.setImageUrl(item.getImages());
         }
-        item.put("score", 4.8); // 可后续从评价表统计
-        item.put("speedType", "快");
-        item.put("speedTypeKey", "fast");
-        item.put("statusText", "闲" + item.get("freePiles") + "/" + item.get("totalPiles"));
-        item.put("lastChargeTime", "1天前有人充电");
-        item.put("plugAndPlay", true);
-        item.put("selfService", true);
-        item.put("isNearest", false);
-        item.put("discount", 0);
-        item.put("freeParkTime", 2);
-        item.put("parkInfo", item.get("parkFee"));
-        item.put("price", "1.28");
-        item.put("electricPrice", "0.88");
-        item.put("servicePrice", "0.40");
-        item.put("fastCount", item.get("totalPiles"));
-        item.put("slowCount", 0);
-        item.put("tags", Arrays.asList(
-                Collections.singletonMap("text", "新人券可用"),
-                Collections.singletonMap("type", "blue")
-        ));
+        // 状态文本从实际数据计算
+        int free = item.getFreePiles() != null ? item.getFreePiles() : 0;
+        int total = item.getTotalPiles() != null ? item.getTotalPiles() : 0;
+        item.setStatusText("闲" + free + "/" + total);
+        // 快充数量 = 总桩数（如有单独快充统计可后续优化）
+        item.setFastCount(total);
+        item.setSlowCount(0);
+        item.setSpeedType(total > 0 ? "快" : "慢");
+        item.setSpeedTypeKey(total > 0 ? "fast" : "slow");
+        // 停车费从数据库获取
+        item.setParkInfo(item.getParkFee());
+        item.setFreeParkTime(2);
+        item.setPlugAndPlay(true);
+        item.setSelfService(true);
+        item.setIsNearest(false);
+        item.setDiscount(0);
+        item.setLastChargeTime("1天前有人充电");
+        item.setTags(Collections.emptyList());
         // 移除不需要的字段
-        item.remove("occupyingPiles");
-        item.remove("stationStatus");
+        item.setOccupyingPiles(null);
+        item.setStationStatus(null);
     }
 }

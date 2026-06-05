@@ -5,7 +5,7 @@
         v-for="car in filteredList"
         :key="car.vehicleId"
         class="car-card"
-        @click="goDetail(car)"
+        @click="goOrder(car)"
       >
         <view class="card-img-wrap">
           <image class="card-img" :src="car.image" mode="aspectFill"></image>
@@ -55,36 +55,101 @@
 </template>
 
 <script>
+import { getCarList, getVehicleSpecs, getCarReviews, getCarDetail } from '@/api/car/car'
+
 export default {
   props: {
-    filter: { type: Number, default: 0 }
+    filter: { type: Object, default: () => ({ color: '', model: '', sortDir: null }) }
   },
   emits: ['go-order'],
 
   data() {
     return {
-      carList: [
-        { vehicleId: 'X220516001', modelName: '小米SU7 后驱 标准版', typeLabel: '全新现车', tags: '', image: '/static/images/car/car1.png', color: '海湾蓝', exteriorHex: '#4A7DB4', interiorColor: '极夜黑', interiorHex: '#1a1a1a', wheel: '19英寸钻石轮毂', rangeKm: 700, guidePrice: 21.59, deliveryTime: '7天内提车' },
-        { vehicleId: 'X220516002', modelName: '小米SU7 后驱 标准版', typeLabel: '全新现车', tags: '', image: '/static/images/car/car2.png', color: '星环灰', exteriorHex: '#8C8C8C', interiorColor: '银河灰', interiorHex: '#5A5A5A', wheel: '20英寸梅花轮毂', rangeKm: 700, guidePrice: 21.59, deliveryTime: '7天内提车' },
-        { vehicleId: 'X220516003', modelName: '小米SU7 后驱 长续航版', typeLabel: '全新现车', tags: '热销', image: '/static/images/car/car3.png', color: '橄榄绿', exteriorHex: '#5C7A4A', interiorColor: '极夜黑', interiorHex: '#1a1a1a', wheel: '20英寸锋刃轮毂', rangeKm: 830, guidePrice: 24.59, deliveryTime: '7天内提车' },
-        { vehicleId: 'X220516004', modelName: '小米SU7 四驱 高性能版', typeLabel: '全新现车', tags: '', image: '/static/images/car/car1.png', color: '熔岩橙', exteriorHex: '#D4732A', interiorColor: '珊瑚红', interiorHex: '#B84C4C', wheel: '21英寸运动轮毂', rangeKm: 750, guidePrice: 29.99, deliveryTime: '7天内提车' },
-        { vehicleId: 'X220516005', modelName: '小米SU7 四驱 高性能版', typeLabel: '全新现车', tags: '', image: '/static/images/car/car2.png', color: '珍珠白', exteriorHex: '#F0F0F0', interiorColor: '银河灰', interiorHex: '#5A5A5A', wheel: '21英寸双层锻造梅花轮毂', rangeKm: 750, guidePrice: 29.99, deliveryTime: '7天内提车' }
-      ]
+      carList: []
     }
   },
 
   computed: {
     filteredList() {
       let list = [...this.carList]
-      if (this.filter === 1) list.sort((a, b) => a.guidePrice - b.guidePrice)
-      else if (this.filter === 2) list.sort((a, b) => b.guidePrice - a.guidePrice)
+      if (this.filter.color) {
+        list = list.filter(car => car.color === this.filter.color)
+      }
+      if (this.filter.model) {
+        list = list.filter(car => car.description === this.filter.model)
+      }
+      if (this.filter.sortDir === 'asc') list.sort((a, b) => a.guidePrice - b.guidePrice)
+      else if (this.filter.sortDir === 'desc') list.sort((a, b) => b.guidePrice - a.guidePrice)
       return list
     }
   },
 
+  created() {
+    this.fetchCarList()
+  },
+
   methods: {
+    fetchCarList() {
+      const carImages = [
+        '/static/images/car/main/比亚迪汉EV冠军版 .jpg',
+        '/static/images/car/main/特斯拉Model Y.png',
+        '/static/images/car/main/蔚来ES6.jpg',
+        '/static/images/car/main/小鹏p7i.jpeg',
+        '/static/images/car/main/理想L7.jpg',
+        '/static/images/car/main/五菱宏光MINI EV 马卡龙.jpg',
+        '/static/images/car/main/比亚迪汉EV 创世版.jpg',
+        '/static/images/car/main/特斯拉Model3.jpg'
+      ]
+      getCarList().then(res => {
+        this.carList = (res.rows || []).map((car, index) => ({
+          vehicleId: car.vehicleId,
+          modelName: car.modelName,
+          title: car.title,
+          guidePrice: car.guidePrice,
+          color: car.color || '海湾蓝',
+          tags: car.tags || '',
+          image: carImages[index] || car.image || '/static/images/car/car1.png',
+          typeLabel: car.vehicleType === 'new' ? '全新现车' : '二手车',
+          exteriorHex: car.exteriorHex || '#4A7DB4',
+          interiorColor: car.interiorColor || '极夜黑',
+          interiorHex: car.interiorHex || '#1a1a1a',
+          wheel: car.wheel || '19英寸钻石轮毂',
+          rangeKm: car.rangeKm || 700,
+          deliveryTime: car.publishTime ? '已发布' : '现车供应',
+          description: car.description || ''
+        }))
+      }).catch(() => {
+        this.carList = []
+      })
+    },
     goDetail(car) {
-      uni.showToast({ title: car.modelName, icon: 'none' })
+      getCarDetail(car.vehicleId).then(res => {
+        const detail = res.data || {}
+        const modelName = detail.modelName || car.modelName
+        getVehicleSpecs(car.vehicleId).then(sres => {
+          const spec = sres.data || {}
+          getCarReviews(car.vehicleId).then(rres => {
+            const reviews = rres.data || []
+            let msg = `${modelName}\n`
+            if (spec.rangeKm) msg += `续航：${spec.rangeKm}km\n`
+            if (spec.batteryCapacity) msg += `电池：${spec.batteryCapacity}kWh\n`
+            if (spec.chargeTimeFast) msg += `快充：${spec.chargeTimeFast}h\n`
+            const avgRating = reviews.length ? (reviews.reduce((s, r) => s + (r.rating || 5), 0) / reviews.length).toFixed(1) : '暂无'
+            msg += `评价：${reviews.length}条 · 平均${avgRating}分`
+            uni.showModal({
+              title: '车辆详情',
+              content: msg,
+              showCancel: false
+            })
+          }).catch(() => {
+            uni.showToast({ title: modelName, icon: 'none' })
+          })
+        }).catch(() => {
+          uni.showToast({ title: modelName, icon: 'none' })
+        })
+      }).catch(() => {
+        uni.showToast({ title: car.modelName, icon: 'none' })
+      })
     },
     goOrder(car) {
       const m = {

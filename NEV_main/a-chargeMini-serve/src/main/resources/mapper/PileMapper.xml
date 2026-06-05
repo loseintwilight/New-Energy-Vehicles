@@ -2,15 +2,31 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.mapper.PileMapper">
 
+    <!-- 充电桩 ResultMap -->
+    <resultMap id="PileVOResultMap" type="com.ruoyi.vo.PileVO">
+        <id column="pileId" property="pileId"/>
+        <result column="pileCode" property="pileCode"/>
+        <result column="pileType" property="pileType"/>
+        <result column="powerKw" property="powerKw"/>
+        <result column="connectorType" property="connectorType"/>
+        <result column="pileStatus" property="pileStatus"/>
+        <result column="statusText" property="statusText"/>
+        <result column="voltage" property="voltage"/>
+        <result column="current" property="current"/>
+        <result column="powerNow" property="powerNow"/>
+        <result column="lastHeartbeat" property="lastHeartbeat"/>
+        <result column="sortOrder" property="sortOrder"/>
+    </resultMap>
+
     <!-- 获取充电站下的充电桩列表 -->
-    <select id="selectPileListByStationId" resultType="java.util.LinkedHashMap">
+    <select id="selectPileListByStationId" resultMap="PileVOResultMap">
         SELECT
             p.pile_id AS pileId,
             p.pile_code AS pileCode,
-            p.pile_type AS `type`,
-            p.power_kw AS power,
+            p.pile_type AS pileType,
+            p.power_kw AS powerKw,
             p.connector_type AS connectorType,
-            p.pile_status AS `status`,
+            p.pile_status AS pileStatus,
             CASE
                 WHEN p.pile_status = '0' THEN '空闲'
                 WHEN p.pile_status = '1' THEN '充电中'
@@ -21,7 +37,7 @@
             p.voltage,
             p.current_a AS `current`,
             p.power_now AS powerNow,
-            p.last_heartbeat,
+            p.last_heartbeat AS lastHeartbeat,
             p.sort_order AS sortOrder
         FROM stad_charging_pile p
         WHERE p.station_id = #{stationId}
@@ -29,14 +45,14 @@
     </select>
 
     <!-- 根据桩编号获取充电桩 -->
-    <select id="selectPileByPileNo" resultType="java.util.LinkedHashMap">
+    <select id="selectPileByPileNo" resultMap="PileVOResultMap">
         SELECT
             p.pile_id AS pileId,
             p.pile_code AS pileCode,
-            p.pile_type AS `type`,
-            p.power_kw AS power,
+            p.pile_type AS pileType,
+            p.power_kw AS powerKw,
             p.connector_type AS connectorType,
-            p.pile_status AS `status`,
+            p.pile_status AS pileStatus,
             p.voltage,
             p.current_a AS `current`,
             p.power_now AS powerNow,

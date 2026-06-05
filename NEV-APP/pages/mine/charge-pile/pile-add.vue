@@ -14,8 +14,8 @@
           <text class="back-icon">❮</text>
         </view>
         <view class="header-info">
-          <text class="header-title">添加充电桩</text>
-          <text class="header-sub">录入新充电桩信息</text>
+          <text class="header-title">{{ isEditMode ? '编辑充电桩' : '添加充电桩' }}</text>
+            <text class="header-sub">{{ isEditMode ? '修改充电桩信息' : '录入新充电桩信息' }}</text>
         </view>
         <view class="header-right" @tap="submitForm">
           <text class="submit-text">提交</text>
@@ -122,6 +122,8 @@ export default {
   data() {
     return {
       isReady: false,
+      isEditMode: false,
+      editPileId: '',
       glowRows: [],
       stationOptions: ['济南高新区充电站', '济南历下区旗舰站', '济南市中区超充站', '济南天桥区充电站', '济南槐荫区快充站'],
       typeOptions: ['直流快充', '直流超充', '交流慢充'],
@@ -147,7 +149,40 @@ export default {
     var self = this
     setTimeout(function() { self.isReady = true }, 200)
   },
+  onLoad: function(options) {
+    if (options && options.mode === 'edit' && options.pileId) {
+      this.isEditMode = true
+      this.editPileId = options.pileId
+      this.loadPileData(options.pileId)
+    }
+  },
   methods: {
+    loadPileData: function(pileId) {
+      var USE_MOCK = true
+      var self = this
+      if (USE_MOCK) {
+        /* 模拟根据pileId加载桩数据 */
+        var mockData = {
+          'DC-001': { station: '济南奥体中心充电站', code: 'DC-001', name: '1号快充桩', type: '直流快充', power: '120', voltage: '750', connector: 'GB/T 20234 (国标)', connCount: '2', rate: '标准充电费率', serviceFee: '0.40', remark: '位于A区靠入口位置' },
+          'DC-002': { station: '济南奥体中心充电站', code: 'DC-002', name: '2号超充桩', type: '直流超充', power: '180', voltage: '1000', connector: 'GB/T 20234 (国标)', connCount: '2', rate: '超充专属费率', serviceFee: '0.60', remark: '超充专区，支持480kW' },
+          'AC-001': { station: '济南奥体中心充电站', code: 'AC-001', name: '3号慢充桩', type: '交流慢充', power: '7', voltage: '220', connector: 'GB/T 20234 (国标)', connCount: '1', rate: '夜间优惠费率', serviceFee: '0.20', remark: '适合长时间停放' }
+        }
+        var data = mockData[pileId] || mockData['DC-001']
+        if (data) {
+          self.form.station = data.station
+          self.form.code = data.code
+          self.form.name = data.name
+          self.form.type = data.type
+          self.form.power = data.power
+          self.form.voltage = data.voltage
+          self.form.connector = data.connector
+          self.form.connCount = data.connCount
+          self.form.rate = data.rate
+          self.form.serviceFee = data.serviceFee
+          self.form.remark = data.remark
+        }
+      }
+    },
     buildGlowRows() {
       var rows = []
       var colors = ['#f59e0b', '#f97316', '#fb923c', '#fbbf24']
@@ -170,7 +205,8 @@ export default {
     submitForm() {
       if (!this.form.station) { uni.showToast({ title: '请选择站点', icon: 'none' }); return }
       if (!this.form.name) { uni.showToast({ title: '请输入充电桩名称', icon: 'none' }); return }
-      uni.showToast({ title: '添加成功', icon: 'success' })
+      var msg = this.isEditMode ? '修改成功' : '添加成功'
+      uni.showToast({ title: msg, icon: 'success' })
       setTimeout(function() { uni.navigateBack() }, 1500)
     }
   }
@@ -188,7 +224,7 @@ export default {
   50% { opacity: 0.5; }
   100% { opacity: 0; transform: scale(1.4); }
 }
-.overlay-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, rgba(255,247,237,0.3) 0%, rgba(255,251,235,0.43) 38%, rgba(254,252,232,0.55) 66%, rgba(255,247,237,0.63) 100%); z-index: 1; pointer-events: none; }
+.overlay-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, rgba(255,247,237,0.92) 0%, rgba(255,251,235,0.95) 38%, rgba(254,252,232,0.96) 66%, rgba(255,247,237,0.97) 100%); z-index: 1; pointer-events: none; }
 .main-scroll { position: relative; z-index: 2; }
 .header { position: relative; padding: 30rpx 28rpx 24rpx; display: flex; align-items: center; }
 .header-bg { position: absolute; top: -60rpx; left: -40rpx; right: -40rpx; bottom: 0; background: radial-gradient(ellipse at 20% 30%, rgba(251,146,60,0.12) 0%, transparent 60%), radial-gradient(ellipse at 80% 50%, rgba(250,204,21,0.1) 0%, transparent 55%); border-radius: 0 0 60rpx 60rpx; }
@@ -203,9 +239,9 @@ export default {
 .info-section { margin: 0 24rpx 20rpx; }
 .section-title { display: flex; align-items: center; margin-bottom: 16rpx; }
 .title-line { width: 6rpx; height: 32rpx; border-radius: 3rpx; background: linear-gradient(180deg, #f59e0b, #f97316); margin-right: 12rpx; }
-.title-line.line-green { background: linear-gradient(180deg, #22c55e, #16a34a); }
-.title-line.line-blue { background: linear-gradient(180deg, #3b82f6, #2563eb); }
-.title-line.line-purple { background: linear-gradient(180deg, #a855f7, #7c3aed); }
+.title-line.line-green { background: linear-gradient(180deg, #d97706, #f59e0b); }
+.title-line.line-blue { background: linear-gradient(180deg, #f59e0b, #fb923c); }
+.title-line.line-purple { background: linear-gradient(180deg, #fb923c, #fbbf24); }
 .title-text { font-size: 30rpx; font-weight: 700; color: #1c1917; }
 .info-card { background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); border-radius: 20rpx; padding: 24rpx; box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.04); }
 .form-row { display: flex; align-items: center; padding: 16rpx 0; border-bottom: 1rpx solid #f5f0e8; }

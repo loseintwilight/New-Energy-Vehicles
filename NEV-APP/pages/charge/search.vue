@@ -162,7 +162,7 @@
 </template>
 
 <script>
-import { searchStations } from '@/api/charge/station.js'
+import { searchStations, getHotSearches, getSuggestions } from '@/api/charge/station.js'
 import safeAreaMixin from '@/mixins/safe-area.js'
 import ChargeHeader from '@/components/charge-header/charge-header.vue'
 
@@ -184,38 +184,49 @@ export default {
       searchParams: { pageNum: 1, pageSize: 10, lat: 36.548, lng: 116.801 },
 
       historyList: [],
-      hotList: [
-        { name: '济南西站', count: 1256 },
-        { name: '万达广场', count: 982 },
-        { name: '奥体中心', count: 876 },
-        { name: '齐鲁软件园', count: 654 },
-        { name: '济南东站', count: 543 },
-        { name: '和谐广场', count: 432 }
-      ],
-
+      hotList: [],
+      suggestList: [],
+      suggestTimer: null,
       recommendList: [
         { icon: 'map-fill', name: '附近最近', desc: '距离优先', bgColor: '#e8f8ee', iconColor: '#07c160' },
         { icon: 'star-fill', name: '价格最低', desc: '省钱首选', bgColor: '#fff7e6', iconColor: '#fa8c16' },
         { icon: 'car', name: '快充站点', desc: '极速充电', bgColor: '#e6f7ff', iconColor: '#1890ff' },
         { icon: 'star-fill', name: '高评分站', desc: '品质保障', bgColor: '#fff0f6', iconColor: '#eb2f96' }
       ],
-
-      suggestList: [
-        { name: '济南西站充电站', address: '济南市槐荫区日照路' },
-        { name: '济南西站公共充电站', address: '济南西站停车场B2层' },
-        { name: '济南西部新城充电站', address: '济南市槐荫区青岛路' }
-      ]
     }
   },
 
   onLoad() {
     this.loadHistory()
+    this.loadHotSearches()
   },
 
   methods: {
     loadHistory() {
       const saved = uni.getStorageSync('searchHistory')
       this.historyList = saved || []
+    },
+
+    async loadHotSearches() {
+      try {
+        const res = await getHotSearches()
+        this.hotList = res.data || []
+      } catch (e) {
+        this.hotList = []
+      }
+    },
+
+    async loadSuggestions(keyword) {
+      if (!keyword || keyword.trim().length === 0) {
+        this.suggestList = []
+        return
+      }
+      try {
+        const res = await getSuggestions(keyword)
+        this.suggestList = res.data || []
+      } catch (e) {
+        this.suggestList = []
+      }
     },
 
     saveHistory(keyword) {
@@ -246,9 +257,15 @@ export default {
       if (val.length > 0) {
         this.showSuggest = true
         this.searched = false
+        // 防抖获取联想建议
+        if (this.suggestTimer) clearTimeout(this.suggestTimer)
+        this.suggestTimer = setTimeout(() => {
+          this.loadSuggestions(val)
+        }, 300)
       } else {
         this.showSuggest = false
         this.searched = false
+        this.suggestList = []
       }
     },
 
@@ -302,6 +319,7 @@ export default {
         this.loadStatus = list.length < this.searchParams.pageSize ? 'noMore' : 'more'
       } catch (e) {
         if (isRefresh) this.isRefreshing = false
+        console.log('[fetchResults] API失败，使用兜底数据:', e)
         this.loadMockResults()
       }
 

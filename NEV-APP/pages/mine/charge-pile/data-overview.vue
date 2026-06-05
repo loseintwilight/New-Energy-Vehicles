@@ -100,12 +100,12 @@
               <svg class="line-svg" viewBox="0 0 300 160" preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="energyGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="rgba(34,197,94,0.35)"></stop>
-                    <stop offset="100%" stop-color="rgba(34,197,94,0.02)"></stop>
+                    <stop offset="0%" stop-color="rgba(245,158,11,0.35)"></stop>
+                    <stop offset="100%" stop-color="rgba(245,158,11,0.02)"></stop>
                   </linearGradient>
                 </defs>
                 <polygon :points="energyAreaPoints" fill="url(#energyGrad)"></polygon>
-                <polyline :points="energyLinePoints" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                <polyline :points="energyLinePoints" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
               </svg>
             </view>
             <view class="line-labels">
@@ -468,21 +468,21 @@ export default {
   opacity: 0.12;
 }
 .kpi-0 .kpi-glow { background: #f97316; }
-.kpi-1 .kpi-glow { background: #22c55e; }
-.kpi-2 .kpi-glow { background: #3b82f6; }
-.kpi-3 .kpi-glow { background: #8b5cf6; }
+.kpi-1 .kpi-glow { background: #d97706; }
+.kpi-2 .kpi-glow { background: #f59e0b; }
+.kpi-3 .kpi-glow { background: #fb923c; }
 .kpi-icon-wrap {
   width: 48rpx; height: 48rpx; border-radius: 14rpx;
   display: flex; align-items: center; justify-content: center; margin-bottom: 16rpx;
 }
 .kpi-0 .kpi-icon-wrap { background: rgba(249,115,22,0.12); }
-.kpi-1 .kpi-icon-wrap { background: rgba(34,197,94,0.12); }
-.kpi-2 .kpi-icon-wrap { background: rgba(59,130,246,0.12); }
-.kpi-3 .kpi-icon-wrap { background: rgba(139,92,246,0.12); }
+.kpi-1 .kpi-icon-wrap { background: rgba(217,119,6,0.12); }
+.kpi-2 .kpi-icon-wrap { background: rgba(245,158,11,0.12); }
+.kpi-3 .kpi-icon-wrap { background: rgba(251,146,60,0.12); }
 .kpi-0 .kpi-icon { color: #f97316; }
-.kpi-1 .kpi-icon { color: #22c55e; }
-.kpi-2 .kpi-icon { color: #3b82f6; }
-.kpi-3 .kpi-icon { color: #8b5cf6; }
+.kpi-1 .kpi-icon { color: #d97706; }
+.kpi-2 .kpi-icon { color: #f59e0b; }
+.kpi-3 .kpi-icon { color: #fb923c; }
 .kpi-icon { font-size: 28rpx; font-weight: bold; }
 .kpi-body { position: relative; z-index: 1; }
 .kpi-value { font-size: 36rpx; font-weight: 700; color: #1f2937; display: block; }
@@ -509,10 +509,10 @@ export default {
   width: 6rpx; height: 28rpx; border-radius: 3rpx;
   background: linear-gradient(180deg, #f97316, #fbbf24);
 }
-.title-line.line-green { background: linear-gradient(180deg, #22c55e, #86efac); }
+.title-line.line-green { background: linear-gradient(180deg, #d97706, #f59e0b); }
 .title-line.line-orange { background: linear-gradient(180deg, #f97316, #fb923c); }
-.title-line.line-purple { background: linear-gradient(180deg, #8b5cf6, #c4b5fd); }
-.title-line.line-blue { background: linear-gradient(180deg, #3b82f6, #93c5fd); }
+.title-line.line-purple { background: linear-gradient(180deg, #fb923c, #fbbf24); }
+.title-line.line-blue { background: linear-gradient(180deg, #f59e0b, #fcd34d); }
 .title-text { font-size: 28rpx; font-weight: 700; color: #1f2937; }
 .title-tip { font-size: 20rpx; color: #cbd5e1; margin-left: auto; }
 .bar-more { display: flex; align-items: center; gap: 4rpx; margin-left: auto; }
@@ -588,11 +588,11 @@ export default {
 .dist-bar-container { width: 44rpx; height: 160rpx; background: #f9fafb; border-radius: 8rpx 8rpx 0 0; display: flex; align-items: flex-end; overflow: hidden; }
 .dist-bar {
   width: 100%; border-radius: 8rpx 8rpx 0 0; transition: height 0.6s;
-  background: linear-gradient(180deg, #8b5cf6, #c4b5fd);
+  background: linear-gradient(180deg, #f59e0b, #fbbf24);
 }
 .dist-bar-inner { width: 100%; height: 100%; }
 .dist-label { font-size: 18rpx; color: #9ca3af; }
-.dist-val { font-size: 16rpx; color: #8b5cf6; font-weight: 600; }
+.dist-val { font-size: 16rpx; color: #f59e0b; font-weight: 600; }
 
 /* ========== 用户分析 ========== */
 .user-stats { display: flex; flex-wrap: wrap; gap: 16rpx; }
@@ -602,7 +602,7 @@ export default {
 }
 .user-card-val { font-size: 40rpx; font-weight: 700; color: #1f2937; display: block; }
 .user-card-label { font-size: 22rpx; color: #9ca3af; display: block; margin-top: 6rpx; }
-.user-card-sub { font-size: 20rpx; color: #22c55e; display: block; margin-top: 4rpx; }
+.user-card-sub { font-size: 20rpx; color: #d97706; display: block; margin-top: 4rpx; }
 
 /* ========== 按钮交互 ========== */
 .btn-hover { opacity: 0.7; }

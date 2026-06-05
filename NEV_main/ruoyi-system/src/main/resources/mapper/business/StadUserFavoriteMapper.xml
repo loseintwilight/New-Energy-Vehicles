@@ -32,13 +32,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <include refid="selectUserFavoriteVo"/>
         <where>
             <if test="userId != null">
-                AND user_id = #{userId}
+                AND f.user_id = #{userId}
             </if>
             <if test="targetType != null and targetType != ''">
-                AND target_type = #{targetType}
+                AND f.target_type = #{targetType}
             </if>
             <if test="targetId != null">
-                AND target_id = #{targetId}
+                AND f.target_id = #{targetId}
             </if>
         </where>
         order by favorite_id desc

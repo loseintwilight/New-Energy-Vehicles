@@ -1,171 +1,267 @@
 <template>
   <view class="page" :class="{ 'page-ready': isReady }">
-    <!-- 背景装饰 -->
+    <!-- 背景光晕矩阵（暖色琥珀系） -->
     <view class="glow-matrix">
       <view class="glow-row" v-for="(row, ri) in glowRows" :key="ri">
-        <view class="glow-spot" v-for="(dot, ci) in row.dots" :key="ci" :style="dot.style"></view>
+        <view
+          class="glow-spot"
+          v-for="(dot, ci) in row.dots"
+          :key="ci"
+          :style="dot.style"
+        ></view>
       </view>
     </view>
     <view class="overlay-mask"></view>
 
-    <scroll-view scroll-y class="main-scroll" :show-scrollbar="false">
+    <!-- 主滚动区 -->
+    <scroll-view scroll-y class="main-scroll" :show-scrollbar="false" @scrolltolower="onLoadMore" :lower-threshold="120">
       <!-- 顶栏 -->
       <view class="header">
         <view class="header-bg"></view>
         <view class="back-btn" hover-class="btn-hover" @tap="goBack">
-          <text class="back-icon">❮</text>
+          <text class="back-icon">‹</text>
         </view>
         <view class="header-info">
-          <text class="header-title">订单管理</text>
-          <text class="header-sub">共 {{ orderList.length }} 笔订单</text>
+          <text class="header-title">车辆订单</text>
+          <text class="header-sub">共 {{ filteredOrders.length }} 笔订单</text>
         </view>
       </view>
 
-      <!-- 订单统计 -->
-      <view class="stats-section">
-        <view class="stats-row">
-          <view class="stat-card stat-all" @tap="switchTab('all')">
-            <text class="stat-num">{{ orderList.length }}</text>
-            <text class="stat-label">全部</text>
-          </view>
-          <view class="stat-card stat-pending" @tap="switchTab('pending_payment')">
-            <text class="stat-num">{{ statsCount('pending_payment') }}</text>
-            <text class="stat-label">待付款</text>
-          </view>
-          <view class="stat-card stat-paid" @tap="switchTab('paid')">
-            <text class="stat-num">{{ statsCount('paid') }}</text>
-            <text class="stat-label">已付款</text>
-          </view>
-          <view class="stat-card stat-done" @tap="switchTab('completed')">
-            <text class="stat-num">{{ statsCount('completed') }}</text>
-            <text class="stat-label">已完成</text>
-          </view>
+      <!-- 统计概览条（3个毛玻璃小卡片横排） -->
+      <view class="stats-bar">
+        <view class="stat-item">
+          <text class="stat-val">{{ todayOrderCount }}</text>
+          <text class="stat-label">今日订单</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-val">¥{{ todayRevenue }}</text>
+          <text class="stat-label">今日营收</text>
+        </view>
+        <view class="stat-divider"></view>
+        <view class="stat-item">
+          <text class="stat-val stat-pending">{{ pendingDeliveryCount }}</text>
+          <text class="stat-label">待交付</text>
         </view>
       </view>
 
-      <!-- 筛选标签 -->
-      <view class="filter-tabs">
-        <scroll-view scroll-x class="tab-scroll" :show-scrollbar="false">
-          <view class="tab-item" v-for="(tab, idx) in tabs" :key="idx" :class="{ active: currentTab === tab.value }" @tap="switchTab(tab.value)">
-            <text>{{ tab.label }}</text>
+      <!-- 筛选标签栏 - 订单状态 -->
+      <view class="filter-section">
+        <scroll-view scroll-x class="filter-scroll-x" :show-scrollbar="false">
+          <view class="filter-row">
+            <view
+              class="filter-chip"
+              v-for="(item, idx) in statusTabs"
+              :key="idx"
+              :class="{ active: activeStatus === idx }"
+              @tap="switchStatus(idx)"
+            >
+              <text>{{ item.label }}</text>
+            </view>
+          </view>
+        </scroll-view>
+
+        <!-- 筛选标签栏 - 时间范围 -->
+        <scroll-view scroll-x class="filter-scroll-x" :show-scrollbar="false">
+          <view class="filter-row">
+            <view
+              class="filter-chip time-chip"
+              v-for="(item, idx) in timeTabs"
+              :key="idx + 100"
+              :class="{ active: activeTime === idx }"
+              @tap="switchTime(idx)"
+            >
+              <text>{{ item.label }}</text>
+            </view>
           </view>
         </scroll-view>
       </view>
 
-      <!-- 订单列表 -->
-      <view class="order-list">
-        <view class="order-card" v-for="(item, idx) in filteredList" :key="idx" hover-class="card-hover" @tap="goDetail(item.id)">
-          <view class="card-header">
-            <text class="order-no">{{ item.order_no }}</text>
-            <view class="type-tag" :class="'type-' + item.type">
-              <text>{{ typeMap[item.type] }}</text>
-            </view>
+      <!-- 订单卡片列表 -->
+      <view class="order-list-wrap">
+        <!-- 空状态 -->
+        <view class="empty-state" v-if="filteredOrders.length === 0 && !loading">
+          <text class="empty-icon">🚗</text>
+          <text class="empty-title">暂无车辆订单</text>
+          <text class="empty-desc">车辆订单会显示在这里</text>
+        </view>
+
+        <!-- 订单卡片 -->
+        <view
+          class="order-card"
+          v-for="(item, idx) in filteredOrders"
+          :key="item.orderId"
+          :class="'card-status-' + item.status"
+          :style="{ animationDelay: (idx * 0.08) + 's' }"
+          hover-class="card-hover"
+          :hover-stay-time="120"
+          @tap="goDetail(item)"
+        >
+          <!-- 左侧彩色状态条 -->
+          <view class="status-bar">
+            <view class="pulse-ring" v-if="item.status === '0'"></view>
           </view>
+
+          <!-- 卡片内容区 -->
           <view class="card-body">
-            <view class="info-row">
-              <text class="info-icon">👤</text>
-              <text class="info-text">{{ item.contact_name }} · {{ item.contact_phone }}</text>
+            <!-- 上部：左右两栏 -->
+            <view class="card-top-row">
+              <!-- 左侧信息 -->
+              <view class="card-left">
+                <view class="order-no-row">
+                  <text class="no-icon">#</text>
+                  <text class="no-text">{{ shortOrderNo(item.orderNo) }}</text>
+                </view>
+                <text class="info-line">🚗 {{ item.vehicleName }}</text>
+                <text class="info-line">👤 {{ item.customerName }}</text>
+                <text class="info-line">🕐 {{ item.time }}</text>
+              </view>
+              <!-- 右侧金额+状态 -->
+              <view class="card-right">
+                <text class="amount-big">¥{{ fmtAmount(item.amount) }}</text>
+                <view :class="['status-tag', 'stag-' + item.status]">
+                  <view class="stag-dot" v-if="item.status === '0'"></view>
+                  <text>{{ item.statusText }}</text>
+                </view>
+              </view>
             </view>
-            <view class="info-row">
-              <text class="info-icon">🚗</text>
-              <text class="info-text car-name">{{ item.car_name }}</text>
-            </view>
-            <view class="price-row">
-              <text class="price-label">订单金额</text>
-              <text class="price-value" v-if="item.amount > 0">¥{{ item.amount.toLocaleString('zh-CN') }}</text>
-              <text class="price-value zero" v-else>免费</text>
-            </view>
-          </view>
-          <view class="card-footer">
-            <text class="time-text">{{ item.create_time }}</text>
-            <view class="status-tag" :class="'status-' + item.status">
-              <text>{{ statusMap[item.status] }}</text>
-            </view>
+
+            <!-- 底部虚线分隔 -->
+            <view class="card-dash-line"></view>
           </view>
         </view>
 
-        <view v-if="filteredList.length === 0" class="empty-wrap">
-          <view class="empty-circle">
-            <text class="empty-icon">📋</text>
+        <!-- 加载更多 -->
+        <view class="load-more-wrap" v-if="filteredOrders.length > 0">
+          <view class="load-more-btn" @tap="onLoadMore" hover-class="load-more-hover">
+            <text class="load-more-text">{{ hasMore ? '加载更多' : '— 没有更多了 —' }}</text>
           </view>
-          <text class="empty-text">暂无订单</text>
         </view>
       </view>
 
-      <view class="bottom-safe"></view>
+      <view style="height: 100rpx;"></view>
     </scroll-view>
   </view>
 </template>
 
 <script>
 export default {
-  data() {
+  data: function() {
     return {
       isReady: false,
       glowRows: [],
-      currentTab: 'all',
-      tabs: [
-        { label: '全部', value: 'all' },
-        { label: '购车订单', value: 'purchase' },
-        { label: '试驾预约', value: 'test_drive' },
-        { label: '以旧换新', value: 'trade_in' }
+      loading: false,
+      hasMore: false,
+      activeStatus: 0,
+      activeTime: 0,
+      statusTabs: [
+        { label: '全部', value: '' },
+        { label: '待付款', value: '0' },
+        { label: '已付待交付', value: '1' },
+        { label: '已完成', value: '2' },
+        { label: '已取消', value: '3' }
       ],
-      typeMap: {
-        purchase: '购车订单',
-        test_drive: '试驾预约',
-        trade_in: '以旧换新'
-      },
-      statusMap: {
-        pending_payment: '待付款',
-        paid: '已付款',
-        completed: '已完成',
-        cancelled: '已取消'
-      },
-      orderList: [
-        { id: 'ORD20260601001', order_no: 'NEV2026060100001', type: 'purchase', contact_name: '张先生', contact_phone: '138****1234', car_name: '特斯拉 Model Y 长续航版', amount: 299900, status: 'paid', create_time: '2026-06-01 10:23:15' },
-        { id: 'ORD20260601002', order_no: 'NEV2026060100002', type: 'test_drive', contact_name: '李女士', contact_phone: '139****5678', car_name: '比亚迪 汉EV 冠军版', amount: 0, status: 'pending_payment', create_time: '2026-06-01 09:45:30' },
-        { id: 'ORD20260601003', order_no: 'NEV2026060100003', type: 'trade_in', contact_name: '王先生', contact_phone: '137****9012', car_name: '蔚来 ET5 75kWh', amount: 328000, status: 'completed', create_time: '2026-05-31 16:08:42' },
-        { id: 'ORD20260601004', order_no: 'NEV2026060100004', type: 'purchase', contact_name: '赵女士', contact_phone: '136****3456', car_name: '小鹏 P7i 702 Max', amount: 289900, status: 'pending_payment', create_time: '2026-05-31 14:22:18' },
-        { id: 'ORD20260601005', order_no: 'NEV2026060100005', type: 'test_drive', contact_name: '孙先生', contact_phone: '135****7890', car_name: '理想 L7 Pro', amount: 0, status: 'completed', create_time: '2026-05-30 11:33:55' },
-        { id: 'ORD20260601006', order_no: 'NEV2026060100006', type: 'purchase', contact_name: '周先生', contact_phone: '134****2345', car_name: '极氪 001 YOU版', amount: 389000, status: 'cancelled', create_time: '2026-05-30 09:17:33' },
-        { id: 'ORD20260601007', order_no: 'NEV2026060100007', type: 'trade_in', contact_name: '吴先生', contact_phone: '133****6789', car_name: '问界 M7 Plus', amount: 319800, status: 'paid', create_time: '2026-05-29 15:44:20' },
-        { id: 'ORD20260601008', order_no: 'NEV2026060100008', type: 'purchase', contact_name: '郑先生', contact_phone: '132****0123', car_name: '智己 LS7 90kWh', amount: 358800, status: 'pending_payment', create_time: '2026-05-29 10:05:48' }
+      timeTabs: [
+        { label: '今天', value: 'today' },
+        { label: '近7天', value: 'week' },
+        { label: '近30天', value: 'month' }
+      ],
+      mockOrders: [
+        { orderId: 'VO20260531000001', orderNo: 'VO20260531000001', vehicleName: '比亚迪海豹 EV 700km 四驱旗舰版',
+          customerName: '张**', amount: 228000, status: '0', statusText: '待付款', time: '2026-05-31 10:30' },
+        { orderId: 'VO20260530000005', orderNo: 'VO20260530000005', vehicleName: '特斯拉 Model Y 后驱版',
+          customerName: '李**', amount: 263900, status: '1', statusText: '已付待交付', time: '2026-05-30 16:20' },
+        { orderId: 'VO20260530000004', orderNo: 'VO20260530000004', vehicleName: '蔚来 ES6 75kWh 运动版',
+          customerName: '王**', amount: 338000, status: '2', statusText: '已完成', time: '2026-05-30 09:15' },
+        { orderId: 'VO20260529000003', orderNo: 'VO20260529000003', vehicleName: '理想 L7 Pro 增程版',
+          customerName: '赵**', amount: 319800, status: '2', statusText: '已完成', time: '2026-05-29 14:00' },
+        { orderId: 'VO20260528000002', orderNo: 'VO20260528000002', vehicleName: '比亚迪汉 DM-i 冠军版',
+          customerName: '刘**', amount: 189800, status: '2', statusText: '已完成', time: '2026-05-28 11:30' },
+        { orderId: 'VO20260527000001', orderNo: 'VO20260527000001', vehicleName: '问界 M5 纯电版',
+          customerName: '陈**', amount: 259800, status: '3', statusText: '已取消', time: '2026-05-27 09:00' }
       ]
     }
   },
   computed: {
-    filteredList() {
-      if (this.currentTab === 'all') return this.orderList
-      return this.orderList.filter(function(item) { return item.type === this.currentTab }.bind(this))
+    filteredOrders: function() {
+      var self = this
+      var list = self.mockOrders
+      var statusVal = self.statusTabs[self.activeStatus].value
+      if (statusVal !== '') {
+        list = list.filter(function(o) { return o.status === statusVal })
+      }
+      return list
+    },
+    todayOrderCount: function() {
+      var self = this
+      return self.mockOrders.filter(function(o) { return o.time.indexOf('2026-05-31') !== -1 }).length
+    },
+    todayRevenue: function() {
+      var self = this
+      var sum = 0
+      self.mockOrders.filter(function(o) { return o.time.indexOf('2026-05-31') !== -1 && o.status !== '3' }).forEach(function(o) { sum += o.amount })
+      return sum.toLocaleString('zh-CN')
+    },
+    pendingDeliveryCount: function() {
+      var self = this
+      return self.mockOrders.filter(function(o) { return o.status === '1' }).length
     }
   },
-  onLoad() {
-    var that = this
+  created: function() {
     this.buildGlowRows()
-    setTimeout(function() { that.isReady = true }, 100)
+    var that = this
+    setTimeout(function() { that.isReady = true }, 200)
   },
   methods: {
-    buildGlowRows() {
+    buildGlowRows: function() {
       var rows = []
-      var colors = ['#16a34a', '#22c55e', '#4ade80', '#86efac']
-      for (var r = 0; r < 5; r++) {
+      var colors = ['#f59e0b', '#f97316', '#fb923c', '#fbbf24', '#fcd34d', '#fde68a']
+      for (var r = 0; r < 7; r++) {
         var dots = []
-        var count = 3 + Math.floor(Math.random() * 4)
+        var count = 4 + Math.floor(Math.random() * 3)
         for (var c = 0; c < count; c++) {
           var color = colors[Math.floor(Math.random() * colors.length)]
-          dots.push({ style: 'width:' + (3 + Math.random() * 6) + 'px;height:' + (3 + Math.random() * 6) + 'px;background:' + color + ';animation-duration:' + (2 + Math.random() * 3) + 's;animation-delay:' + (Math.random() * 2) + 's;' })
+          var size = 60 + Math.floor(Math.random() * 70)
+          var dur = 2.5 + Math.random() * 2.5
+          var delay = Math.random() * 2.5
+          var alpha = 0.08 + Math.random() * 0.18
+          dots.push({
+            style: 'width:' + size + 'rpx;height:' + size + 'rpx;background:radial-gradient(circle,' + color + ',' + color + '00);opacity:' + alpha.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's;'
+          })
         }
         rows.push({ dots: dots })
       }
       this.glowRows = rows
     },
-    goBack() { uni.navigateBack() },
-    switchTab(value) { this.currentTab = value },
-    statsCount(status) {
-      return this.orderList.filter(function(item) { return item.status === status }).length
+    goBack: function() {
+      uni.navigateBack({ delta: 1 })
     },
-    goDetail(orderId) {
-      uni.navigateTo({ url: '/pages/mine/vehicle/vehicle-order-detail?orderId=' + orderId })
+    switchStatus: function(idx) {
+      this.activeStatus = idx
+    },
+    switchTime: function(idx) {
+      this.activeTime = idx
+      uni.showToast({ title: this.timeTabs[idx].label + '筛选已应用', icon: 'none', duration: 1200 })
+    },
+    goDetail: function(item) {
+      uni.navigateTo({
+        url: '/pages/mine/vehicle/vehicle-order-detail?orderId=' + item.orderId
+      })
+    },
+    onLoadMore: function() {
+      if (!this.hasMore) return
+      uni.showToast({ title: '加载更多数据...', icon: 'none', duration: 1000 })
+    },
+    shortOrderNo: function(no) {
+      if (!no) return ''
+      if (no.length > 14) {
+        return no.substring(0, 11) + '...'
+      }
+      return no
+    },
+    fmtAmount: function(amount) {
+      if (amount === null || amount === undefined) return '0'
+      return Number(amount).toLocaleString('zh-CN')
     }
   }
 }
@@ -175,161 +271,471 @@ export default {
 /* ========== 页面容器 ========== */
 .page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #ecfdf5 0%, #f0fdf4 30%, #f7fee7 60%, #fefefe 100%);
+  background: linear-gradient(180deg, #fff7ed 0%, #fffbeb 30%, #fefce8 60%, #fffbeb 100%);
   position: relative;
-  overflow: hidden;
-  opacity: 0;
-}
-.page-ready {
-  opacity: 1;
+  overflow-x: hidden;
 }
 .page-ready .order-card {
-  animation: slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
-}
-.page-ready .order-card:nth-child(1) { animation-delay: 0.05s; }
-.page-ready .order-card:nth-child(2) { animation-delay: 0.1s; }
-.page-ready .order-card:nth-child(3) { animation-delay: 0.15s; }
-.page-ready .order-card:nth-child(4) { animation-delay: 0.2s; }
-.page-ready .order-card:nth-child(5) { animation-delay: 0.25s; }
-.page-ready .order-card:nth-child(6) { animation-delay: 0.3s; }
-.page-ready .order-card:nth-child(7) { animation-delay: 0.35s; }
-.page-ready .order-card:nth-child(8) { animation-delay: 0.4s; }
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(30rpx); }
-  to { opacity: 1; transform: translateY(0); }
+  animation: fadeSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
 }
 
-/* ========== 背景光晕 ========== */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(30rpx) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ========== 背景光晕矩阵 ========== */
 .glow-matrix {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  pointer-events: none; z-index: 0; overflow: hidden;
-  display: flex; flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 .glow-row {
-  display: flex; justify-content: space-around;
-  align-items: center; padding: 20rpx 12rpx; gap: 16rpx;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 24rpx 20rpx;
 }
 .glow-spot {
-  border-radius: 50%; flex-shrink: 0;
-  animation: glowPulse ease-in-out infinite;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: glowPulse ease-in-out infinite alternate;
 }
 @keyframes glowPulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.9); }
+  0% { opacity: 0.15; transform: scale(0.85); }
+  50% { opacity: 0.6; }
+  100% { opacity: 0.15; transform: scale(1.25); }
 }
+
 .overlay-mask {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(180deg, rgba(240,253,244,0.88) 0%, rgba(236,253,245,0.9) 30%, rgba(248,250,252,0.93) 70%, rgba(255,255,255,0.96) 100%);
-  z-index: 1; pointer-events: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg,
+    rgba(255, 247, 237, 0.92) 0%,
+    rgba(255, 251, 235, 0.95) 35%,
+    rgba(254, 252, 232, 0.96) 65%,
+    rgba(255, 251, 235, 0.97) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.main-scroll {
+  position: relative;
+  z-index: 2;
+  height: 100vh;
 }
 
 /* ========== 顶栏 ========== */
 .header {
-  height: 160rpx; padding: 0 28rpx; display: flex; align-items: center;
-  position: relative; z-index: 10;
+  position: relative;
+  padding: 28rpx 28rpx 24rpx;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
 }
 .header-bg {
-  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(135deg, #16a34a 0%, #22c55e 40%, #4ade80 70%, #86efac 100%);
-  border-radius: 0 0 32rpx 32rpx;
-}
-.header-bg::after {
-  content: ''; position: absolute; bottom: -16rpx; left: 0; right: 0;
-  height: 32rpx;
-  background: linear-gradient(180deg, #16a34a, transparent);
-  border-radius: 0 0 32rpx 32rpx; filter: blur(10rpx); opacity: 0.3;
+  position: absolute;
+  top: -80rpx;
+  left: -40rpx;
+  right: -40rpx;
+  bottom: -20rpx;
+  background: linear-gradient(135deg, #f59e0b 0%, #f97316 35%, #fb923c 65%, #fdba74 100%);
+  border-radius: 0 0 60rpx 60rpx;
 }
 .back-btn {
-  width: 64rpx; height: 64rpx; border-radius: 50%;
-  background: rgba(255,255,255,0.22);
-  display: flex; align-items: center; justify-content: center;
-  margin-right: 20rpx; z-index: 1; transition: all 0.12s ease;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 32rpx;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  box-shadow: 0 4rpx 14rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
 }
-.btn-hover { transform: scale(0.92); background: rgba(255,255,255,0.4); }
-.back-icon { color: #fff; font-size: 36rpx; font-weight: 300; }
-.header-info { flex: 1; z-index: 1; }
-.header-title { font-size: 36rpx; font-weight: 700; color: #fff; display: block; }
-.header-sub { font-size: 24rpx; color: rgba(255,255,255,0.8); margin-top: 4rpx; }
+.btn-hover {
+  transform: scale(0.9);
+  background: rgba(255, 255, 255, 0.45);
+}
+.back-icon {
+  font-size: 36rpx;
+  color: #ffffff;
+  font-weight: 300;
+}
+.header-info {
+  flex: 1;
+  margin-left: 20rpx;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+}
+.header-title {
+  font-size: 38rpx;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 1rpx;
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+.header-sub {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.88);
+  margin-top: 6rpx;
+  font-weight: 500;
+}
 
-/* ========== 统计卡片 ========== */
-.stats-section { position: relative; z-index: 2; padding: 24rpx 28rpx 0; }
-.stats-row { display: flex; gap: 16rpx; }
-.stat-card {
-  flex: 1; background: #fff; border-radius: 20rpx;
-  padding: 24rpx 0; text-align: center;
-  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.04);
+/* ========== 统计概览条 ========== */
+.stats-bar {
+  margin: 0 24rpx 20rpx;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 22rpx;
+  padding: 24rpx 16rpx;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 6rpx 24rpx rgba(0, 0, 0, 0.05), inset 0 1rpx 0 rgba(255, 255, 255, 0.9);
+  border: 1rpx solid rgba(255, 255, 255, 0.8);
+  position: relative;
+  z-index: 2;
 }
-.stat-num { font-size: 36rpx; font-weight: 700; display: block; color: #1a1a2e; }
-.stat-label { font-size: 22rpx; color: #888; margin-top: 4rpx; display: block; }
+.stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.stat-val {
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #f59e0b;
+  letter-spacing: 0.5rpx;
+}
+.stat-pending {
+  color: #d97706;
+  animation: pendingBlink 1.5s ease-in-out infinite;
+}
+@keyframes pendingBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+.stat-label {
+  font-size: 22rpx;
+  color: #78716c;
+  margin-top: 6rpx;
+  font-weight: 500;
+}
+.stat-divider {
+  width: 2rpx;
+  height: 48rpx;
+  background: linear-gradient(180deg, transparent, #e7e5e4, transparent);
+}
 
-/* ========== 筛选标签 ========== */
-.filter-tabs { position: relative; z-index: 2; padding: 20rpx 28rpx; }
-.tab-scroll { white-space: nowrap; }
-.tab-item {
-  display: inline-block; padding: 12rpx 28rpx; border-radius: 28rpx;
-  font-size: 26rpx; color: #666; background: #fff;
-  margin-right: 16rpx; box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.04);
-  transition: all 0.2s;
+/* ========== 筛选标签栏 ========== */
+.filter-section {
+  padding: 0 24rpx 16rpx;
+  position: relative;
+  z-index: 2;
 }
-.tab-item.active {
-  background: linear-gradient(135deg, #16a34a, #22c55e);
-  color: #fff; font-weight: 600;
+.filter-scroll-x {
+  white-space: nowrap;
+  margin-bottom: 12rpx;
+}
+.filter-scroll-x:last-child {
+  margin-bottom: 0;
+}
+.filter-row {
+  display: inline-flex;
+  gap: 14rpx;
+  padding: 6rpx 0;
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12rpx 28rpx;
+  border-radius: 32rpx;
+  font-size: 24rpx;
+  color: #a16207;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1rpx solid rgba(245, 158, 11, 0.15);
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
+}
+.filter-chip.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  border-color: transparent;
+  box-shadow: 0 4rpx 14rpx rgba(245, 158, 11, 0.3);
+  transform: scale(1.05);
+}
+.time-chip {
+  padding: 10rpx 24rpx;
+  font-size: 22rpx;
+  color: #78716c;
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+.time-chip.active {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  box-shadow: 0 3rpx 10rpx rgba(251, 191, 36, 0.25);
 }
 
-/* ========== 订单列表 ========== */
-.order-list { position: relative; z-index: 2; padding: 0 28rpx; }
-.order-card {
-  background: #fff; border-radius: 20rpx; padding: 28rpx;
-  margin-bottom: 20rpx; box-shadow: 0 2rpx 16rpx rgba(0,0,0,0.04);
-  transition: all 0.2s;
+/* ========== 订单列表区域 ========== */
+.order-list-wrap {
+  padding: 0 24rpx;
+  position: relative;
+  z-index: 2;
 }
-.card-hover { transform: scale(0.98); box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.08); }
-
-.card-header {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 20rpx;
-}
-.order-no { font-size: 26rpx; color: #888; font-family: monospace; }
-.type-tag {
-  padding: 6rpx 16rpx; border-radius: 12rpx; font-size: 22rpx; font-weight: 500;
-  background: #eff6ff; color: #3b82f6;
-}
-.type-tag.type-test_drive { background: #fef3c7; color: #d97706; }
-.type-tag.type-trade_in { background: #ede9fe; color: #7c3aed; }
-
-.card-body { margin-bottom: 20rpx; }
-.info-row { display: flex; align-items: center; margin-bottom: 12rpx; }
-.info-icon { font-size: 26rpx; margin-right: 12rpx; }
-.info-text { font-size: 26rpx; color: #444; flex: 1; }
-.car-name { color: #16a34a; font-weight: 500; }
-.price-row { display: flex; justify-content: space-between; align-items: center; padding-top: 16rpx; border-top: 1rpx solid #f0f0f0; }
-.price-label { font-size: 24rpx; color: #aaa; }
-.price-value { font-size: 32rpx; font-weight: 700; color: #e53e3e; }
-.price-value.zero { font-size: 28rpx; font-weight: 500; color: #888; }
-
-.card-footer { display: flex; justify-content: space-between; align-items: center; }
-.time-text { font-size: 22rpx; color: #bbb; }
-.status-tag {
-  padding: 8rpx 18rpx; border-radius: 16rpx; font-size: 22rpx; font-weight: 500;
-  background: #f0fdf4; color: #16a34a;
-}
-.status-tag.status-pending_payment { background: #fef3c7; color: #d97706; }
-.status-tag.status-completed { background: #eff6ff; color: #3b82f6; }
-.status-tag.status-cancelled { background: #f1f5f9; color: #94a3b8; }
 
 /* ========== 空状态 ========== */
-.empty-wrap { text-align: center; padding: 120rpx 0; }
-.empty-circle {
-  width: 140rpx; height: 140rpx; border-radius: 50%;
-  background: #f1f5f9; margin: 0 auto 24rpx;
-  display: flex; align-items: center; justify-content: center;
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 160rpx 0;
 }
-.empty-icon { font-size: 52rpx; }
-.empty-text { font-size: 28rpx; color: #aaa; }
+.empty-icon {
+  font-size: 96rpx;
+  margin-bottom: 20rpx;
+}
+.empty-title {
+  font-size: 32rpx;
+  color: #78716c;
+  font-weight: 700;
+  margin-bottom: 10rpx;
+}
+.empty-desc {
+  font-size: 26rpx;
+  color: #a8a29e;
+}
 
-/* ========== 底部安全区 ========== */
-.bottom-safe { height: 40rpx; }
+/* ========== 订单卡片 ========== */
+.order-card {
+  display: flex;
+  flex-direction: row;
+  border-radius: 20rpx;
+  margin-bottom: 20rpx;
+  overflow: hidden;
+  position: relative;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 6rpx 28rpx rgba(0, 0, 0, 0.05), inset 0 1rpx 0 rgba(255, 255, 255, 0.9);
+  border: 1rpx solid rgba(255, 255, 255, 0.8);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.card-hover {
+  transform: scale(0.98) translateY(-2rpx);
+  box-shadow: 0 12rpx 36rpx rgba(0, 0, 0, 0.1);
+}
 
-.main-scroll { height: calc(100vh - 0px); position: relative; z-index: 2; }
+/* 左侧彩色状态条 */
+.status-bar {
+  width: 6rpx;
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.card-status-0 .status-bar {
+  background: linear-gradient(180deg, #f59e0b, #fb923c);
+  box-shadow: 2rpx 0 16rpx rgba(245, 158, 11, 0.35);
+}
+.card-status-1 .status-bar {
+  background: linear-gradient(180deg, #f59e0b, #fb923c);
+  box-shadow: 2rpx 0 16rpx rgba(245,158,11,0.35);
+}
+.card-status-2 .status-bar {
+  background: linear-gradient(180deg, #d97706, #f59e0b);
+  box-shadow: 2rpx 0 16rpx rgba(217,119,6,0.3);
+}
+.card-status-3 .status-bar {
+  background: linear-gradient(180deg, #9ca3af, #d1d5db);
+  box-shadow: 2rpx 0 16rpx rgba(156, 163, 175, 0.25);
+}
+.card-hover .status-bar {
+  width: 9rpx;
+}
+
+/* 待付款脉冲动画圆环 */
+.pulse-ring {
+  width: 18rpx;
+  height: 18rpx;
+  border-radius: 50%;
+  background: #fb923c;
+  box-shadow: 0 0 12rpx #f59e0b, 0 0 24rpx rgba(245, 158, 11, 0.4);
+  animation: statusPulse 1.6s ease-in-out infinite;
+}
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.6); }
+}
+
+/* 卡片内容区 */
+.card-body {
+  flex: 1;
+  padding: 22rpx 20rpx 18rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 上下布局：上部左右两栏 */
+.card-top-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+/* 左侧信息列 */
+.card-left {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  padding-right: 16rpx;
+}
+.order-no-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+.no-icon {
+  font-size: 22rpx;
+  color: #f97316;
+  font-weight: 900;
+  margin-right: 6rpx;
+}
+.no-text {
+  font-size: 24rpx;
+  font-weight: 800;
+  color: #292524;
+  font-family: monospace;
+  letter-spacing: 0.5rpx;
+}
+.info-line {
+  font-size: 23rpx;
+  color: #78716c;
+  line-height: 1.7;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 右侧金额+状态列 */
+.card-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+.amount-big {
+  font-size: 38rpx;
+  font-weight: 900;
+  color: #f59e0b;
+  letter-spacing: -0.5rpx;
+  text-shadow: 0 2rpx 8rpx rgba(245, 158, 11, 0.15);
+  margin-bottom: 8rpx;
+}
+.status-tag {
+  border-radius: 12rpx;
+  padding: 5rpx 14rpx;
+  font-size: 20rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  position: relative;
+  overflow: hidden;
+}
+.stag-dot {
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  background: #f97316;
+  animation: stagDotBlink 1.2s ease-in-out infinite;
+  box-shadow: 0 0 6rpx #f97316;
+}
+@keyframes stagDotBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.stag-0 {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(251, 146, 60, 0.06));
+  color: #f59e0b;
+  border: 1rpx solid rgba(245, 158, 11, 0.2);
+  padding-left: 20rpx;
+}
+.stag-1 {
+  background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(251,146,60,0.06));
+  color: #f59e0b;
+  border: 1rpx solid rgba(245,158,11,0.2);
+}
+.stag-2 {
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.12), rgba(34, 197, 94, 0.06));
+  color: #16a34a;
+  border: 1rpx solid rgba(22, 163, 74, 0.2);
+}
+.stag-3 {
+  background: linear-gradient(135deg, rgba(107, 114, 128, 0.1), rgba(156, 163, 175, 0.05));
+  color: #6b7280;
+  border: 1rpx solid rgba(107, 114, 128, 0.15);
+}
+
+/* 底部虚线分隔 */
+.card-dash-line {
+  height: 1rpx;
+  margin-top: 16rpx;
+  background-image: repeating-linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.06) 0,
+    rgba(0, 0, 0, 0.06) 12rpx,
+    transparent 12rpx,
+    transparent 24rpx
+  );
+}
+
+/* ========== 加载更多 ========== */
+.load-more-wrap {
+  text-align: center;
+  padding: 32rpx 0 16rpx;
+}
+.load-more-btn {
+  display: inline-block;
+  padding: 14rpx 48rpx;
+  border-radius: 32rpx;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1rpx solid rgba(245, 158, 11, 0.15);
+  transition: all 0.25s ease;
+}
+.load-more-hover {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.9);
+}
+.load-more-text {
+  font-size: 24rpx;
+  color: #a16207;
+  font-weight: 600;
+}
 </style>

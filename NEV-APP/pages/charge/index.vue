@@ -356,7 +356,9 @@ export default {
         pageNum: 1,
         pageSize: 10,
         lat: 36.548,
-        lng: 116.801
+        lng: 116.801,
+        orderByColumn: 'distance',
+        isAsc: 'asc'
       },
 
       priceTipData: {},
@@ -392,7 +394,7 @@ export default {
       if (!this.locationReady) {
         this.initLocation()
       }
-      this.loadMockData()
+      this.fetchStationList(true)
     }
   },
 
@@ -600,7 +602,7 @@ export default {
 
       try {
         const res = await getStationList(this.queryParams)
-        const list = res.rows || []
+        const list = res.data.rows || []
 
         if (isRefresh) {
           this.stationList = list
@@ -614,6 +616,7 @@ export default {
         this.buildMarkers(this.stationList)
       } catch (e) {
         if (isRefresh) this.isRefreshing = false
+        console.error('[fetchStationList] 查询失败，使用兜底数据:', e)
         this.loadMockData()
       }
 
@@ -646,9 +649,6 @@ export default {
       const baseLng = 116.981
       const offsetLat = this.mapCenter.lat - baseLat
       const offsetLng = this.mapCenter.lng - baseLng
-      console.log('[DEBUG loadMockData] baseLat:', baseLat, 'baseLng:', baseLng,
-        'mapCenter:', this.mapCenter.lat, this.mapCenter.lng,
-        'offset:', offsetLat, offsetLng)
       const shiftCoord = (lat, lng) => ({
         lat: lat + offsetLat,
         lng: lng + offsetLng
@@ -696,20 +696,7 @@ export default {
           parkInfo: '免费停车4小时',
           lat: 36.668, lng: 116.896, electricPrice: '0.95', servicePrice: '0.40',
           score: 4.6,
-          piles: [
-            { number: 'A01', type: '快充', status: 'free', power: '120kW' },
-            { number: 'A02', type: '快充', status: 'charging', power: '120kW' },
-            { number: 'A03', type: '快充', status: 'free', power: '120kW' },
-            { number: 'A04', type: '快充', status: 'free', power: '120kW' },
-            { number: 'B01', type: '慢充', status: 'offline', power: '7kW' },
-            { number: 'B02', type: '慢充', status: 'free', power: '7kW' },
-            { number: 'B03', type: '慢充', status: 'free', power: '7kW' },
-            { number: 'B04', type: '慢充', status: 'charging', power: '7kW' },
-            { number: 'B05', type: '慢充', status: 'free', power: '7kW' },
-            { number: 'B06', type: '慢充', status: 'free', power: '7kW' },
-            { number: 'B07', type: '慢充', status: 'fault', power: '7kW' },
-            { number: 'B08', type: '慢充', status: 'free', power: '7kW' }
-          ]
+          piles: this.generatePiles(12, '快', '120kW')
         },
         {
           stationId: 1003, name: '软件园充电站',
@@ -767,7 +754,9 @@ export default {
           tags: [{ text: '高速路站', type: 'blue' }, { text: '24小时', type: 'gray' }],
           plugAndPlay: true, selfService: false, isNearest: false, discount: 0, freeParkTime: 3,
           parkInfo: '免费停车3小时',
-          lat: 36.720, lng: 117.140, electricPrice: '0.98', servicePrice: '0.40'
+          lat: 36.720, lng: 117.140, electricPrice: '0.98', servicePrice: '0.40',
+          score: 4.4,
+          piles: this.generatePiles(24, '快', '120kW')
         }
       ]
 
@@ -810,8 +799,10 @@ export default {
         return
       }
       this.activeFilter = item.key
+      this.queryParams.filter = item.key === 'distance' ? '' : item.key
+      this.queryParams.pageNum = 1
       this.stationList = []
-      this.loadMockData()
+      this.fetchStationList(true)
     },
 
     onSortChange(s) {
@@ -819,6 +810,7 @@ export default {
         this.currentSort = 'default'
         this.sortOrder = 'asc'
         this.queryParams.orderByColumn = 'distance'
+        this.queryParams.isAsc = 'asc'
       } else {
         if (this.currentSort === s.key) {
           this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc'
@@ -832,7 +824,7 @@ export default {
 
       this.queryParams.pageNum = 1
       this.stationList = []
-      this.loadMockData()
+      this.fetchStationList(true)
     },
 
     applySort(list) {
@@ -872,13 +864,14 @@ export default {
     resetFilter() {
       this.activeFilter = 'distance'
       this.currentSort = 'default'
+      this.sortOrder = 'asc'
       this.queryParams = {
         pageNum: 1, pageSize: 10,
         lat: this.queryParams.lat, lng: this.queryParams.lng,
         orderByColumn: 'distance', isAsc: 'asc'
       }
       this.stationList = []
-      this.loadMockData()
+      this.fetchStationList(true)
     },
 
     showPriceTip(station) {
@@ -947,18 +940,22 @@ export default {
       const selected = this.moreFilterOptions.filter(o => o.selected).map(o => o.key)
       if (selected.length > 0) {
         this.activeFilter = selected[0]
+        this.queryParams.filter = selected[0]
       }
       if (this.$refs.filterPopup) this.$refs.filterPopup.close()
+      this.queryParams.pageNum = 1
       this.stationList = []
-      this.loadMockData()
+      this.fetchStationList(true)
     },
 
     resetMoreFilter() {
       this.moreFilterOptions.forEach(o => o.selected = false)
       this.activeFilter = 'distance'
+      this.queryParams.filter = ''
       if (this.$refs.filterPopup) this.$refs.filterPopup.close()
+      this.queryParams.pageNum = 1
       this.stationList = []
-      this.loadMockData()
+      this.fetchStationList(true)
     },
 
   },

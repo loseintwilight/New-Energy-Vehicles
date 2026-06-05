@@ -2,8 +2,31 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.mapper.OrderMapper">
 
+    <!-- 订单 ResultMap -->
+    <resultMap id="OrderVOResultMap" type="com.ruoyi.vo.OrderVO">
+        <id column="orderId" property="orderId"/>
+        <result column="orderNo" property="orderNo"/>
+        <result column="stationId" property="stationId"/>
+        <result column="stationName" property="stationName"/>
+        <result column="pileNo" property="pileNo"/>
+        <result column="chargeType" property="chargeType"/>
+        <result column="startTime" property="startTime"/>
+        <result column="endTime" property="endTime"/>
+        <result column="duration" property="duration"/>
+        <result column="energy" property="energy"/>
+        <result column="amount" property="amount"/>
+        <result column="electricFee" property="electricFee"/>
+        <result column="serviceFee" property="serviceFee"/>
+        <result column="discountAmount" property="discountAmount"/>
+        <result column="status" property="status"/>
+        <result column="statusText" property="statusText"/>
+        <result column="payStatus" property="payStatus"/>
+        <result column="createTime" property="createTime"/>
+        <result column="endTimeVal" property="endTimeVal"/>
+    </resultMap>
+
     <!-- 分页查询用户订单列表 -->
-    <select id="selectOrderList" resultType="java.util.LinkedHashMap">
+    <select id="selectOrderList" resultMap="OrderVOResultMap">
         SELECT
             o.order_id AS orderId,
             o.order_no AS orderNo,
@@ -50,7 +73,7 @@
     </select>
 
     <!-- 根据订单号查询订单 -->
-    <select id="selectOrderByOrderNo" resultType="java.util.LinkedHashMap">
+    <select id="selectOrderByOrderNo" resultMap="OrderVOResultMap">
         SELECT
             o.order_id AS orderId,
             o.order_no AS orderNo,

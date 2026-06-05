@@ -1,4 +1,4 @@
-package com.ruoyi.web.controller.business;
+package com.ruoyi.web.controller.system;
 
 import java.util.HashMap;
 import java.util.Map;

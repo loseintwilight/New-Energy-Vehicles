@@ -239,6 +239,12 @@
       "navigationBarTitleText": "浏览文本"
     }
   }, {
+    "path": "pages/mine/service/index",
+    "style": {
+      "navigationBarTitleText": "维保服务",
+      "navigationStyle": "custom"
+    }
+  }, {
     "path": "pages/mine/service/shopList/index",
     "style": {
       "navigationBarTitleText": "门店列表"
@@ -459,6 +465,36 @@
     "path": "pages/mine/vehicle/vehicle-order-list",
     "style": {
       "navigationBarTitleText": "订单管理",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/vehicle/used-car-list",
+    "style": {
+      "navigationBarTitleText": "二手车管理",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/vehicle/used-car-detail",
+    "style": {
+      "navigationBarTitleText": "二手车详情",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/vehicle/used-car-add",
+    "style": {
+      "navigationBarTitleText": "添加二手车",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/charge-pile/charge-review-list",
+    "style": {
+      "navigationBarTitleText": "评价管理",
+      "navigationStyle": "custom"
+    }
+  }, {
+    "path": "pages/mine/charge-pile/charge-review-detail",
+    "style": {
+      "navigationBarTitleText": "评价详情",
       "navigationStyle": "custom"
     }
   }],

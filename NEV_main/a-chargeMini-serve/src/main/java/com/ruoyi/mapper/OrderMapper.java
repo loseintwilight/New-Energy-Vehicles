@@ -1,5 +1,6 @@
 package com.ruoyi.mapper;
 
+import com.ruoyi.vo.OrderVO;
 import org.apache.ibatis.annotations.Param;
 import java.util.List;
 import java.util.Map;
@@ -7,16 +8,16 @@ import java.util.Map;
 public interface OrderMapper {
 
     /** 分页查询用户订单列表 */
-    List<Map<String, Object>> selectOrderList(@Param("userId") Long userId,
-                                             @Param("status") String status,
-                                             @Param("offset") Integer offset,
-                                             @Param("limit") Integer limit);
+    List<OrderVO> selectOrderList(@Param("userId") Long userId,
+                                  @Param("status") String status,
+                                  @Param("offset") Integer offset,
+                                  @Param("limit") Integer limit);
 
     /** 查询用户订单总数 */
     Long selectOrderCount(@Param("userId") Long userId, @Param("status") String status);
 
     /** 根据订单号查询订单 */
-    Map<String, Object> selectOrderByOrderNo(@Param("orderNo") String orderNo);
+    OrderVO selectOrderByOrderNo(@Param("orderNo") String orderNo);
 
     /** 插入订单 */
     int insertOrder(Map<String, Object> order);

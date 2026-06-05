@@ -2,6 +2,55 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.mapper.StationMapper">
 
+    <!-- 站点列表 ResultMap -->
+    <resultMap id="StationVOResultMap" type="com.ruoyi.vo.StationVO">
+        <id column="stationId" property="stationId"/>
+        <result column="name" property="name"/>
+        <result column="address" property="address"/>
+        <result column="lat" property="lat"/>
+        <result column="lng" property="lng"/>
+        <result column="totalPiles" property="totalPiles"/>
+        <result column="freePiles" property="freePiles"/>
+        <result column="occupyingPiles" property="occupyingPiles"/>
+        <result column="parkFee" property="parkFee"/>
+        <result column="openTime" property="openTime"/>
+        <result column="closeTime" property="closeTime"/>
+        <result column="images" property="images"/>
+        <result column="imageUrl" property="imageUrl"/>
+        <result column="distance" property="distance"/>
+        <result column="facilitiesInfo" property="facilitiesInfo"/>
+        <result column="stationStatus" property="stationStatus"/>
+        <result column="price" property="price"/>
+        <result column="electricPrice" property="electricPrice"/>
+        <result column="servicePrice" property="servicePrice"/>
+    </resultMap>
+
+    <!-- 费率时段 ResultMap -->
+    <resultMap id="RateVOResultMap" type="com.ruoyi.vo.RateVO">
+        <id column="rateId" property="rateId"/>
+        <result column="rateName" property="rateName"/>
+        <result column="pileType" property="pileType"/>
+        <result column="periodId" property="periodId"/>
+        <result column="periodName" property="periodName"/>
+        <result column="startTime" property="startTime"/>
+        <result column="endTime" property="endTime"/>
+        <result column="electricPrice" property="electricPrice"/>
+        <result column="servicePrice" property="servicePrice"/>
+        <result column="totalPrice" property="totalPrice"/>
+    </resultMap>
+
+    <!-- 城市 ResultMap -->
+    <resultMap id="CityVOResultMap" type="com.ruoyi.vo.CityVO">
+        <result column="code" property="code"/>
+        <result column="name" property="name"/>
+    </resultMap>
+
+    <!-- 搜索建议 ResultMap -->
+    <resultMap id="SuggestionVOResultMap" type="com.ruoyi.vo.SuggestionVO">
+        <result column="name" property="name"/>
+        <result column="address" property="address"/>
+    </resultMap>
+
     <!-- 通用列 -->
     <sql id="stationColumns">
         s.station_id, s.station_name, s.station_code, s.merchant_id,
@@ -14,7 +63,7 @@
     </sql>
 
     <!-- 分页查询充电站列表（带距离计算） -->
-    <select id="selectStationListWithDistance" resultType="java.util.LinkedHashMap">
+    <select id="selectStationListWithDistance" resultMap="StationVOResultMap">
         SELECT
             s.station_id AS stationId,
             s.station_name AS name,
@@ -23,11 +72,21 @@
             s.longitude AS lng,
             s.total_piles AS totalPiles,
             s.available_piles AS freePiles,
-            s.occupying_piles,
+            s.occupying_piles AS occupyingPiles,
             s.parking_fee AS parkFee,
-            s.open_time,
-            s.close_time,
+            s.open_time AS openTime,
+            s.close_time AS closeTime,
             s.images,
+            s.images AS imageUrl,
+            (SELECT rp.total_price FROM stad_charging_rate_period rp
+             WHERE rp.rate_id = (SELECT r.rate_id FROM stad_charging_rate r WHERE r.station_id = s.station_id AND r.is_active = 1 LIMIT 1)
+             ORDER BY rp.sort_order LIMIT 1) AS price,
+            (SELECT rp.energy_price FROM stad_charging_rate_period rp
+             WHERE rp.rate_id = (SELECT r.rate_id FROM stad_charging_rate r WHERE r.station_id = s.station_id AND r.is_active = 1 LIMIT 1)
+             ORDER BY rp.sort_order LIMIT 1) AS electricPrice,
+            (SELECT rp.service_fee FROM stad_charging_rate_period rp
+             WHERE rp.rate_id = (SELECT r.rate_id FROM stad_charging_rate r WHERE r.station_id = s.station_id AND r.is_active = 1 LIMIT 1)
+             ORDER BY rp.sort_order LIMIT 1) AS servicePrice,
             ROUND(6371 * 2 * ASIN(SQRT(
                 POW(SIN((#{lat} - s.latitude) * PI() / 360), 2)
                 + COS(#{lat} * PI() / 180) * COS(s.latitude * PI() / 180)
@@ -56,7 +115,7 @@
     </select>
 
     <!-- 搜索充电站 -->
-    <select id="searchStations" resultType="java.util.LinkedHashMap">
+    <select id="searchStations" resultMap="StationVOResultMap">
         SELECT
             s.station_id AS stationId,
             s.station_name AS name,
@@ -66,8 +125,19 @@
             s.total_piles AS totalPiles,
             s.available_piles AS freePiles,
             s.parking_fee AS parkFee,
-            s.open_time,
-            s.close_time,
+            s.open_time AS openTime,
+            s.close_time AS closeTime,
+            s.images,
+            s.images AS imageUrl,
+            (SELECT rp.total_price FROM stad_charging_rate_period rp
+             WHERE rp.rate_id = (SELECT r.rate_id FROM stad_charging_rate r WHERE r.station_id = s.station_id AND r.is_active = 1 LIMIT 1)
+             ORDER BY rp.sort_order LIMIT 1) AS price,
+            (SELECT rp.energy_price FROM stad_charging_rate_period rp
+             WHERE rp.rate_id = (SELECT r.rate_id FROM stad_charging_rate r WHERE r.station_id = s.station_id AND r.is_active = 1 LIMIT 1)
+             ORDER BY rp.sort_order LIMIT 1) AS electricPrice,
+            (SELECT rp.service_fee FROM stad_charging_rate_period rp
+             WHERE rp.rate_id = (SELECT r.rate_id FROM stad_charging_rate r WHERE r.station_id = s.station_id AND r.is_active = 1 LIMIT 1)
+             ORDER BY rp.sort_order LIMIT 1) AS servicePrice,
             ROUND(6371 * 2 * ASIN(SQRT(
                 POW(SIN((#{lat} - s.latitude) * PI() / 360), 2)
                 + COS(#{lat} * PI() / 180) * COS(s.latitude * PI() / 180)
@@ -91,7 +161,7 @@
     </select>
 
     <!-- 搜索建议 -->
-    <select id="selectSuggestions" resultType="java.util.LinkedHashMap">
+    <select id="selectSuggestions" resultMap="SuggestionVOResultMap">
         SELECT
             s.station_name AS name,
             CONCAT(s.province, s.city, s.district, s.address) AS address
@@ -103,7 +173,7 @@
     </select>
 
     <!-- 获取城市列表（去重） -->
-    <select id="selectCityList" resultType="java.util.LinkedHashMap">
+    <select id="selectCityList" resultMap="CityVOResultMap">
         SELECT DISTINCT
             CONCAT(s.province, s.city) AS code,
             s.city AS name
@@ -120,7 +190,7 @@
     </select>
 
     <!-- 获取充电站关联费率 -->
-    <select id="selectRatesByStationId" resultType="java.util.LinkedHashMap">
+    <select id="selectRatesByStationId" resultMap="RateVOResultMap">
         SELECT
             r.rate_id AS rateId,
             r.rate_name AS rateName,
@@ -139,8 +209,8 @@
     </select>
 
     <!-- 热门搜索 -->
-    <select id="selectHotSearches" resultType="java.util.LinkedHashMap">
-        SELECT s.station_name AS name, 0 AS `count`
+    <select id="selectHotSearches" resultMap="SuggestionVOResultMap">
+        SELECT s.station_name AS name, '' AS address
         FROM stad_charging_station s
         WHERE s.station_status = '1'
         ORDER BY s.total_piles DESC

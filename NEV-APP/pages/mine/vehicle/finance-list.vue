@@ -1,217 +1,762 @@
-﻿<template>
+<template>
   <view class="page" :class="{ 'page-ready': isReady }">
+    <!-- 背景光晕矩阵（琥珀橙暖色系） -->
     <view class="glow-matrix">
       <view class="glow-row" v-for="(row, ri) in glowRows" :key="ri">
-        <view class="glow-spot" v-for="(dot, ci) in row.dots" :key="ci" :style="dot.style"></view>
+        <view
+          class="glow-spot"
+          v-for="(dot, ci) in row.dots"
+          :key="ci"
+          :style="dot.style"
+        ></view>
       </view>
     </view>
     <view class="overlay-mask"></view>
 
+    <!-- 主滚动区 -->
     <scroll-view scroll-y class="main-scroll" :show-scrollbar="false">
+      <!-- 琥珀渐变顶栏 -->
       <view class="header">
         <view class="header-bg"></view>
         <view class="back-btn" hover-class="btn-hover" @tap="goBack">
-          <text class="back-icon">❮</text>
+          <text class="back-icon">‹</text>
         </view>
         <view class="header-info">
-          <text class="header-title">财务管理</text>
-          <text class="header-sub">{{ monthLabel }} 账期</text>
+          <text class="header-title">金融方案管理</text>
+          <text class="header-sub">{{ activeCount }} 个在用中</text>
         </view>
         <view class="header-right" @tap="goAdd">
-          <view class="add-btn">
-            <text class="add-icon">+</text>
+          <view class="add-btn-sm">
+            <text class="add-icon-sm">+</text>
+            <text class="add-text-sm">新增</text>
           </view>
         </view>
       </view>
 
-      <view class="summary-section">
-        <view class="summary-card">
-          <view class="summary-left">
-            <text class="summary-label">本月收入</text>
-            <text class="summary-value">¥ {{ summary.income }}</text>
-            <text class="summary-trend up">↑ {{ summary.incomeTrend }}</text>
+      <!-- 统计概览 -->
+      <view class="stats-row">
+        <view class="stat-card stat-total">
+          <text class="stat-label">方案总数</text>
+          <text class="stat-value">{{ mockPlans.length }}</text>
+          <text class="stat-unit">个</text>
+        </view>
+        <view class="stat-card stat-active">
+          <text class="stat-label">在用方案</text>
+          <text class="stat-value">{{ activeCount }}</text>
+          <text class="stat-unit">个</text>
+        </view>
+        <view class="stat-card stat-rate">
+          <text class="stat-label">平均年利率</text>
+          <text class="stat-value">{{ avgYearRate }}</text>
+          <text class="stat-unit"></text>
+        </view>
+      </view>
+
+      <!-- 金融方案卡片列表 -->
+      <view class="plan-list" v-if="mockPlans.length > 0">
+        <view
+          class="plan-card"
+          v-for="(item, idx) in mockPlans"
+          :key="item.planId"
+          :class="[item.isRecommended ? 'card-recommended' : 'card-normal']"
+          :style="{ 'animation-delay': (idx * 0.08) + 's' }"
+          hover-class="card-hover"
+          @tap="goEdit(item)"
+        >
+          <!-- 左侧彩色竖条 -->
+          <view class="left-bar"></view>
+
+          <!-- 推荐角标 -->
+          <view class="recommend-badge" v-if="item.isRecommended">
+            <text>★ 推荐</text>
           </view>
-          <view class="summary-right">
-            <text class="summary-label">本月支出</text>
-            <text class="summary-value out">¥ {{ summary.expense }}</text>
-            <text class="summary-trend down">↓ {{ summary.expenseTrend }}</text>
-          </view>
-        </view>
-        <view class="profit-row">
-          <text class="profit-label">净利润</text>
-          <text class="profit-value">¥ {{ summary.profit }}</text>
-        </view>
-      </view>
 
-      <view class="month-picker">
-        <view class="month-arrow" @tap="prevMonth">❮</view>
-        <text class="month-text">{{ monthLabel }}</text>
-        <view class="month-arrow" @tap="nextMonth">❯</view>
-      </view>
+          <!-- 卡片主体 -->
+          <view class="card-body">
+            <!-- 卡片头部：名称 + 状态切换 -->
+            <view class="card-header">
+              <view class="header-left">
+                <text class="plan-emoji">🏦</text>
+                <text class="plan-name">{{ item.planName }}</text>
+                <view v-if="item.status === '0'" class="stop-tag">
+                  <text>已停用</text>
+                </view>
+              </view>
+              <switch
+                :checked="item.status === '1'"
+                color="#f59e0b"
+                style="transform: scale(0.8);"
+                @tap.stop
+                @change="toggleStatus(item, $event)"
+              />
+            </view>
 
-      <view class="filter-tabs">
-        <view class="tab-item" v-for="(tab, idx) in tabs" :key="idx" :class="{ active: activeTab === idx }" @tap="switchTab(idx)">
-          <text>{{ tab }}</text>
-        </view>
-      </view>
+            <!-- 核心数据区域 -->
+            <view class="data-area">
+              <!-- 首付 + 期数 -->
+              <view class="info-grid">
+                <view class="grid-item">
+                  <text class="grid-label">首付比例</text>
+                  <text class="grid-value">{{ (item.downRatio * 100).toFixed(0) }}%</text>
+                </view>
+                <view class="grid-item">
+                  <text class="grid-label">贷款期限</text>
+                  <text class="grid-value">{{ item.months }}期</text>
+                </view>
+                <view class="grid-item">
+                  <text class="grid-label">适用条件</text>
+                  <text class="grid-value cond-text">{{ item.condition }}</text>
+                </view>
+              </view>
 
-      <view class="record-list">
-        <view class="record-card" v-for="(item, idx) in filteredRecords" :key="idx" hover-class="card-hover" @tap="goDetail(item.id)">
-          <view class="record-left">
-            <view class="record-type-icon" :class="'type-' + item.type">
-              <text>{{ item.type === 'income' ? '↑' : '↓' }}</text>
+              <!-- 年利率大字展示 -->
+              <view class="rate-block">
+                <text class="rate-label">年利率</text>
+                <view class="rate-value-wrap">
+                  <text class="rate-symbol">%</text>
+                  <text class="rate-number">{{ fmtRate(item.yearRate) }}</text>
+                </view>
+                <text class="rate-zero-tag" v-if="item.yearRate === 0">🎉 0息免息</text>
+              </view>
+
+              <!-- 月供示例 -->
+              <view class="monthly-example">
+                <view class="example-left">
+                  <text class="example-icon">📊</text>
+                  <text class="example-label">月供示例（20万车价）</text>
+                </view>
+                <text class="example-value">&yen;{{ calcMonthly(item) }}</text>
+              </view>
+            </view>
+
+            <!-- 底部状态条 -->
+            <view class="status-bar" :class="item.status === '1' ? 'bar-on' : 'bar-off'">
+              <view class="status-dot" v-if="item.status === '1'"></view>
+              <text class="status-txt">{{ item.status === '1' ? '启用中 ✓' : '已停用 ✗' }}</text>
             </view>
           </view>
-          <view class="record-center">
-            <text class="record-title">{{ item.title }}</text>
-            <text class="record-desc">{{ item.category }} | {{ item.date }}</text>
-          </view>
-          <view class="record-right">
-            <text class="record-amount" :class="{ income: item.type === 'income', expense: item.type === 'expense' }">{{ item.type === 'income' ? '+' : '-' }}¥{{ item.amount }}</text>
-            <text class="record-status">{{ item.status }}</text>
-          </view>
-        </view>
-
-        <view v-if="filteredRecords.length === 0" class="empty-wrap">
-          <view class="empty-circle">
-            <text class="empty-icon">💰</text>
-          </view>
-          <text class="empty-text">暂无财务记录</text>
         </view>
       </view>
 
-      <view class="bottom-safe"></view>
+      <!-- 空状态 -->
+      <view class="empty-state" v-if="mockPlans.length === 0">
+        <text class="empty-icon">💰</text>
+        <text class="empty-text">暂无金融方案</text>
+        <view class="empty-btn" @tap="goAdd">
+          <text>立即添加方案</text>
+        </view>
+      </view>
+
+      <view style="height: 140rpx;"></view>
     </scroll-view>
+
+    <!-- 浮动新增按钮(FAB) -->
+    <view class="fab-add" hover-class="fab-hover" @tap="goAdd">
+      <text class="fab-icon">+</text>
+    </view>
   </view>
 </template>
 
 <script>
 export default {
-  data() {
+  data: function() {
+    var rows = []
+    var colors = ['#f59e0b', '#f97316', '#fb923c', '#fbbf24', '#fcd34d', '#fde68a']
+    for (var r = 0; r < 7; r++) {
+      var dots = []
+      var count = 4 + Math.floor(Math.random() * 3)
+      for (var c = 0; c < count; c++) {
+        var color = colors[Math.floor(Math.random() * colors.length)]
+        var size = 60 + Math.floor(Math.random() * 70)
+        var dur = 2.5 + Math.random() * 2.5
+        var delay = Math.random() * 2.5
+        var alpha = 0.08 + Math.random() * 0.18
+        dots.push({
+          style: 'width:' + size + 'rpx;height:' + size + 'rpx;background:radial-gradient(circle,' + color + ',' + color + '00);opacity:' + alpha.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's;'
+        })
+      }
+      rows.push({ dots: dots })
+    }
+
     return {
       isReady: false,
-      glowRows: [],
-      activeTab: 0,
-      tabs: ['全部', '收入', '支出'],
-      currentMonth: 5,
-      currentYear: 2025,
-      summary: { income: '386,500', incomeTrend: '12.5%', expense: '152,800', expenseTrend: '5.2%', profit: '233,700' },
-      records: [
-        { id: 1, type: 'income', title: '比亚迪 海豹 销售款', category: '整车销售', amount: '185,800', date: '2025-06-01', status: '已到账' },
-        { id: 2, type: 'income', title: '特斯拉 Model 3 定金', category: '定金收入', amount: '20,000', date: '2025-06-01', status: '已到账' },
-        { id: 3, type: 'expense', title: '5月展厅租金', category: '场地成本', amount: '28,500', date: '2025-05-30', status: '已支付' },
-        { id: 4, type: 'expense', title: '充电桩采购款', category: '设备采购', amount: '45,000', date: '2025-05-28', status: '已支付' },
-        { id: 5, type: 'income', title: '蔚来 ET5 全款', category: '整车销售', amount: '298,000', date: '2025-05-26', status: '已到账' },
-        { id: 6, type: 'expense', title: '员工5月工资', category: '人力成本', amount: '68,500', date: '2025-05-25', status: '已支付' },
-        { id: 7, type: 'income', title: '充电服务费结算', category: '服务收入', amount: '36,800', date: '2025-05-20', status: '已到账' },
-        { id: 8, type: 'expense', title: '广告投放费用', category: '营销支出', amount: '12,000', date: '2025-05-18', status: '已支付' }
+      glowRows: rows,
+      examplePrice: 200000,
+      mockPlans: [
+        { planId: 1, planName: '12期极速还款', downRatio: 0.40, months: 12, yearRate: 0, monthlyRate: 0, isRecommended: true, status: '1', condition: '信用分≥650' },
+        { planId: 2, planName: '24期0息方案', downRatio: 0.30, months: 24, yearRate: 0, monthlyRate: 0, isRecommended: true, status: '1', condition: '信用分≥680' },
+        { planId: 3, planName: '36期低息方案', downRatio: 0.25, months: 36, yearRate: 0.035, monthlyRate: 0.0029, isRecommended: false, status: '1', condition: '信用分≥700' },
+        { planId: 4, planName: '48期超长分期', downRatio: 0.20, months: 48, yearRate: 0.049, monthlyRate: 0.0041, isRecommended: false, status: '1', condition: '信用分≥720' },
+        { planId: 5, planName: '60期轻松购', downRatio: 0.15, months: 60, yearRate: 0.059, monthlyRate: 0.0049, isRecommended: false, status: '0', condition: '信用分≥750' }
       ]
     }
   },
   computed: {
-    monthLabel() {
-      return this.currentYear + '年' + this.currentMonth + '月'
-    },
-    filteredRecords() {
-      if (this.activeTab === 0) return this.records
-      var type = this.activeTab === 1 ? 'income' : 'expense'
+    activeCount: function() {
       var self = this
-      return this.records.filter(function(r) { return r.type === type })
+      return self.mockPlans.filter(function(p) { return p.status === '1' }).length
+    },
+    avgYearRate: function() {
+      var self = this
+      var active = self.mockPlans.filter(function(p) { return p.status === '1' })
+      if (active.length === 0) return '0.00'
+      var sum = 0
+      for (var i = 0; i < active.length; i++) {
+        sum += active[i].yearRate
+      }
+      return (sum / active.length * 100).toFixed(2) + '%'
     }
   },
-  created() {
-    this.buildGlowRows()
-    var self = this
-    setTimeout(function() { self.isReady = true }, 200)
+  created: function() {
+    var that = this
+    setTimeout(function() { that.isReady = true }, 200)
   },
   methods: {
-    buildGlowRows() {
-      var rows = []
-      var colors = ['#10b981', '#059669', '#34d399', '#6ee7b7']
-      for (var r = 0; r < 5; r++) {
-        var dots = []
-        var count = 3 + Math.floor(Math.random() * 4)
-        for (var c = 0; c < count; c++) {
-          var color = colors[Math.floor(Math.random() * colors.length)]
-          dots.push({ style: 'width:' + (3 + Math.floor(Math.random() * 6)) + 'px;height:' + (3 + Math.floor(Math.random() * 6)) + 'px;background:' + color + ';animation-duration:' + (2 + Math.random() * 3) + 's;animation-delay:' + Math.random() * 2 + 's;' })
-        }
-        rows.push({ dots: dots })
-      }
-      this.glowRows = rows
+    goBack: function() {
+      uni.navigateBack({ delta: 1 })
     },
-    goBack() { uni.navigateBack() },
-    goAdd() { uni.navigateTo({ url: '/pages/mine/vehicle/finance-edit' }) },
-    goDetail(id) { uni.showToast({ title: '记录详情 #' + id, icon: 'none', duration: 1500 }) },
-    switchTab(idx) { this.activeTab = idx },
-    prevMonth() { if (this.currentMonth === 1) { this.currentMonth = 12; this.currentYear-- } else { this.currentMonth-- } },
-    nextMonth() { if (this.currentMonth === 12) { this.currentMonth = 1; this.currentYear++ } else { this.currentMonth++ } }
+    goAdd: function() {
+      uni.navigateTo({ url: '/pages/mine/vehicle/finance-edit' })
+    },
+    goEdit: function(item) {
+      uni.navigateTo({ url: '/pages/mine/vehicle/finance-edit?planId=' + item.planId })
+    },
+    toggleStatus: function(item, e) {
+      item.status = e.detail.value ? '1' : '0'
+      uni.showToast({
+        title: item.status === '1' ? '已启用' : '已停用',
+        icon: 'none',
+        duration: 1200
+      })
+    },
+    fmtRate: function(val) {
+      if (val === undefined || val === null) return '0.00'
+      return (val * 100).toFixed(1)
+    },
+    calcMonthly: function(item) {
+      var price = this.examplePrice
+      var loanAmount = price * (1 - item.downRatio)
+      var mr = item.monthlyRate
+      var n = item.months
+      // 0息时等额本金
+      if (mr === 0 || n === 0) {
+        return (loanAmount / n).toFixed(0)
+      }
+      // 等额本息公式: P * [r(1+r)^n] / [(1+r)^n - 1]
+      var factor = Math.pow(1 + mr, n)
+      var monthly = loanAmount * (mr * factor) / (factor - 1)
+      return monthly.toFixed(0)
+    }
   }
 }
 </script>
 
 <style scoped>
-.page { min-height: 100vh; background: linear-gradient(180deg, #ecfdf5 0%, #f0fdf4 30%, #faf5ff 60%, #ecfdf5 100%); opacity: 0; transition: opacity 0.5s ease; }
-.page-ready { opacity: 1; }
-.glow-matrix { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-.glow-row { display: flex; justify-content: space-around; padding: 20rpx 30rpx; }
-.glow-spot { border-radius: 50%; filter: blur(6px); opacity: 0; animation: glowPulse ease-in-out infinite alternate; }
-@keyframes glowPulse { 0% { opacity: 0; transform: scale(0.6); } 50% { opacity: 0.5; } 100% { opacity: 0; transform: scale(1.4); } }
-.overlay-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, rgba(236,253,245,0.35) 0%, rgba(240,253,244,0.45) 38%, rgba(250,245,255,0.55) 66%, rgba(236,253,245,0.65) 100%); z-index: 1; pointer-events: none; }
-.main-scroll { position: relative; z-index: 2; }
+/* ========== 页面容器 ========== */
+.page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #fff7ed 0%, #fffbeb 30%, #fefce8 60%, #fffbeb 100%);
+  position: relative;
+  overflow-x: hidden;
+}
+.page-ready .plan-card {
+  animation: fadeSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(30rpx) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 
-.header { position: relative; padding: 30rpx 28rpx 24rpx; display: flex; align-items: center; }
-.header-bg { position: absolute; top: -60rpx; left: -40rpx; right: -40rpx; bottom: 0; background: radial-gradient(ellipse at 20% 30%, rgba(16,185,129,0.1) 0%, transparent 60%), radial-gradient(ellipse at 80% 50%, rgba(52,211,153,0.08) 0%, transparent 55%); border-radius: 0 0 60rpx 60rpx; }
-.back-btn { width: 60rpx; height: 60rpx; border-radius: 30rpx; background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 1; box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06); }
-.back-icon { font-size: 28rpx; color: #065f46; }
-.header-info { flex: 1; margin-left: 20rpx; z-index: 1; }
-.header-title { font-size: 36rpx; font-weight: 700; color: #022c22; display: block; }
-.header-sub { font-size: 24rpx; color: #059669; margin-top: 4rpx; display: block; }
-.header-right { z-index: 1; }
-.add-btn { width: 60rpx; height: 60rpx; border-radius: 30rpx; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; box-shadow: 0 4rpx 16rpx rgba(16,185,129,0.35); }
-.add-icon { font-size: 32rpx; color: #fff; }
+/* ========== 背景光晕矩阵 ========== */
+.glow-matrix {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.glow-row {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 24rpx 20rpx;
+}
+.glow-spot {
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: glowPulse ease-in-out infinite alternate;
+}
+@keyframes glowPulse {
+  0% { opacity: 0.15; transform: scale(0.85); }
+  50% { opacity: 0.6; }
+  100% { opacity: 0.15; transform: scale(1.25); }
+}
 
-.summary-section { padding: 0 28rpx 20rpx; }
-.summary-card { background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); border-radius: 24rpx; padding: 28rpx; display: flex; box-shadow: 0 2rpx 20rpx rgba(0,0,0,0.04); }
-.summary-left { flex: 1; }
-.summary-right { flex: 1; border-left: 1rpx solid rgba(0,0,0,0.06); padding-left: 24rpx; }
-.summary-label { font-size: 24rpx; color: #9ca3af; display: block; }
-.summary-value { font-size: 40rpx; font-weight: 700; color: #059669; margin: 4rpx 0; display: block; }
-.summary-value.out { color: #ef4444; }
-.summary-trend { font-size: 22rpx; display: block; }
-.summary-trend.up { color: #10b981; }
-.summary-trend.down { color: #f59e0b; }
-.profit-row { display: flex; justify-content: space-between; align-items: center; margin-top: 16rpx; padding: 16rpx 28rpx; background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(5,150,105,0.08)); border-radius: 16rpx; }
-.profit-label { font-size: 26rpx; color: #065f46; }
-.profit-value { font-size: 36rpx; font-weight: 700; color: #059669; }
+.overlay-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg,
+    rgba(255, 247, 237, 0.92) 0%,
+    rgba(255, 251, 235, 0.95) 35%,
+    rgba(254, 252, 232, 0.96) 65%,
+    rgba(255, 251, 235, 0.97) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+.main-scroll {
+  position: relative;
+  z-index: 2;
+  height: 100vh;
+}
 
-.month-picker { display: flex; align-items: center; justify-content: center; padding: 0 28rpx 16rpx; }
-.month-arrow { width: 56rpx; height: 56rpx; border-radius: 28rpx; background: rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center; font-size: 24rpx; color: #059669; }
-.month-text { font-size: 30rpx; font-weight: 600; color: #065f46; margin: 0 32rpx; }
+/* ========== 琥珀渐变顶栏 ========== */
+.header {
+  position: relative;
+  padding: 28rpx 28rpx 24rpx;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+.header-bg {
+  position: absolute;
+  top: -80rpx;
+  left: -40rpx;
+  right: -40rpx;
+  bottom: -20rpx;
+  background: linear-gradient(135deg, #f59e0b 0%, #f97316 35%, #fb923c 65%, #fdba74 100%);
+  border-radius: 0 0 60rpx 60rpx;
+}
+.back-btn {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 32rpx;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  box-shadow: 0 4rpx 14rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+.btn-hover {
+  transform: scale(0.9);
+  background: rgba(255, 255, 255, 0.45);
+}
+.back-icon {
+  font-size: 36rpx;
+  color: #ffffff;
+  font-weight: 300;
+}
+.header-info {
+  flex: 1;
+  margin-left: 20rpx;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+}
+.header-title {
+  font-size: 38rpx;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 1rpx;
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+.header-sub {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.88);
+  margin-top: 6rpx;
+  font-weight: 500;
+}
+.header-right {
+  z-index: 2;
+}
+.add-btn-sm {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 14rpx 26rpx;
+  border-radius: 32rpx;
+  box-shadow: 0 4rpx 14rpx rgba(0, 0, 0, 0.08);
+}
+.add-icon-sm {
+  font-size: 30rpx;
+  color: #ffffff;
+  font-weight: 700;
+  margin-right: 6rpx;
+}
+.add-text-sm {
+  font-size: 24rpx;
+  color: #ffffff;
+  font-weight: 600;
+}
 
-.filter-tabs { display: flex; padding: 0 28rpx 16rpx; gap: 12rpx; }
-.tab-item { padding: 12rpx 28rpx; border-radius: 30rpx; font-size: 26rpx; color: #6b7280; background: rgba(255,255,255,0.7); transition: all 0.3s; }
-.tab-item.active { background: linear-gradient(135deg, #10b981, #059669); color: #fff; box-shadow: 0 4rpx 12rpx rgba(16,185,129,0.3); }
+/* ========== 统计概览 ========== */
+.stats-row {
+  display: flex;
+  padding: 16rpx 24rpx;
+  gap: 14rpx;
+  position: relative;
+  z-index: 2;
+}
+.stat-card {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 18rpx;
+  padding: 20rpx 12rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 4rpx 16rpx rgba(245, 158, 11, 0.08);
+  border: 1rpx solid rgba(245, 158, 11, 0.1);
+}
+.stat-label {
+  font-size: 21rpx;
+  color: #a16207;
+  font-weight: 500;
+  margin-bottom: 8rpx;
+}
+.stat-value {
+  font-size: 36rpx;
+  font-weight: 900;
+  color: #f59e0b;
+  line-height: 1.2;
+}
+.stat-unit {
+  font-size: 19rpx;
+  color: #d97706;
+  font-weight: 600;
+  margin-top: 2rpx;
+}
+.stat-active .stat-value { color: #ea580c; }
+.stat-rate .stat-value { color: #dc2626; font-size: 28rpx; }
 
-.record-list { padding: 0 28rpx; }
-.record-card { background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); border-radius: 20rpx; padding: 24rpx; margin-bottom: 16rpx; display: flex; align-items: center; box-shadow: 0 2rpx 16rpx rgba(0,0,0,0.04); }
-.card-hover { transform: scale(0.98); }
-.record-left { margin-right: 20rpx; }
-.record-type-icon { width: 56rpx; height: 56rpx; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; font-size: 28rpx; font-weight: 700; }
-.type-income { background: rgba(16,185,129,0.12); color: #059669; }
-.type-expense { background: rgba(239,68,68,0.12); color: #ef4444; }
-.record-center { flex: 1; }
-.record-title { font-size: 28rpx; font-weight: 500; color: #1f2937; display: block; }
-.record-desc { font-size: 24rpx; color: #9ca3af; margin-top: 4rpx; display: block; }
-.record-right { text-align: right; }
-.record-amount { font-size: 28rpx; font-weight: 600; display: block; }
-.record-amount.income { color: #059669; }
-.record-amount.expense { color: #ef4444; }
-.record-status { font-size: 22rpx; color: #9ca3af; margin-top: 4rpx; display: block; }
+/* ========== 金融方案卡片列表 ========== */
+.plan-list {
+  padding: 12rpx 24rpx;
+}
+.plan-card {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 24rpx;
+  margin-bottom: 20rpx;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 6rpx 28rpx rgba(0, 0, 0, 0.05), inset 0 1rpx 0 rgba(255, 255, 255, 0.9);
+  border: 1rpx solid rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+}
+.card-hover {
+  transform: scale(0.985) translateY(-2rpx);
+  box-shadow: 0 12rpx 36rpx rgba(0, 0, 0, 0.1);
+}
 
-.empty-wrap { display: flex; flex-direction: column; align-items: center; padding: 80rpx 0; }
-.empty-circle { width: 120rpx; height: 120rpx; border-radius: 60rpx; background: rgba(255,255,255,0.6); display: flex; align-items: center; justify-content: center; margin-bottom: 20rpx; }
-.empty-icon { font-size: 48rpx; }
-.empty-text { font-size: 28rpx; color: #9ca3af; }
+/* 左侧彩色竖条 */
+.left-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6rpx;
+  border-radius: 24rpx 0 0 24rpx;
+  transition: all 0.3s ease;
+}
+.card-recommended .left-bar {
+  background: linear-gradient(180deg, #fbbf24, #f59e0b, #d97706);
+  box-shadow: 2rpx 0 16rpx rgba(245, 158, 11, 0.45);
+}
+.card-normal .left-bar {
+  background: linear-gradient(180deg, #f59e0b, #fb923c, #fbbf24);
+  box-shadow: 2rpx 0 16rpx rgba(245, 158, 11, 0.35);
+}
+.card-hover .left-bar { width: 8rpx; }
 
-.bottom-safe { height: 40rpx; }
+/* 推荐角标 */
+.recommend-badge {
+  position: absolute;
+  top: 18rpx;
+  right: -4rpx;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  padding: 6rpx 22rpx 6rpx 14rpx;
+  border-radius: 0 14rpx 14rpx 0;
+  z-index: 3;
+  box-shadow: 0 4rpx 12rpx rgba(245, 158, 11, 0.35);
+}
+.recommend-badge text {
+  font-size: 19rpx;
+  color: #ffffff;
+  font-weight: 800;
+  letter-spacing: 1rpx;
+}
+
+/* 卡片主体 */
+.card-body {
+  padding: 24rpx 22rpx 20rpx 26rpx;
+  position: relative;
+  z-index: 1;
+}
+
+/* ========== 卡片头部 ========== */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+.plan-emoji {
+  font-size: 32rpx;
+  margin-right: 10rpx;
+}
+.plan-name {
+  font-size: 30rpx;
+  font-weight: 800;
+  color: #1c1917;
+  letter-spacing: 0.5rpx;
+  margin-right: 12rpx;
+}
+.stop-tag {
+  display: inline-block;
+  padding: 5rpx 16rpx;
+  border-radius: 14rpx;
+  background: linear-gradient(135deg, rgba(156, 163, 175, 0.12), rgba(209, 213, 219, 0.06));
+  border: 1rpx solid rgba(156, 163, 175, 0.18);
+}
+.stop-tag text {
+  font-size: 20rpx;
+  color: #9ca3af;
+  font-weight: 700;
+}
+
+/* ========== 核心数据区域 ========== */
+.data-area {
+  background: linear-gradient(135deg, rgba(255, 251, 235, 0.95), rgba(255, 255, 255, 1));
+  border-radius: 16rpx;
+  padding: 18rpx 20rpx;
+  margin-bottom: 14rpx;
+  border: 1rpx solid rgba(245, 158, 11, 0.08);
+}
+
+/* 信息网格 */
+.info-grid {
+  display: flex;
+  gap: 10rpx;
+  margin-bottom: 16rpx;
+}
+.grid-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12rpx 6rpx;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 12rpx;
+  border: 1rpx solid rgba(0, 0, 0, 0.03);
+}
+.grid-label {
+  font-size: 20rpx;
+  color: #a8a29e;
+  font-weight: 500;
+  margin-bottom: 6rpx;
+}
+.grid-value {
+  font-size: 26rpx;
+  font-weight: 800;
+  color: #451a03;
+}
+.cond-text {
+  font-size: 20rpx !important;
+  font-weight: 600 !important;
+}
+
+/* 年利率大字展示 */
+.rate-block {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 18rpx;
+  margin-bottom: 14rpx;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(251, 146, 60, 0.04));
+  border-radius: 14rpx;
+  border: 1rpx solid rgba(245, 158, 11, 0.12);
+}
+.rate-label {
+  font-size: 23rpx;
+  color: #92400e;
+  font-weight: 600;
+}
+.rate-value-wrap {
+  display: flex;
+  align-items: baseline;
+}
+.rate-symbol {
+  font-size: 24rpx;
+  color: #f59e0b;
+  font-weight: 700;
+  margin-right: 4rpx;
+}
+.rate-number {
+  font-size: 44rpx;
+  font-weight: 900;
+  color: #f59e0b;
+  letter-spacing: -0.5rpx;
+  text-shadow: 0 2rpx 10rpx rgba(245, 158, 11, 0.2);
+}
+.rate-zero-tag {
+  font-size: 20rpx;
+  color: #ea580c;
+  font-weight: 700;
+  background: rgba(234, 88, 12, 0.08);
+  padding: 4rpx 12rpx;
+  border-radius: 10rpx;
+}
+
+/* 月供示例 */
+.monthly-example {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14rpx 16rpx;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(251, 191, 36, 0.03));
+  border-radius: 12rpx;
+  border: 1rpx solid rgba(245, 158, 11, 0.1);
+}
+.example-left {
+  display: flex;
+  align-items: center;
+}
+.example-icon {
+  font-size: 24rpx;
+  margin-right: 8rpx;
+}
+.example-label {
+  font-size: 22rpx;
+  color: #78716c;
+  font-weight: 500;
+}
+.example-value {
+  font-size: 30rpx;
+  font-weight: 900;
+  color: #d97706;
+  letter-spacing: 0.5rpx;
+}
+
+/* ========== 底部状态条 ========== */
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10rpx 0 2rpx;
+  border-radius: 12rpx;
+  gap: 8rpx;
+}
+.bar-on {
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.08), rgba(245, 158, 11, 0.04));
+}
+.bar-off {
+  background: linear-gradient(135deg, rgba(156, 163, 175, 0.08), rgba(209, 213, 219, 0.04));
+}
+.status-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: #d97706;
+  animation: dotPulse 2s ease-in-out infinite;
+  box-shadow: 0 0 8rpx #d97706;
+}
+@keyframes dotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+.status-txt {
+  font-size: 21rpx;
+  font-weight: 600;
+}
+.bar-on .status-txt { color: #d97706; }
+.bar-off .status-txt { color: #9ca3af; }
+
+/* ========== 空状态 ========== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120rpx 40rpx;
+}
+.empty-icon {
+  font-size: 96rpx;
+  opacity: 0.35;
+  animation: floatBounce 2.5s ease-in-out infinite;
+}
+@keyframes floatBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-16rpx); }
+}
+.empty-text {
+  font-size: 30rpx;
+  color: #a8a29e;
+  font-weight: 500;
+  margin-top: 20rpx;
+}
+.empty-btn {
+  margin-top: 32rpx;
+  padding: 22rpx 56rpx;
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  border-radius: 44rpx;
+  font-size: 28rpx;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+  box-shadow: 0 8rpx 32rpx rgba(245, 158, 11, 0.35);
+  transition: all 0.25s ease;
+}
+.empty-btn:active {
+  transform: scale(0.94);
+  box-shadow: 0 10rpx 40rpx rgba(245, 158, 11, 0.45);
+}
+
+/* ========== 浮动新增按钮(FAB) ========== */
+.fab-add {
+  position: fixed;
+  right: 32rpx;
+  bottom: 60rpx;
+  width: 108rpx;
+  height: 108rpx;
+  border-radius: 54rpx;
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99;
+  box-shadow: 0 8rpx 32rpx rgba(245, 158, 11, 0.4), 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.fab-hover {
+  transform: scale(1.1) rotate(90deg);
+  box-shadow: 0 12rpx 44rpx rgba(245, 158, 11, 0.5), 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+.fab-icon {
+  font-size: 52rpx;
+  color: #ffffff;
+  font-weight: 300;
+  line-height: 1;
+}
 </style>

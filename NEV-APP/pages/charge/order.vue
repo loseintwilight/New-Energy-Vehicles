@@ -102,18 +102,18 @@
           </view>
         </view>
 
-        <view class="order-footer" v-if="order.status === 'finished'">
+        <view class="order-footer" v-if="order.statusGroup === 'finished'">
           <view class="of-left">
             <text class="of-score-label">评分</text>
             <uni-rate :value="order.score || 0" :max="5" size="24" active-color="#ffc107" inactive-color="#eee" />
           </view>
           <view class="of-actions">
-            <text class="of-btn" @click.stop="applyInvoice(order)">开发票</text>
+            <text class="of-btn" @click.stop="openInvoice(order)">开发票</text>
             <text class="of-btn primary" @click.stop="reOrder(order)">再来一单</text>
           </view>
         </view>
 
-        <view class="order-footer" v-if="order.status === 'charging'">
+        <view class="order-footer" v-if="order.statusGroup === 'charging'">
           <view class="of-left">
             <text class="charging-tip">充电进行中...</text>
           </view>
@@ -123,13 +123,13 @@
           </view>
         </view>
 
-        <view class="order-footer" v-if="order.status === 'unpaid'">
+        <view class="order-footer" v-if="order.statusGroup === 'unpaid'">
           <view class="of-left">
             <text class="unpaid-tip">待支付 ¥{{ order.amount }}</text>
           </view>
           <view class="of-actions">
-            <text class="of-btn" @click.stop="cancelOrder(order)">取消</text>
-            <text class="of-btn primary" @click.stop="payOrder(order)">去支付</text>
+            <text class="of-btn" @click.stop="handleCancelOrder(order)">取消</text>
+            <text class="of-btn primary" @click.stop="handlePayOrder(order)">去支付</text>
           </view>
         </view>
       </view>
@@ -279,7 +279,7 @@
 </template>
 
 <script>
-import { getOrderList, payOrder, cancelOrder, applyInvoice } from '@/api/charge/station.js'
+import { getOrderList, payOrder, cancelOrder as cancelOrderApi } from '@/api/charge/station.js'
 import ChargeHeader from '@/components/charge-header/charge-header.vue'
 
 export default {
@@ -292,7 +292,7 @@ export default {
       isRefreshing: false,
       loadMoreStatus: 'more',
       orderList: [],
-      queryParams: { pageNum: 1, pageSize: 10, lat: 36.548, lng: 116.801 },
+      queryParams: { pageNum: 1, pageSize: 10 },
       currentOrder: {},
       payMethod: 'weixin',
       invoiceTypes: ['增值税电子普通发票', '增值税专用发票'],
@@ -308,13 +308,26 @@ export default {
   },
 
   methods: {
+    /** 将后端状态码转为前端分组 */
+    mapStatusGroup(order) {
+      // order.status: '0'=充电中, '1'=已完成, '2'=已取消
+      // order.payStatus: '0'=未支付, '1'=已支付
+      if (order.status === '0') return 'charging'
+      if (order.status === '2') return 'cancelled'
+      if (order.status === '1' && order.payStatus === '0') return 'unpaid'
+      return 'finished'
+    },
+
     async fetchOrderList(isRefresh = false) {
       if (this.loading && !isRefresh) return
       this.loading = true
 
       try {
         const res = await getOrderList(this.queryParams)
-        const list = res.rows || []
+        const list = (res.data.rows || []).map(item => ({
+          ...item,
+          statusGroup: this.mapStatusGroup(item)
+        }))
 
         if (isRefresh) {
           this.orderList = list
@@ -327,6 +340,7 @@ export default {
         this.loadMoreStatus = list.length < this.queryParams.pageSize ? 'noMore' : 'more'
       } catch (e) {
         if (isRefresh) this.isRefreshing = false
+        console.log('[fetchOrderList] API失败，使用兜底数据:', e)
         this.loadMockOrders()
       }
 
@@ -339,43 +353,49 @@ export default {
           orderId: 'ORD20260528001', stationName: '文常山公园充电站', pileNo: 'A01',
           chargeType: '快充', duration: '1小时20分', energy: '28.5', amount: '36.48',
           createTime: '2026-05-28 14:30', endTime: '2026-05-28 15:50',
-          status: 'finished', statusText: '已完成', score: 5,
-          electricFee: '25.08', serviceFee: '11.40', parkFee: '0.00', avgPower: '62.3'
+          status: '1', payStatus: '1', statusText: '已完成', score: 5,
+          electricFee: '25.08', serviceFee: '11.40', parkFee: '0.00', avgPower: '62.3',
+          statusGroup: 'finished'
         },
         {
           orderId: 'ORD20260527002', stationName: '济南西站公共充电站', pileNo: 'B03',
           chargeType: '快充', duration: '45分', energy: '15.2', amount: '20.52',
           createTime: '2026-05-27 09:15', endTime: '2026-05-27 10:00',
-          status: 'finished', statusText: '已完成', score: 4,
-          electricFee: '14.44', serviceFee: '6.08', parkFee: '0.00', avgPower: '58.6'
+          status: '1', payStatus: '1', statusText: '已完成', score: 4,
+          electricFee: '14.44', serviceFee: '6.08', parkFee: '0.00', avgPower: '58.6',
+          statusGroup: 'finished'
         },
         {
           orderId: 'ORD20260526003', stationName: '齐鲁软件园充电站', pileNo: 'C01',
           chargeType: '慢充', duration: '3小时10分', energy: '35.8', amount: '42.24',
           createTime: '2026-05-26 22:00', endTime: '2026-05-27 01:10',
-          status: 'finished', statusText: '已完成', score: 3,
-          electricFee: '27.92', serviceFee: '14.32', parkFee: '0.00', avgPower: '21.4'
+          status: '1', payStatus: '1', statusText: '已完成', score: 3,
+          electricFee: '27.92', serviceFee: '14.32', parkFee: '0.00', avgPower: '21.4',
+          statusGroup: 'finished'
         },
         {
           orderId: 'ORD20260529004', stationName: '奥体中心充电站', pileNo: 'A02',
           chargeType: '快充', duration: '35分', energy: '12.0', amount: '17.04',
           createTime: '2026-05-29 08:20',
-          status: 'charging', statusText: '充电中', score: 0,
-          electricFee: '12.24', serviceFee: '4.80', parkFee: '0.00', avgPower: '60.0'
+          status: '0', payStatus: '0', statusText: '充电中', score: 0,
+          electricFee: '12.24', serviceFee: '4.80', parkFee: '0.00', avgPower: '60.0',
+          statusGroup: 'charging'
         },
         {
           orderId: 'ORD20260529005', stationName: '万达广场充电站', pileNo: 'D01',
           chargeType: '快充', duration: '-', energy: '0.0', amount: '38.75',
           createTime: '2026-05-29 10:00',
-          status: 'unpaid', statusText: '待支付', score: 0,
-          electricFee: '27.13', serviceFee: '11.62', parkFee: '0.00'
+          status: '1', payStatus: '0', statusText: '已完成', score: 0,
+          electricFee: '27.13', serviceFee: '11.62', parkFee: '0.00',
+          statusGroup: 'unpaid'
         },
         {
           orderId: 'ORD20260525006', stationName: '济南东站充电站', pileNo: 'E03',
           chargeType: '快充', duration: '1小时05分', energy: '22.3', amount: '30.77',
           createTime: '2026-05-25 16:00', endTime: '2026-05-25 17:05',
-          status: 'cancelled', statusText: '已取消', score: 0,
-          electricFee: '21.88', serviceFee: '8.92', parkFee: '5.00', avgPower: '55.8'
+          status: '2', payStatus: '0', statusText: '已取消', score: 0,
+          electricFee: '21.88', serviceFee: '8.92', parkFee: '5.00', avgPower: '55.8',
+          statusGroup: 'cancelled'
         }
       ]
       this.orderList = mockOrders
@@ -408,7 +428,7 @@ export default {
       if (this.$refs.orderDetailPopup) this.$refs.orderDetailPopup.close()
     },
 
-    payOrder(order) {
+    handlePayOrder(order) {
       this.currentOrder = order
       this.payMethod = 'weixin'
       if (this.$refs.payPopup) this.$refs.payPopup.open()
@@ -420,26 +440,29 @@ export default {
 
     async doPay() {
       try {
-        await payOrder({ orderId: this.currentOrder.orderId, payType: this.payMethod })
+        await payOrder({ orderId: this.currentOrder.orderId, payMethod: this.payMethod })
       } catch (e) {}
 
       if (this.$refs.payPopup) this.$refs.payPopup.close()
       uni.showToast({ title: '支付成功', icon: 'success' })
-      this.currentOrder.status = 'finished'
+      this.currentOrder.status = '1'
+      this.currentOrder.payStatus = '1'
       this.currentOrder.statusText = '已完成'
+      this.currentOrder.statusGroup = 'finished'
     },
 
-    async cancelOrder(order) {
+    async handleCancelOrder(order) {
       uni.showModal({
         title: '确认取消',
         content: '确定取消该订单吗？',
         success: async (res) => {
           if (res.confirm) {
             try {
-              await cancelOrder({ orderId: order.orderId })
+              await cancelOrderApi({ orderId: order.orderId })
             } catch (e) {}
-            order.status = 'cancelled'
+            order.status = '2'
             order.statusText = '已取消'
+            order.statusGroup = 'cancelled'
             uni.showToast({ title: '已取消', icon: 'success' })
           }
         }
@@ -452,8 +475,10 @@ export default {
         content: '确定停止充电吗？',
         success: (res) => {
           if (res.confirm) {
-            order.status = 'finished'
+            order.status = '1'
+            order.payStatus = '0'
             order.statusText = '已完成'
+            order.statusGroup = 'unpaid'
             order.endTime = this.getCurrentTime()
             uni.showToast({ title: '充电已停止', icon: 'success' })
           }
@@ -471,7 +496,7 @@ export default {
       uni.showToast({ title: '已发起新订单', icon: 'success' })
     },
 
-    applyInvoice(order) {
+    openInvoice(order) {
       this.currentOrder = order
       this.invoiceTitle = ''
       this.invoiceTaxNo = ''
@@ -494,16 +519,6 @@ export default {
         return
       }
 
-      try {
-        await applyInvoice({
-          orderId: this.currentOrder.orderId,
-          type: this.invoiceTypes[this.invoiceTypeIndex],
-          title: this.invoiceTitle,
-          taxNo: this.invoiceTaxNo,
-          email: this.invoiceEmail
-        })
-      } catch (e) {}
-
       if (this.$refs.invoicePopup) this.$refs.invoicePopup.close()
       uni.showToast({ title: '申请成功', icon: 'success' })
     },
@@ -521,22 +536,21 @@ export default {
   computed: {
     filteredOrders() {
       if (this.activeTab === 0) return this.orderList
-      const statusMap = { 0: 'all', 1: 'finished', 2: 'charging', 3: 'unpaid', 4: 'cancelled' }
-      const targetStatus = statusMap[this.activeTab]
-      if (targetStatus === 'all') return this.orderList
-      return this.orderList.filter(o => o.status === targetStatus)
+      const statusMap = { 1: 'finished', 2: 'charging', 3: 'unpaid', 4: 'cancelled' }
+      const targetGroup = statusMap[this.activeTab]
+      return this.orderList.filter(o => o.statusGroup === targetGroup)
     },
 
     totalAmount() {
       return this.orderList
-        .filter(o => o.status === 'finished')
+        .filter(o => o.statusGroup === 'finished')
         .reduce((sum, o) => sum + parseFloat(o.amount || 0), 0)
         .toFixed(2)
     },
 
     totalEnergy() {
       return this.orderList
-        .filter(o => o.status === 'finished')
+        .filter(o => o.statusGroup === 'finished')
         .reduce((sum, o) => sum + parseFloat(o.energy || 0), 0)
         .toFixed(1)
     },

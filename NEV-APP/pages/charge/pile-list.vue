@@ -47,7 +47,7 @@
             <view class="pc-row price-row">
               <text class="pc-label">充电价格</text>
               <text class="pc-price">{{ currentPrice }}~1.28元/度</text>
-              <text class="pc-price-link">价格详情 <u-icon name="arrow-right" size="16" color="#1b8e67" bold></u-icon></text>
+              <text class="pc-price-link" @click="showAllPrices">价格详情 <u-icon name="arrow-right" size="16" color="#1b8e67" bold></u-icon></text>
             </view>
             <view class="pc-spec-row">
               <text class="spec-tag">{{ pile.type }}</text>
@@ -74,49 +74,37 @@
         </view>
       </view>
     </scroll-view>
+
+    <!-- 价格详情弹窗 -->
+    <uni-popup ref="priceDetailPopup" type="bottom" :safe-area="true">
+      <view class="price-detail-popup">
+        <view class="popup-header">
+          <text class="popup-title">时段电价详情</text>
+          <u-icon name="close" size="40" color="#999" @click="closePriceDetail"></u-icon>
+        </view>
+        <view class="price-time-grid">
+          <view class="pt-row header">
+            <text class="pt-cell">时段</text>
+            <text class="pt-cell">电费</text>
+            <text class="pt-cell">服务费</text>
+            <text class="pt-cell">合计</text>
+          </view>
+          <view v-for="(tp, tpi) in timePrices" :key="tpi" class="pt-row" :class="{ active: tp.isCurrent }">
+            <text class="pt-cell">{{ tp.timeRange }}</text>
+            <text class="pt-cell">¥{{ tp.electric }}/度</text>
+            <text class="pt-cell">¥{{ tp.service }}/度</text>
+            <text class="pt-cell highlight">¥{{ tp.total }}/度</text>
+          </view>
+        </view>
+      </view>
+    </uni-popup>
   </view>
 </template>
 
 <script>
 import safeAreaMixin from '@/mixins/safe-area.js'
 import ChargeHeader from '@/components/charge-header/charge-header.vue'
-
-const mockPileData = [
-  { number: 'A01', type: '快充', status: 'free', power: '120kW', statusText: '空闲', connectorType: 'GB/T直流', floor: 'B1', position: 'A区-01号', online: true,
-    pileCode: '3740190000020104', name: '3号桩', gunCode: '3740190000020104001', voltage: '750V', standard: '国标2015', soc: 89, current: 18.9, voltageReal: 406.5 },
-  { number: 'A02', type: '快充', status: 'free', power: '120kW', statusText: '空闲', connectorType: 'GB/T直流', floor: 'B1', position: 'A区-02号', online: true,
-    pileCode: '3740190000020105', name: '1号桩', gunCode: '3740190000020105001', voltage: '750V', standard: '国标2015', soc: 100, current: 3.6, voltageReal: 395.5 },
-  { number: 'A03', type: '快充', status: 'charging', power: '120kW', statusText: '使用中', connectorType: 'GB/T直流', floor: 'B1', position: 'A区-03号', online: true,
-    pileCode: '3740190000020103', name: '7号桩', gunCode: '3740190000020103001', voltage: '750V', standard: '国标2015', soc: 40, current: 44.5, voltageReal: 414.0, remainTime: '35分钟' },
-  { number: 'A04', type: '快充', status: 'free', power: '120kW', statusText: '空闲', connectorType: 'GB/T直流', floor: 'B1', position: 'A区-04号', online: true,
-    pileCode: '3740190000020106', name: '2号桩', gunCode: '3740190000020106001', voltage: '750V', standard: '国标2015', soc: 75, current: 0, voltageReal: 400.0 },
-  { number: 'A05', type: '快充', status: 'free', power: '120kW', statusText: '空闲', connectorType: 'GB/T直流', floor: 'B1', position: 'A区-05号', online: true,
-    pileCode: '3740190000020107', name: '4号桩', gunCode: '3740190000020107001', voltage: '750V', standard: '国标2015', soc: 60, current: 0, voltageReal: 408.0 },
-  { number: 'A06', type: '快充', status: 'charging', power: '120kW', statusText: '使用中', connectorType: 'GB/T直流', floor: 'B1', position: 'A区-06号', online: true,
-    pileCode: '3740190000020108', name: '5号桩', gunCode: '3740190000020108001', voltage: '750V', standard: '国标2015', soc: 35, current: 52.3, voltageReal: 410.2, remainTime: '45分钟' },
-  { number: 'A07', type: '快充', status: 'free', power: '120kW', statusText: '空闲', connectorType: 'GB/T直流', floor: 'B1', position: 'A区-07号', online: true,
-    pileCode: '3740190000020109', name: '6号桩', gunCode: '3740190000020109001', voltage: '750V', standard: '国标2015', soc: 95, current: 0, voltageReal: 398.5 },
-  { number: 'A08', type: '快充', status: 'free', power: '120kW', statusText: '空闲', connectorType: 'GB/T直流', floor: 'B1', position: 'A区-08号', online: true,
-    pileCode: '3740190000020110', name: '8号桩', gunCode: '3740190000020110001', voltage: '750V', standard: '国标2015', soc: 20, current: 0, voltageReal: 402.0 },
-  { number: 'B01', type: '慢充', status: 'free', power: '7kW', statusText: '空闲', connectorType: 'GB/T交流', floor: 'B2', position: 'B区-01号', online: true,
-    pileCode: '3740190000020201', name: '慢充1号', gunCode: '3740190000020201001', voltage: '220V', standard: '国标2015', soc: 55, current: 12.0, voltageReal: 220.0 },
-  { number: 'B02', type: '慢充', status: 'fault', power: '7kW', statusText: '故障维护', connectorType: 'GB/T交流', floor: 'B2', position: 'B区-02号', online: false,
-    pileCode: '3740190000020202', name: '慢充2号', gunCode: '3740190000020202001', voltage: '220V', standard: '国标2015', soc: 0, current: 0, voltageReal: 0 },
-  { number: 'B03', type: '慢充', status: 'free', power: '7kW', statusText: '空闲', connectorType: 'GB/T交流', floor: 'B2', position: 'B区-03号', online: true,
-    pileCode: '3740190000020203', name: '慢充3号', gunCode: '3740190000020203001', voltage: '220V', standard: '国标2015', soc: 0, current: 0, voltageReal: 0 },
-  { number: 'B04', type: '慢充', status: 'charging', power: '7kW', statusText: '使用中', connectorType: 'GB/T交流', floor: 'B2', position: 'B区-04号', online: true,
-    pileCode: '3740190000020204', name: '慢充4号', gunCode: '3740190000020204001', voltage: '220V', standard: '国标2015', soc: 68, current: 10.5, voltageReal: 218.0, remainTime: '55分钟' },
-  { number: 'B05', type: '慢充', status: 'free', power: '7kW', statusText: '空闲', connectorType: 'GB/T交流', floor: 'B2', position: 'B区-05号', online: true,
-    pileCode: '3740190000020205', name: '慢充5号', gunCode: '3740190000020205001', voltage: '220V', standard: '国标2015', soc: 82, current: 0, voltageReal: 221.0 },
-  { number: 'B06', type: '慢充', status: 'free', power: '7kW', statusText: '空闲', connectorType: 'GB/T交流', floor: 'B2', position: 'B区-06号', online: true,
-    pileCode: '3740190000020206', name: '慢充6号', gunCode: '3740190000020206001', voltage: '220V', standard: '国标2015', soc: 45, current: 0, voltageReal: 219.5 },
-  { number: 'C01', type: '快充', status: 'free', power: '180kW', statusText: '空闲', connectorType: 'GB/T直流', floor: 'B1', position: 'C区超充-01号', online: true,
-    pileCode: '3740190000020301', name: '超充1号', gunCode: '3740190000020301001', voltage: '1000V', standard: '国标2015+', soc: 70, current: 0, voltageReal: 800.0 },
-  { number: 'C02', type: '快充', status: 'free', power: '180kW', statusText: '空闲', connectorType: 'GB/T直流', floor: 'B1', position: 'C区超充-02号', online: true,
-    pileCode: '3740190000020302', name: '超充2号', gunCode: '3740190000020302001', voltage: '1000V', standard: '国标2015+', soc: 88, current: 0, voltageReal: 795.0 },
-  { number: 'C03', type: '快充', status: 'charging', power: '180kW', statusText: '使用中', connectorType: 'GB/T直流', floor: 'B1', position: 'C区超充-03号', online: true,
-    pileCode: '3740190000020303', name: '超充3号', gunCode: '3740190000020303001', voltage: '1000V', standard: '国标2015+', soc: 25, current: 98.6, voltageReal: 788.0, remainTime: '25分钟' }
-]
+import { getPileList, getStationDetail } from '@/api/charge/station.js'
 
 export default {
   mixins: [safeAreaMixin],
@@ -126,9 +114,16 @@ export default {
       stationId: '',
       stationName: '充电站',
       currentPrice: '1.28',
-      totalPiles: 17,
+      totalPiles: 0,
       pileList: [],
-      activeFilter: 'all'
+      activeFilter: 'all',
+      timePrices: [
+        { timeRange: '00:00-08:00', electric: '0.52', service: '0.30', total: '0.82', isCurrent: false },
+        { timeRange: '08:00-12:00', electric: '0.88', service: '0.40', total: '1.28', isCurrent: true },
+        { timeRange: '12:00-17:00', electric: '0.78', service: '0.35', total: '1.13', isCurrent: false },
+        { timeRange: '17:00-21:00', electric: '1.02', service: '0.45', total: '1.47', isCurrent: false },
+        { timeRange: '21:00-24:00', electric: '0.62', service: '0.30', total: '0.92', isCurrent: false }
+      ]
     }
   },
 
@@ -151,13 +146,125 @@ export default {
     if (options.name) this.stationName = decodeURIComponent(options.name)
     if (options.currentPrice) this.currentPrice = options.currentPrice
     if (options.pileFilter) this.activeFilter = options.pileFilter
-    this.pileList = mockPileData
-    this.totalPiles = mockPileData.length
+    this.fetchPileList()
+    this.fetchPriceData()
   },
 
   methods: {
+    async fetchPriceData() {
+      try {
+        const res = await getStationDetail(this.stationId)
+        const data = res.data || {}
+        if (data.timePrices && data.timePrices.length > 0) {
+          // 判断当前时段
+          const now = new Date()
+          const curMin = now.getHours() * 60 + now.getMinutes()
+          this.timePrices = data.timePrices.map(p => {
+            const startParts = p.startTime ? p.startTime.split(':') : ['00', '00']
+            const endParts = p.endTime ? p.endTime.split(':') : ['23', '59']
+            const startMin = parseInt(startParts[0]) * 60 + parseInt(startParts[1])
+            const endMin = parseInt(endParts[0]) * 60 + parseInt(endParts[1])
+            const isCurrent = curMin >= startMin && curMin < endMin
+            return {
+              timeRange: p.startTime + '-' + p.endTime,
+              electric: p.electricPrice != null ? String(p.electricPrice) : '0',
+              service: p.servicePrice != null ? String(p.servicePrice) : '0',
+              total: p.totalPrice != null ? String(p.totalPrice) : '0',
+              isCurrent
+            }
+          })
+          const current = this.timePrices.find(p => p.isCurrent) || this.timePrices[0]
+          this.currentPrice = current ? current.total : this.currentPrice
+        }
+      } catch (e) {
+        console.log('[DEBUG pile-list] 获取费率失败:', e)
+      }
+    },
+
+    async fetchPileList() {
+      try {
+        const res = await getPileList(this.stationId)
+        const piles = res.data || []
+        if (piles && piles.length > 0) {
+          this.pileList = piles.map(p => ({
+            number: p.pileCode || p.number || '',
+            type: p.pileType === 'dc' ? '快充' : (p.pileType === 'ac' ? '慢充' : (p.type || '快充')),
+            status: p.pileStatus === '0' ? 'free' : (p.pileStatus === '1' ? 'charging' : (p.pileStatus === '3' ? 'fault' : (p.status || 'free'))),
+            power: p.powerKw ? p.powerKw + 'kW' : (p.power || '120kW'),
+            statusText: p.pileStatus === '0' ? '空闲' : (p.pileStatus === '1' ? '使用中' : (p.pileStatus === '3' ? '故障维护' : (p.statusText || '空闲'))),
+            connectorType: p.connectorType || 'GB/T直流',
+            online: p.pileStatus !== '2',
+            position: p.position || '',
+            floor: p.floor || '',
+            pileCode: p.pileCode || '',
+            name: p.name || '',
+            gunCode: p.gunCode || '',
+            voltage: p.voltage || '',
+            standard: p.standard || '',
+            soc: p.soc || 0,
+            current: p.current || 0,
+            voltageReal: p.voltageReal || 0,
+            remainTime: p.remainTime || ''
+          }))
+          this.totalPiles = this.pileList.length
+          return
+        }
+      } catch (e) {
+        console.log('[DEBUG pile-list] API失败，使用兜底数据:', e)
+      }
+      this.loadMockPileList()
+    },
+
+    loadMockPileList() {
+      this.pileList = [
+        { number: 'A01', type: '快充', status: 'free', power: '120kW', statusText: '空闲', connectorType: 'GB/T直流', floor: 'B1', position: 'A区-01号', online: true,
+          pileCode: '3740190000020104', name: '3号桩', gunCode: '3740190000020104001', voltage: '750V', standard: '国标2015', soc: 89, current: 18.9, voltageReal: 406.5 },
+        { number: 'A02', type: '快充', status: 'free', power: '120kW', statusText: '空闲', connectorType: 'GB/T直流', floor: 'B1', position: 'A区-02号', online: true,
+          pileCode: '3740190000020105', name: '1号桩', gunCode: '3740190000020105001', voltage: '750V', standard: '国标2015', soc: 100, current: 3.6, voltageReal: 395.5 },
+        { number: 'A03', type: '快充', status: 'charging', power: '120kW', statusText: '使用中', connectorType: 'GB/T直流', floor: 'B1', position: 'A区-03号', online: true,
+          pileCode: '3740190000020103', name: '7号桩', gunCode: '3740190000020103001', voltage: '750V', standard: '国标2015', soc: 40, current: 44.5, voltageReal: 414.0, remainTime: '35分钟' },
+        { number: 'A04', type: '快充', status: 'free', power: '120kW', statusText: '空闲', connectorType: 'GB/T直流', floor: 'B1', position: 'A区-04号', online: true,
+          pileCode: '3740190000020106', name: '2号桩', gunCode: '3740190000020106001', voltage: '750V', standard: '国标2015', soc: 75, current: 0, voltageReal: 400.0 },
+        { number: 'A05', type: '快充', status: 'free', power: '120kW', statusText: '空闲', connectorType: 'GB/T直流', floor: 'B1', position: 'A区-05号', online: true,
+          pileCode: '3740190000020107', name: '4号桩', gunCode: '3740190000020107001', voltage: '750V', standard: '国标2015', soc: 60, current: 0, voltageReal: 408.0 },
+        { number: 'A06', type: '快充', status: 'charging', power: '120kW', statusText: '使用中', connectorType: 'GB/T直流', floor: 'B1', position: 'A区-06号', online: true,
+          pileCode: '3740190000020108', name: '5号桩', gunCode: '3740190000020108001', voltage: '750V', standard: '国标2015', soc: 35, current: 52.3, voltageReal: 410.2, remainTime: '45分钟' },
+        { number: 'A07', type: '快充', status: 'free', power: '120kW', statusText: '空闲', connectorType: 'GB/T直流', floor: 'B1', position: 'A区-07号', online: true,
+          pileCode: '3740190000020109', name: '6号桩', gunCode: '3740190000020109001', voltage: '750V', standard: '国标2015', soc: 95, current: 0, voltageReal: 398.5 },
+        { number: 'A08', type: '快充', status: 'free', power: '120kW', statusText: '空闲', connectorType: 'GB/T直流', floor: 'B1', position: 'A区-08号', online: true,
+          pileCode: '3740190000020110', name: '8号桩', gunCode: '3740190000020110001', voltage: '750V', standard: '国标2015', soc: 20, current: 0, voltageReal: 402.0 },
+        { number: 'B01', type: '慢充', status: 'free', power: '7kW', statusText: '空闲', connectorType: 'GB/T交流', floor: 'B2', position: 'B区-01号', online: true,
+          pileCode: '3740190000020201', name: '慢充1号', gunCode: '3740190000020201001', voltage: '220V', standard: '国标2015', soc: 55, current: 12.0, voltageReal: 220.0 },
+        { number: 'B02', type: '慢充', status: 'fault', power: '7kW', statusText: '故障维护', connectorType: 'GB/T交流', floor: 'B2', position: 'B区-02号', online: false,
+          pileCode: '3740190000020202', name: '慢充2号', gunCode: '3740190000020202001', voltage: '220V', standard: '国标2015', soc: 0, current: 0, voltageReal: 0 },
+        { number: 'B03', type: '慢充', status: 'free', power: '7kW', statusText: '空闲', connectorType: 'GB/T交流', floor: 'B2', position: 'B区-03号', online: true,
+          pileCode: '3740190000020203', name: '慢充3号', gunCode: '3740190000020203001', voltage: '220V', standard: '国标2015', soc: 0, current: 0, voltageReal: 0 },
+        { number: 'B04', type: '慢充', status: 'charging', power: '7kW', statusText: '使用中', connectorType: 'GB/T交流', floor: 'B2', position: 'B区-04号', online: true,
+          pileCode: '3740190000020204', name: '慢充4号', gunCode: '3740190000020204001', voltage: '220V', standard: '国标2015', soc: 68, current: 10.5, voltageReal: 218.0, remainTime: '55分钟' },
+        { number: 'B05', type: '慢充', status: 'free', power: '7kW', statusText: '空闲', connectorType: 'GB/T交流', floor: 'B2', position: 'B区-05号', online: true,
+          pileCode: '3740190000020205', name: '慢充5号', gunCode: '3740190000020205001', voltage: '220V', standard: '国标2015', soc: 82, current: 0, voltageReal: 221.0 },
+        { number: 'B06', type: '慢充', status: 'free', power: '7kW', statusText: '空闲', connectorType: 'GB/T交流', floor: 'B2', position: 'B区-06号', online: true,
+          pileCode: '3740190000020206', name: '慢充6号', gunCode: '3740190000020206001', voltage: '220V', standard: '国标2015', soc: 45, current: 0, voltageReal: 219.5 },
+        { number: 'C01', type: '快充', status: 'free', power: '180kW', statusText: '空闲', connectorType: 'GB/T直流', floor: 'B1', position: 'C区超充-01号', online: true,
+          pileCode: '3740190000020301', name: '超充1号', gunCode: '3740190000020301001', voltage: '1000V', standard: '国标2015+', soc: 70, current: 0, voltageReal: 800.0 },
+        { number: 'C02', type: '快充', status: 'free', power: '180kW', statusText: '空闲', connectorType: 'GB/T直流', floor: 'B1', position: 'C区超充-02号', online: true,
+          pileCode: '3740190000020302', name: '超充2号', gunCode: '3740190000020302001', voltage: '1000V', standard: '国标2015+', soc: 88, current: 0, voltageReal: 795.0 },
+        { number: 'C03', type: '快充', status: 'charging', power: '180kW', statusText: '使用中', connectorType: 'GB/T直流', floor: 'B1', position: 'C区超充-03号', online: true,
+          pileCode: '3740190000020303', name: '超充3号', gunCode: '3740190000020303001', voltage: '1000V', standard: '国标2015+', soc: 25, current: 98.6, voltageReal: 788.0, remainTime: '25分钟' }
+      ]
+      this.totalPiles = this.pileList.length
+    },
+
     goBack() {
       uni.navigateBack()
+    },
+
+    showAllPrices() {
+      if (this.$refs.priceDetailPopup) this.$refs.priceDetailPopup.open()
+    },
+
+    closePriceDetail() {
+      if (this.$refs.priceDetailPopup) this.$refs.priceDetailPopup.close()
     }
   }
 }
@@ -365,6 +472,58 @@ export default {
 
       &.free-row {
         .rt-item { font-size: 24rpx; color: #07c160; font-weight: 500; }
+      }
+    }
+  }
+}
+
+.price-detail-popup {
+  background: #fff;
+  border-radius: 24rpx 24rpx 0 0;
+  padding: 32rpx 24rpx 60rpx;
+
+  .popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24rpx;
+
+    .popup-title {
+      font-size: 34rpx;
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+  }
+
+  .price-time-grid {
+    .pt-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      padding: 20rpx 8rpx;
+      border-bottom: 1rpx solid #f5f5f5;
+
+      &.header {
+        .pt-cell {
+          font-size: 22rpx;
+          color: #999;
+          font-weight: 500;
+        }
+      }
+
+      &.active {
+        background: #f0fff4;
+        border-radius: 8rpx;
+      }
+
+      .pt-cell {
+        font-size: 26rpx;
+        color: #555;
+        text-align: center;
+
+        &.highlight {
+          color: #ff6b00;
+          font-weight: 700;
+        }
       }
     }
   }

@@ -26,24 +26,24 @@
           </view>
           <view class="form-card">
             <view class="form-row">
-              <text class="form-label">品牌</text>
+              <text class="form-label">品牌:</text>
               <input class="form-input" v-model="oldCar.brand" placeholder="如：特斯拉" />
             </view>
             <view class="form-row">
-              <text class="form-label">车型</text>
+              <text class="form-label">车型:</text>
               <input class="form-input" v-model="oldCar.model" placeholder="如：Model 3" />
             </view>
             <view class="form-row">
-              <text class="form-label">上牌年份</text>
+              <text class="form-label">上牌年份:</text>
               <picker mode="selector" :range="years" @change="onYearChange">
-                <view class="form-picker">
+                <view class="form-picker form-picker-sm">
                   <text :class="['form-picker-text', { placeholder: !oldCar.year }]">{{ oldCar.year || '请选择' }}</text>
                   <text class="arrow">></text>
                 </view>
               </picker>
             </view>
             <view class="form-row">
-              <text class="form-label">表显里程</text>
+              <text class="form-label">表显里程:</text>
               <view class="form-input-wrap">
                 <input class="form-input flex-1" type="digit" v-model="oldCar.mileage" placeholder="请输入里程" />
                 <text class="form-unit">万公里</text>
@@ -257,7 +257,7 @@
 </template>
 
 <script>
-import { getTradeInEvaluation, createTradeInOrder } from '@/api/car/car'
+import { getTradeInEvaluation, createTradeInOrder, getCarList, getCities, getStores } from '@/api/car/car'
 
 export default {
   data() {
@@ -274,8 +274,8 @@ export default {
       uploadImages: ['', '', ''],
       conditions: ['良好', '一般', '较差'],
       years: Array.from({ length: 16 }, (_, i) => 2026 - i),
-      cities: ['北京', '上海', '广州', '深圳', '杭州', '成都', '武汉', '南京', '重庆', '西安'],
-      storeList: ['北京朝阳服务中心', '上海浦东体验店', '广州天河服务中心', '深圳南山体验店'],
+      cities: [],
+      storeList: [],
       storeIndex: 0,
       evaluationPrice: '0.00',
       conditionAdjust: '0.00',
@@ -315,9 +315,37 @@ export default {
         this.newCars = []
       }
     }
+    if (!this.newCars || this.newCars.length === 0) {
+      this.fetchNewCars()
+    }
+    this.fetchCities()
+    this.fetchStores()
   },
 
   methods: {
+    fetchNewCars() {
+      getCarList().then(res => {
+        const rows = res.rows || []
+        if (rows.length > 0) {
+          this.newCars = rows.map(c => ({
+            vehicleId: c.vehicleId,
+            modelName: c.modelName,
+            guidePrice: c.guidePrice,
+            image: c.image || '/static/images/car/car1.png'
+          }))
+        }
+      }).catch(() => {})
+    },
+    fetchCities() {
+      getCities().then(res => {
+        this.cities = res.data || []
+      }).catch(() => {})
+    },
+    fetchStores() {
+      getStores().then(res => {
+        this.storeList = res.data || []
+      }).catch(() => {})
+    },
     onYearChange(e) {
       this.oldCar.year = this.years[e.detail.value]
     },
@@ -530,6 +558,9 @@ page {
   padding: 16rpx 20rpx;
   background: #f8f9fb;
   border-radius: 10rpx;
+}
+.form-picker-sm {
+  padding: 8rpx 20rpx;
 }
 .form-picker-text {
   font-size: 26rpx;

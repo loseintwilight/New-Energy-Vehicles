@@ -1,200 +1,842 @@
-﻿<template>
+<template>
   <view class="page" :class="{ 'page-ready': isReady }">
+    <!-- 背景光晕矩阵（暖色琥珀系） -->
     <view class="glow-matrix">
       <view class="glow-row" v-for="(row, ri) in glowRows" :key="ri">
-        <view class="glow-spot" v-for="(dot, ci) in row.dots" :key="ci" :style="dot.style"></view>
+        <view
+          class="glow-spot"
+          v-for="(dot, ci) in row.dots"
+          :key="ci"
+          :style="dot.style"
+        ></view>
       </view>
     </view>
     <view class="overlay-mask"></view>
 
+    <!-- 主滚动区 -->
     <scroll-view scroll-y class="main-scroll" :show-scrollbar="false">
+      <!-- 琥珀橙渐变顶栏 -->
       <view class="header">
         <view class="header-bg"></view>
+        <view class="header-circle"></view>
         <view class="back-btn" hover-class="btn-hover" @tap="goBack">
-          <text class="back-icon">❮</text>
+          <text class="back-icon">‹</text>
         </view>
         <view class="header-info">
-          <text class="header-title">站点管理</text>
-          <text class="header-sub">共 {{ stationList.length }} 个站点</text>
+          <text class="header-title">充电站管理</text>
+          <text class="header-sub">共 {{ filteredList.length }} 个站点</text>
         </view>
         <view class="header-right" @tap="goAdd">
           <view class="add-btn">
-            <text class="add-icon">+</text>
+            <text class="add-icon">＋</text>
+            <text class="add-text">新增</text>
           </view>
         </view>
       </view>
 
-      <view class="filter-tabs">
-        <view class="filter-tab" v-for="(tab, idx) in filterTabs" :key="idx" :class="{ active: activeFilter === idx }" @tap="switchFilter(idx)">
-          <text>{{ tab }}</text>
+      <!-- 毛玻璃搜索栏 -->
+      <view class="search-wrap">
+        <view class="search-bar">
+          <text class="search-icon">🔍</text>
+          <input
+            class="search-input"
+            v-model="searchKey"
+            placeholder="搜索站名或编码"
+            placeholder-class="search-placeholder"
+            @confirm="doSearch"
+          />
         </view>
       </view>
 
-      <view class="search-bar">
-        <text class="search-icon">🔍</text>
-        <input class="search-input" v-model="searchKey" placeholder="搜索站点名称或地址" placeholder-class="search-placeholder" />
-      </view>
+      <!-- 状态筛选标签栏 -->
+      <scroll-view scroll-x class="filter-bar" :show-scrollbar="false">
+        <view class="filter-inner">
+          <view
+            v-for="(item, index) in statusList"
+            :key="index"
+            class="filter-chip"
+            :class="{ active: currentStatus === item.value }"
+            @tap="switchStatus(item.value)"
+            hover-class="chip-hover"
+          >
+            <text class="chip-text">{{ item.label }}</text>
+          </view>
+        </view>
+      </scroll-view>
 
-      <view class="station-list">
-        <view class="station-card" v-for="(item, idx) in filteredStations" :key="idx" hover-class="card-hover" @tap="goDetail(item.id)">
-          <view class="station-header-row">
-            <view class="station-name-row">
-              <text class="station-name">{{ item.name }}</text>
-              <text class="station-status" :class="'sts-' + item.statusType">{{ item.statusText }}</text>
-            </view>
-            <view class="station-more">
-              <text class="more-dot">···</text>
-            </view>
+      <!-- 站点卡片列表 -->
+      <view class="list-area">
+        <!-- 空状态 -->
+        <view v-if="filteredList.length === 0" class="empty-box">
+          <view class="empty-icon-wrap">
+            <text class="empty-icon">⚡</text>
           </view>
-          <view class="station-addr">
-            <text class="addr-icon">📍</text>
-            <text class="addr-text">{{ item.address }}</text>
-          </view>
-          <view class="station-data-row">
-            <view class="data-item">
-              <text class="data-num">{{ item.pileCount }}</text>
-              <text class="data-label">充电桩</text>
+          <text class="empty-main">暂无站点数据</text>
+          <text class="empty-sub">尝试切换筛选条件</text>
+        </view>
+
+        <!-- 站点卡片 -->
+        <view
+          v-for="(item, index) in filteredList"
+          :key="index"
+          class="station-card"
+          hover-class="card-hover"
+          @tap="goDetail(item.stationId)"
+        >
+          <!-- 左侧彩色状态条 -->
+          <view class="color-bar" :class="'cb-' + item.status"></view>
+          <!-- 卡片主体 -->
+          <view class="sc-body">
+            <!-- 顶部：站名 + 状态标签 -->
+            <view class="sc-top">
+              <text class="sc-name">{{ item.name }}</text>
+              <view class="status-badge" :class="'sb-' + item.status">
+                <view class="status-dot" v-if="item.status === '1'"></view>
+                <text class="sb-text">{{ getStatusLabel(item.status) }}</text>
+              </view>
             </view>
-            <view class="data-item">
-              <text class="data-num">{{ item.busyCount }}</text>
-              <text class="data-label">使用中</text>
+            <!-- 编码 -->
+            <text class="sc-code">编码：{{ item.code }}</text>
+            <!-- 地址 -->
+            <view class="sc-addr">
+              <text class="addr-mark">📍</text>
+              <text class="addr-val">{{ item.address }}</text>
             </view>
-            <view class="data-item">
-              <text class="data-num">{{ item.todayOrders }}</text>
-              <text class="data-label">今日订单</text>
+            <!-- 三栏数据 -->
+            <view class="sc-stats">
+              <view class="stat-cell">
+                <text class="stat-num">{{ item.totalPiles }}</text>
+                <text class="stat-lbl">总桩数</text>
+              </view>
+              <view class="stat-divider"></view>
+              <view class="stat-cell">
+                <text class="stat-num highlight">{{ item.availablePiles }}</text>
+                <text class="stat-lbl">空闲桩</text>
+              </view>
+              <view class="stat-divider"></view>
+              <view class="stat-cell">
+                <text class="stat-num income">¥{{ fmtMoney(item.todayIncome) }}</text>
+                <text class="stat-lbl">今日营收</text>
+              </view>
             </view>
-            <view class="data-item">
-              <text class="data-num highlight">¥{{ item.todayRevenue }}</text>
-              <text class="data-label">今日营收</text>
+            <!-- 桩利用率进度条 -->
+            <view class="pile-row">
+              <view class="pile-progress-bg">
+                <view
+                  class="pile-progress-fill"
+                  :style="{ width: getPilePercent(item.availablePiles, item.totalPiles) + '%' }"
+                ></view>
+              </view>
+              <view class="pile-text">
+                <text class="pile-available">{{ item.availablePiles }}空闲</text>
+                <text class="pile-slash">/</text>
+                <text class="pile-total">{{ item.totalPiles }}总桩</text>
+                <text class="pile-rate">{{ getPilePercent(item.availablePiles, item.totalPiles) }}%</text>
+              </view>
             </view>
           </view>
         </view>
       </view>
 
-      <view class="empty-state" v-if="filteredStations.length === 0">
-        <text class="empty-icon">🏪</text>
-        <text class="empty-text">暂无站点</text>
-      </view>
-
-      <view style="height: 120rpx;"></view>
+      <view style="height: 100rpx;"></view>
     </scroll-view>
   </view>
 </template>
 
 <script>
 export default {
-  data() {
+  data: function() {
     return {
       isReady: false,
       glowRows: [],
-      activeFilter: 0,
       searchKey: '',
-      filterTabs: ['全部', '运营中', '维护中', '已关闭'],
-      stationList: [
-        { id: 1, name: '济南高新区充电站', address: '高新区舜华路2000号', pileCount: '12', busyCount: '8', todayOrders: '86', todayRevenue: '1,280', statusText: '运营中', statusType: 'active' },
-        { id: 2, name: '济南历下区旗舰站', address: '历下区泉城路188号', pileCount: '20', busyCount: '15', todayOrders: '210', todayRevenue: '3,560', statusText: '运营中', statusType: 'active' },
-        { id: 3, name: '济南市中区超充站', address: '市中区经十路66号', pileCount: '8', busyCount: '0', todayOrders: '0', todayRevenue: '0', statusText: '维护中', statusType: 'maintain' },
-        { id: 4, name: '济南天桥区充电站', address: '天桥区济洛路32号', pileCount: '6', busyCount: '3', todayOrders: '28', todayRevenue: '420', statusText: '运营中', statusType: 'active' },
-        { id: 5, name: '济南槐荫区快充站', address: '槐荫区经二路128号', pileCount: '10', busyCount: '6', todayOrders: '52', todayRevenue: '890', statusText: '运营中', statusType: 'active' },
-        { id: 6, name: '济南历城区充电站', address: '历城区花园路77号', pileCount: '4', busyCount: '0', todayOrders: '0', todayRevenue: '0', statusText: '已关闭', statusType: 'closed' }
+      currentStatus: '',
+      statusList: [
+        { label: '全部', value: '' },
+        { label: '运营中', value: '1' },
+        { label: '维护中', value: '2' },
+        { label: '已停用', value: '3' }
+      ],
+      /* Mock站点数据（从数据库真实站名取） */
+      mockStations: [
+        { stationId: 1, name: '济南奥体中心充电站', code: 'JN-AT-001', address: '历下区奥体中路2000号',
+          status: '1', totalPiles: 8, availablePiles: 6, todayIncome: 1280.50, todayOrders: 42, city: '济南市' },
+        { stationId: 2, name: '济南万达广场充电站', code: 'JN-WD-002', address: '市中区经四路万达广场',
+          status: '1', totalPiles: 6, availablePiles: 4, todayIncome: 856.00, todayOrders: 31, city: '济南市' },
+        { stationId: 4, name: '青岛万象城充电站', code: 'QD-WXC-004', address: '市南区山东路6号万象城',
+          status: '1', totalPiles: 6, availablePiles: 5, todayIncome: 1120.00, todayOrders: 38, city: '青岛市' },
+        { stationId: 7, name: '淄博万象汇充电站', code: 'ZB-WXH-007', address: '张店区金晶大道66号',
+          status: '2', totalPiles: 4, availablePiles: 3, todayIncome: 420.00, todayOrders: 15, city: '淄博市' },
+        { stationId: 10, name: '烟台芝罘万达充电站', code: 'YT-ZFWD-010', address: '芝罘区西南河路518号',
+          status: '1', totalPiles: 5, availablePiles: 4, todayIncome: 680.30, todayOrders: 24, city: '烟台市' }
       ]
     }
   },
   computed: {
-    filteredStations() {
-      var self = this
-      var list = self.stationList
-      var filters = ['all', 'active', 'maintain', 'closed']
-      if (self.activeFilter !== 0) {
-        list = list.filter(function(v) { return v.statusType === filters[self.activeFilter] })
+    /* 筛选后的站点列表 */
+    filteredList: function() {
+      var that = this
+      var list = that.mockStations
+
+      /* 状态筛选 */
+      if (that.currentStatus !== '') {
+        list = list.filter(function(item) {
+          return item.status === that.currentStatus
+        })
       }
-      if (self.searchKey) {
-        var key = self.searchKey.toLowerCase()
-        list = list.filter(function(v) { return v.name.toLowerCase().indexOf(key) !== -1 || v.address.toLowerCase().indexOf(key) !== -1 })
+
+      /* 关键词搜索 */
+      if (that.searchKey && that.searchKey.trim() !== '') {
+        var key = that.searchKey.trim().toLowerCase()
+        list = list.filter(function(item) {
+          return item.name.toLowerCase().indexOf(key) !== -1 ||
+                 item.code.toLowerCase().indexOf(key) !== -1 ||
+                 item.address.toLowerCase().indexOf(key) !== -1
+        })
       }
+
       return list
     }
   },
-  created() {
+  created: function() {
     this.buildGlowRows()
-    var self = this
-    setTimeout(function() { self.isReady = true }, 200)
+    var that = this
+    setTimeout(function() {
+      that.isReady = true
+    }, 200)
   },
   methods: {
-    buildGlowRows() {
+    /* ---------- 初始化：构建背景光晕矩阵 ---------- */
+    buildGlowRows: function() {
       var rows = []
-      var colors = ['#f59e0b', '#f97316', '#fb923c', '#fbbf24']
-      for (var r = 0; r < 5; r++) {
+      var colors = ['#f59e0b', '#f97316', '#fb923c', '#fbbf24', '#fcd34d', '#fde68a']
+      for (var r = 0; r < 7; r++) {
         var dots = []
-        var count = 3 + Math.floor(Math.random() * 4)
+        var count = 4 + Math.floor(Math.random() * 3)
         for (var c = 0; c < count; c++) {
           var color = colors[Math.floor(Math.random() * colors.length)]
-          dots.push({ style: 'width:' + (3 + Math.floor(Math.random() * 6)) + 'px;height:' + (3 + Math.floor(Math.random() * 6)) + 'px;background:' + color + ';animation-duration:' + (2 + Math.random() * 3) + 's;animation-delay:' + Math.random() * 2 + 's;' })
+          var size = 60 + Math.floor(Math.random() * 70)
+          var dur = 2.5 + Math.random() * 2.5
+          var delay = Math.random() * 2.5
+          var alpha = 0.08 + Math.random() * 0.18
+          dots.push({
+            style: 'width:' + size + 'rpx;height:' + size + 'rpx;background:radial-gradient(circle,' + color + ',' + color + '00);opacity:' + alpha.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's;'
+          })
         }
         rows.push({ dots: dots })
       }
       this.glowRows = rows
     },
-    goBack() { uni.navigateBack() },
-    goAdd() { uni.navigateTo({ url: '/pages/mine/charge-pile/station-add' }) },
-    switchFilter(idx) { this.activeFilter = idx },
-    goDetail(id) { uni.navigateTo({ url: '/pages/mine/charge-pile/station-detail?stationId=' + id }) }
+
+    /* ---------- 搜索与筛选 ---------- */
+    doSearch: function() {
+      /* computed 自动响应 searchKey 变化，此处保留供确认搜索触发 */
+    },
+
+    switchStatus: function(value) {
+      this.currentStatus = value
+    },
+
+    /* ---------- 工具方法 ---------- */
+    getStatusLabel: function(status) {
+      var map = {
+        '1': '运营中',
+        '2': '维护中',
+        '3': '已停用'
+      }
+      return map[status] || '未知'
+    },
+
+    getPilePercent: function(available, total) {
+      if (!total || total === 0) return 0
+      return Math.round((available / total) * 100)
+    },
+
+    fmtMoney: function(val) {
+      if (val === null || val === undefined) return '0.00'
+      return Number(val).toFixed(2)
+    },
+
+    /* ---------- 页面跳转 ---------- */
+    goBack: function() {
+      uni.navigateBack({ delta: 1 })
+    },
+
+    goDetail: function(stationId) {
+      uni.navigateTo({
+        url: '/pages/mine/charge-pile/station-detail?stationId=' + stationId
+      })
+    },
+
+    goAdd: function() {
+      uni.navigateTo({ url: '/pages/mine/charge-pile/station-add' })
+    },
+
+    doDeleteStation: function(stationId, name) {
+      var self = this
+      uni.showModal({
+        title: '确认删除',
+        content: '确定要删除站点「' + name + '」吗？删除后不可恢复。',
+        confirmColor: '#ef4444',
+        success: function(res) {
+          if (res.confirm) {
+            self.mockStations = self.mockStations.filter(function(s) { return s.stationId !== stationId })
+            uni.showToast({ title: '已删除', icon: 'success' })
+          }
+        }
+      })
+    }
   }
 }
 </script>
 
 <style scoped>
-.page { min-height: 100vh; background: linear-gradient(180deg, #fff7ed 0%, #fffbeb 30%, #fefce8 60%, #fff7ed 100%); opacity: 0; transition: opacity 0.5s ease; }
-.page-ready { opacity: 1; }
-.glow-matrix { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-.glow-row { display: flex; justify-content: space-around; padding: 20rpx 30rpx; }
-.glow-spot { border-radius: 50%; filter: blur(6px); opacity: 0; animation: glowPulse ease-in-out infinite alternate; }
-@keyframes glowPulse {
-  0% { opacity: 0; transform: scale(0.6); }
-  50% { opacity: 0.5; }
-  100% { opacity: 0; transform: scale(1.4); }
+/* ========== 页面容器 ========== */
+.page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #fff7ed 0%, #fffbeb 30%, #fefce8 60%, #fffbeb 100%);
+  position: relative;
+  overflow-x: hidden;
 }
-.overlay-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, rgba(255,247,237,0.3) 0%, rgba(255,251,235,0.43) 38%, rgba(254,252,232,0.55) 66%, rgba(255,247,237,0.63) 100%); z-index: 1; pointer-events: none; }
-.main-scroll { position: relative; z-index: 2; }
-.header { position: relative; padding: 30rpx 28rpx 24rpx; display: flex; align-items: center; }
-.header-bg { position: absolute; top: -60rpx; left: -40rpx; right: -40rpx; bottom: 0; background: radial-gradient(ellipse at 20% 30%, rgba(251,146,60,0.12) 0%, transparent 60%), radial-gradient(ellipse at 80% 50%, rgba(250,204,21,0.1) 0%, transparent 55%); border-radius: 0 0 60rpx 60rpx; }
-.back-btn { width: 60rpx; height: 60rpx; border-radius: 30rpx; background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 1; box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06); }
-.back-icon { font-size: 28rpx; color: #92400e; }
-.btn-hover { opacity: 0.7; transform: scale(0.95); }
-.header-info { flex: 1; margin-left: 20rpx; z-index: 1; }
-.header-title { font-size: 36rpx; font-weight: 700; color: #451a03; display: block; }
-.header-sub { font-size: 24rpx; color: #a16207; margin-top: 4rpx; display: block; }
-.header-right { z-index: 1; }
-.add-btn { width: 64rpx; height: 64rpx; border-radius: 32rpx; background: linear-gradient(135deg, #f59e0b, #f97316); display: flex; align-items: center; justify-content: center; box-shadow: 0 4rpx 16rpx rgba(245,158,11,0.35); }
-.add-icon { font-size: 36rpx; color: #fff; }
-.filter-tabs { display: flex; padding: 0 24rpx 16rpx; gap: 12rpx; }
-.filter-tab { padding: 12rpx 24rpx; border-radius: 20rpx; background: rgba(255,255,255,0.8); font-size: 24rpx; color: #78716c; }
-.filter-tab.active { background: linear-gradient(135deg, #f59e0b, #f97316); color: #fff; font-weight: 600; }
-.search-bar { display: flex; align-items: center; margin: 0 24rpx 20rpx; background: rgba(255,255,255,0.8); border-radius: 16rpx; padding: 16rpx 20rpx; box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.04); }
-.search-icon { font-size: 28rpx; margin-right: 12rpx; }
-.search-input { flex: 1; font-size: 26rpx; color: #1c1917; }
-.search-placeholder { color: #a8a29e; }
-.station-list { padding: 0 24rpx; }
-.station-card { background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); border-radius: 20rpx; padding: 24rpx; margin-bottom: 16rpx; box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.04); }
-.card-hover { transform: scale(0.98); }
-.station-header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12rpx; }
-.station-name-row { display: flex; align-items: center; gap: 12rpx; }
-.station-name { font-size: 30rpx; font-weight: 700; color: #1c1917; }
-.station-status { font-size: 20rpx; padding: 4rpx 12rpx; border-radius: 10rpx; }
-.sts-active { background: #dcfce7; color: #16a34a; }
-.sts-maintain { background: #fef3c7; color: #b45309; }
-.sts-closed { background: #fee2e2; color: #dc2626; }
-.station-more { padding: 4rpx; }
-.more-dot { font-size: 28rpx; color: #a8a29e; letter-spacing: 4rpx; }
-.station-addr { display: flex; align-items: center; margin-bottom: 16rpx; }
-.addr-icon { font-size: 22rpx; margin-right: 6rpx; }
-.addr-text { font-size: 24rpx; color: #78716c; }
-.station-data-row { display: flex; border-top: 1rpx solid #f5f0e8; padding-top: 16rpx; }
-.data-item { flex: 1; text-align: center; }
-.data-num { font-size: 28rpx; font-weight: 700; color: #1c1917; display: block; }
-.data-num.highlight { color: #f59e0b; }
-.data-label { font-size: 20rpx; color: #a8a29e; margin-top: 4rpx; display: block; }
-.empty-state { display: flex; flex-direction: column; align-items: center; padding: 80rpx 0; }
-.empty-icon { font-size: 80rpx; opacity: 0.4; }
-.empty-text { font-size: 28rpx; color: #a8a29e; margin-top: 16rpx; }
+
+/* 入场动画 */
+.page-ready .station-card {
+  animation: fadeSlideUp 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+.page-ready .station-card:nth-child(1) { animation-delay: 0.06s; }
+.page-ready .station-card:nth-child(2) { animation-delay: 0.12s; }
+.page-ready .station-card:nth-child(3) { animation-delay: 0.18s; }
+.page-ready .station-card:nth-child(4) { animation-delay: 0.24s; }
+.page-ready .station-card:nth-child(5) { animation-delay: 0.30s; }
+.page-ready .station-card:nth-child(6) { animation-delay: 0.36s; }
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(30rpx) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ========== 背景光晕矩阵 ========== */
+.glow-matrix {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.glow-row {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 24rpx 20rpx;
+}
+.glow-spot {
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: glowPulse ease-in-out infinite alternate;
+}
+@keyframes glowPulse {
+  0% { opacity: 0.15; transform: scale(0.85); }
+  50% { opacity: 0.6; }
+  100% { opacity: 0.15; transform: scale(1.25); }
+}
+
+.overlay-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg,
+    rgba(255, 247, 237, 0.92) 0%,
+    rgba(255, 251, 235, 0.95) 35%,
+    rgba(254, 252, 232, 0.96) 65%,
+    rgba(255, 251, 235, 0.97) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.main-scroll {
+  position: relative;
+  z-index: 2;
+  height: 100vh;
+}
+
+/* ========== 琥珀橙渐变顶栏 ========== */
+.header {
+  position: relative;
+  padding: 28rpx 28rpx 24rpx;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+.header-bg {
+  position: absolute;
+  top: -80rpx;
+  left: -40rpx;
+  right: -40rpx;
+  bottom: -20rpx;
+  background: linear-gradient(135deg, #f59e0b 0%, #f97316 35%, #fb923c 65%, #fdba74 100%);
+  border-radius: 0 0 60rpx 60rpx;
+}
+.header-circle {
+  position: absolute;
+  top: -50rpx;
+  right: -30rpx;
+  width: 300rpx;
+  height: 300rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+.back-btn {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 32rpx;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  box-shadow: 0 4rpx 14rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+.btn-hover {
+  transform: scale(0.9);
+  background: rgba(255, 255, 255, 0.45);
+}
+.back-icon {
+  font-size: 36rpx;
+  color: #ffffff;
+  font-weight: 300;
+}
+.header-info {
+  flex: 1;
+  margin-left: 20rpx;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+}
+.header-title {
+  font-size: 38rpx;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 1rpx;
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+.header-sub {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.88);
+  margin-top: 6rpx;
+  font-weight: 500;
+}
+.header-right {
+  z-index: 2;
+}
+.add-btn {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 10rpx 22rpx;
+  border-radius: 20rpx;
+  background: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 4rpx 14rpx rgba(0, 0, 0, 0.08);
+}
+.add-icon {
+  font-size: 32rpx;
+  color: #ffffff;
+  font-weight: 700;
+}
+.add-text {
+  font-size: 24rpx;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* ========== 搜索栏（毛玻璃版） ========== */
+.search-wrap {
+  position: relative;
+  z-index: 3;
+  padding: 10rpx 24rpx 12rpx;
+}
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 20rpx;
+  padding: 18rpx 22rpx;
+  box-shadow: 0 4rpx 16rpx rgba(245, 158, 11, 0.08),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.9);
+  border: 1rpx solid rgba(255, 255, 255, 0.75);
+}
+.search-icon {
+  font-size: 28rpx;
+  margin-right: 14rpx;
+  flex-shrink: 0;
+}
+.search-input {
+  flex: 1;
+  font-size: 27rpx;
+  color: #1c1917;
+}
+.search-placeholder {
+  color: #a8a29e;
+}
+
+/* ========== 筛选标签栏 ========== */
+.filter-bar {
+  position: relative;
+  z-index: 3;
+  white-space: nowrap;
+  padding-bottom: 16rpx;
+}
+.filter-inner {
+  display: inline-flex;
+  padding: 16rpx 24rpx;
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 13rpx 32rpx;
+  border-radius: 36rpx;
+  margin-right: 18rpx;
+  background: linear-gradient(135deg, rgba(255,255,255,0.85), rgba(255,255,255,0.98));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 2rpx solid rgba(245, 158, 11, 0.12);
+  box-shadow: 0 2rpx 10rpx rgba(245, 158, 11, 0.06),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.8);
+}
+.chip-hover {
+  transform: scale(0.96);
+}
+.filter-chip.active {
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  box-shadow: 0 6rpx 20rpx rgba(245, 158, 11, 0.35);
+  border-color: transparent;
+}
+.chip-text {
+  font-size: 26rpx;
+  color: #44403c;
+  font-weight: 600;
+  letter-spacing: 0.5rpx;
+}
+.filter-chip.active .chip-text {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* ========== 列表区域 ========== */
+.list-area {
+  padding: 8rpx 24rpx 40rpx;
+  position: relative;
+  z-index: 2;
+}
+
+/* ========== 空状态 ========== */
+.empty-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 200rpx 0 160rpx;
+}
+.empty-icon-wrap {
+  width: 150rpx;
+  height: 150rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(249,115,22,0.08));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 28rpx;
+  animation: floatAnim 3s ease-in-out infinite;
+  box-shadow: 0 8rpx 32rpx rgba(245, 158, 11, 0.15);
+}
+@keyframes floatAnim {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12rpx); }
+}
+.empty-icon {
+  font-size: 60rpx;
+}
+.empty-main {
+  font-size: 30rpx;
+  color: #44403c;
+  font-weight: 700;
+  margin-bottom: 12rpx;
+}
+.empty-sub {
+  font-size: 24rpx;
+  color: #a8a29e;
+}
+
+/* ========== 站点卡片 ========== */
+.station-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-radius: 24rpx;
+  margin-bottom: 22rpx;
+  box-shadow:
+    0 8rpx 32rpx rgba(0, 0, 0, 0.06),
+    0 2rpx 8rpx rgba(245, 158, 11, 0.05),
+    inset 0 1rpx 0 rgba(255, 255, 255, 0.9);
+  border: 1rpx solid rgba(255, 255, 255, 0.8);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  flex-direction: row;
+}
+
+/* 左侧彩色状态条 */
+.color-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5rpx;
+  border-radius: 24rpx 0 0 24rpx;
+  transition: all 0.35s ease;
+  z-index: 3;
+}
+.cb-1 {
+  background: linear-gradient(180deg, #d97706, #f59e0b);
+  box-shadow: 2rpx 0 14rpx rgba(217, 119, 6, 0.28);
+}
+.cb-2 {
+  background: linear-gradient(180deg, #f59e0b, #fb923c);
+  box-shadow: 2rpx 0 14rpx rgba(245, 158, 11, 0.28);
+}
+.cb-3 {
+  background: linear-gradient(180deg, #fbbf24, #fcd34d);
+  box-shadow: 2rpx 0 14rpx rgba(251, 191, 36, 0.28);
+}
+
+/* hover效果：微缩放+阴影加深+条带加宽 */
+.card-hover {
+  transform: scale(0.97) translateY(-2rpx)!important;
+  box-shadow:
+    0 16rpx 48rpx rgba(0, 0, 0, 0.12)!important,
+    0 8rpx 24rpx rgba(245, 158, 11, 0.1)!important;
+  border-color: rgba(245, 158, 11, 0.2)!important;
+}
+.card-hover .color-bar {
+  width: 7rpx;
+  box-shadow: 4rpx 0 20rpx currentColor;
+}
+
+.sc-body {
+  flex: 1;
+  padding: 26rpx 26rpx 22rpx 28rpx;
+  position: relative;
+  z-index: 2;
+}
+
+/* 顶部：站名 + 状态标签 */
+.sc-top {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10rpx;
+}
+.sc-name {
+  font-size: 31rpx;
+  font-weight: 800;
+  color: #1c1917;
+  flex: 1;
+  margin-right: 16rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: 0.5rpx;
+}
+
+/* 状态标签 */
+.status-badge {
+  border-radius: 12rpx;
+  padding: 7rpx 18rpx;
+  flex-shrink: 0;
+  font-weight: 700;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  gap: 7rpx;
+}
+.status-dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8rpx #22c55e;
+  animation: dotPulse 2s ease-in-out infinite;
+}
+@keyframes dotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+.sb-1 {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(74, 222, 128, 0.06));
+  color: #16a34a;
+  border: 1rpx solid rgba(34, 197, 94, 0.2);
+}
+.sb-1 .sb-text { font-size: 21rpx; }
+.sb-2 {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.12), rgba(251, 146, 60, 0.06));
+  color: #ea580c;
+  border: 1rpx solid rgba(249, 115, 22, 0.2);
+}
+.sb-2 .sb-text { font-size: 21rpx; }
+.sb-3 {
+  background: linear-gradient(135deg, rgba(156, 163, 175, 0.12), rgba(209, 213, 219, 0.06));
+  color: #6b7280;
+  border: 1rpx solid rgba(156, 163, 175, 0.2);
+}
+.sb-3 .sb-text { font-size: 21rpx; }
+
+/* 编码 */
+.sc-code {
+  font-size: 23rpx;
+  color: #a8a29e;
+  margin-bottom: 12rpx;
+  display: block;
+}
+
+/* 地址 */
+.sc-addr {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  margin-bottom: 16rpx;
+}
+.addr-mark {
+  font-size: 23rpx;
+  margin-right: 7rpx;
+  flex-shrink: 0;
+  margin-top: 2rpx;
+}
+.addr-val {
+  font-size: 24rpx;
+  color: #78716c;
+  line-height: 1.5;
+  flex: 1;
+}
+
+/* 三栏数据 */
+.sc-stats {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: 16rpx;
+  background: linear-gradient(135deg, rgba(250, 252, 250, 0.95), rgba(255, 255, 255, 1));
+  border-radius: 16rpx;
+  padding: 14rpx 16rpx;
+  border: 1rpx solid rgba(0, 0, 0, 0.03);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.02);
+}
+.stat-cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.stat-num {
+  font-size: 28rpx;
+  color: #1c1917;
+  font-weight: 800;
+}
+.stat-num.highlight {
+  color: #16a34a;
+  font-size: 32rpx;
+}
+.stat-num.income {
+  color: #f59e0b;
+  font-size: 26rpx;
+}
+.stat-lbl {
+  font-size: 20rpx;
+  color: #a8a29e;
+  margin-top: 4rpx;
+  font-weight: 500;
+}
+.stat-divider {
+  width: 1rpx;
+  height: 42rpx;
+  background: linear-gradient(180deg, transparent, #d6d3d1, transparent);
+  margin: 0 10rpx;
+}
+
+/* 桩利用率进度条 */
+.pile-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+.pile-progress-bg {
+  width: 100%;
+  height: 10rpx;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 5rpx;
+  overflow: hidden;
+}
+.pile-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #4ade80, #86efac);
+  border-radius: 5rpx;
+  transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 0 10rpx rgba(34, 197, 94, 0.3);
+  position: relative;
+}
+/* 绿色流光动画 */
+.pile-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  animation: progressShine 2.2s ease-in-out infinite;
+}
+@keyframes progressShine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.pile-text {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.pile-available {
+  font-size: 23rpx;
+  color: #16a34a;
+  font-weight: 800;
+}
+.pile-slash {
+  font-size: 21rpx;
+  color: #cccccc;
+  margin: 0 5rpx;
+}
+.pile-total {
+  font-size: 21rpx;
+  color: #a8a29e;
+  font-weight: 600;
+}
+.pile-rate {
+  font-size: 21rpx;
+  color: #f59e0b;
+  font-weight: 700;
+}
 </style>

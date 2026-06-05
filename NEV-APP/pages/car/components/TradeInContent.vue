@@ -2,7 +2,7 @@
   <view class="content">
     <scroll-view scroll-y class="scroll">
       <view class="hero">
-        <image class="hero-bg" src="/static/images/car/car1.png" mode="aspectFill"></image>
+        <image class="hero-bg" src="/static/images/car/以旧换新.jpg" mode="aspectFit"></image>
         <view class="hero-overlay">
           <view class="hero-tag">官方置换</view>
           <text class="hero-title">以旧换新</text>
@@ -58,84 +58,67 @@
 
       <view class="section">
         <view class="section-hd">
-          <text class="section-title">旧车估价</text>
-          <text class="section-sub">填写信息，快速获取参考报价</text>
+          <text class="section-title">旧车信息</text>
+          <text class="section-sub">填写您要置换的车辆信息</text>
         </view>
-        <view class="eval-form">
-          <view class="eval-row">
-            <text class="eval-label">品牌</text>
-            <input class="eval-input" v-model="evalForm.brand" />
+        <view class="form-card">
+          <view class="form-row">
+            <text class="form-label">品牌</text>
+            <input class="form-input" v-model="oldCar.brand" placeholder="如：特斯拉" />
           </view>
-          <view class="eval-row">
-            <text class="eval-label">车型</text>
-            <input class="eval-input" v-model="evalForm.model" />
+          <view class="form-row">
+            <text class="form-label">车型</text>
+            <input class="form-input" v-model="oldCar.model" placeholder="如：Model 3" />
           </view>
-          <view class="eval-row">
-            <text class="eval-label">上牌年份</text>
-            <picker mode="selector" :range="yearList" @change="onYearChange">
-              <view class="eval-picker">
-                <text :class="['eval-picker-text', { ph: !evalForm.year }]">{{ evalForm.year || '请选择' }}</text>
-                <text class="eval-arrow">▼</text>
+          <view class="form-row">
+            <text class="form-label">上牌年份</text>
+            <picker mode="selector" :range="years" @change="onYearChange">
+              <view class="form-picker">
+                <text :class="['form-picker-text', { placeholder: !oldCar.year }]">{{ oldCar.year || '请选择' }}</text>
+                <text class="arrow">></text>
               </view>
             </picker>
           </view>
-          <view class="eval-row">
-            <text class="eval-label">表显里程</text>
-            <view class="eval-input-wrap">
-              <input class="eval-input flex-1" type="digit" v-model="evalForm.mileage" />
-              <text class="eval-unit">万公里</text>
+          <view class="form-row">
+            <text class="form-label">表显里程</text>
+            <view class="form-input-wrap">
+              <input class="form-input flex-1" type="digit" v-model="oldCar.mileage" placeholder="请输入里程" />
+              <text class="form-unit">万公里</text>
             </view>
           </view>
-        </view>
-        <view class="eval-result" v-if="showEvalResult">
-          <view class="eval-result-hd">
-            <text class="eval-result-label">参考估价</text>
-            <text class="eval-result-badge">仅供参考</text>
-          </view>
-          <view class="eval-result-price">
-            <text class="eval-result-symbol">¥</text>
-            <text class="eval-result-num">{{ evalPrice }}</text>
-            <text class="eval-result-unit">万</text>
-          </view>
-          <view class="eval-result-bar">
-            <view class="eval-result-fill" :style="{ width: evalPercent + '%' }"></view>
-          </view>
-          <view class="eval-result-detail">
-            <view class="eval-detail-row">
-              <text class="eval-detail-label">市场行情</text>
-              <text class="eval-detail-val">¥{{ evalPrice }}万</text>
-            </view>
-            <view class="eval-detail-row">
-              <text class="eval-detail-label">车况调整</text>
-              <text class="eval-detail-val" style="color:#34c759;">+¥0.30万</text>
-            </view>
-            <view class="eval-detail-row">
-              <text class="eval-detail-label">里程调整</text>
-              <text class="eval-detail-val" style="color:#f5a623;">-¥0.20万</text>
+          <view class="form-row">
+            <text class="form-label">车辆状况</text>
+            <view class="condition-group">
+              <view v-for="(c, i) in conditions" :key="i" class="condition-tag" :class="{ on: oldCar.condition === i }" @click="oldCar.condition = i">{{ c }}</view>
             </view>
           </view>
-        </view>
-        <view class="eval-btn" @click="doEvaluate">
-          <text>{{ showEvalResult ? '重新估价' : '立即估价' }}</text>
         </view>
       </view>
 
       <view class="section">
         <view class="section-hd">
-          <text class="section-title">推荐换新车型</text>
-          <text class="section-sub">置换补贴叠加享优惠</text>
+          <text class="section-title">联系人信息</text>
+          <text class="section-sub">提交后工作人员将尽快与您联系</text>
         </view>
-        <scroll-view scroll-x class="car-scroll" show-scrollbar="false">
-          <view v-for="(rc, i) in recommendList" :key="rc.vehicleId" class="rc-card" @click="goTradeOrder(rc)">
-            <image class="rc-img" :src="rc.image" mode="aspectFill"></image>
-            <text class="rc-name">{{ rc.modelName }}</text>
-            <view class="rc-price-row">
-              <text class="rc-price">¥{{ rc.guidePrice }}万</text>
-              <text class="rc-subsidy">补贴¥0.8万</text>
-            </view>
-            <view class="rc-btn">立即换新</view>
+        <view class="form-card">
+          <view class="form-row">
+            <text class="form-label">联系人</text>
+            <input class="form-input" v-model="contactName" placeholder="请输入姓名" />
           </view>
-        </scroll-view>
+          <view class="form-row">
+            <text class="form-label">联系电话</text>
+            <input class="form-input" type="text" v-model="contactPhone" placeholder="请输入手机号" maxlength="11" />
+          </view>
+          <view class="form-row">
+            <text class="form-label">选择门店</text>
+            <picker @change="onStoreChange" :value="storeIndex" :range="storeList">
+              <view class="form-picker">
+                <text class="form-picker-text">{{ storeList[storeIndex] || '请选择门店' }}</text>
+                <text class="arrow">></text>
+              </view>
+            </picker>
+          </view>
+        </view>
       </view>
 
       <view class="section benefits-section">
@@ -145,71 +128,118 @@
         </view>
         <view class="benefits-grid">
           <view class="benefit-item">
-            <view class="benefit-icon benefit-icon-blue">🔍</view>
+            <view class="benefit-icon benefit-icon-blue">
+              <image class="benefit-icon-img" src="/static/images/car/icon/glass.png" mode="aspectFit"></image>
+            </view>
             <text class="benefit-name">免费检测</text>
             <text class="benefit-desc">专业技师实车检测评估</text>
           </view>
           <view class="benefit-item">
-            <view class="benefit-icon benefit-icon-green">💰</view>
+            <view class="benefit-icon benefit-icon-green">
+              <image class="benefit-icon-img" src="/static/images/car/icon/money.png" mode="aspectFit"></image>
+            </view>
             <text class="benefit-name">高额补贴</text>
             <text class="benefit-desc">叠加国家+品牌双重补贴</text>
           </view>
           <view class="benefit-item">
-            <view class="benefit-icon benefit-icon-orange">📋</view>
+            <view class="benefit-icon benefit-icon-orange">
+              <image class="benefit-icon-img" src="/static/images/car/icon/book.png" mode="aspectFit"></image>
+            </view>
             <text class="benefit-name">一站式服务</text>
             <text class="benefit-desc">评估+购车+过户全程代办</text>
           </view>
           <view class="benefit-item">
-            <view class="benefit-icon benefit-icon-purple">🛡️</view>
+            <view class="benefit-icon benefit-icon-purple">
+              <image class="benefit-icon-img" src="/static/images/car/icon/shield.png" mode="aspectFit"></image>
+            </view>
             <text class="benefit-name">官方保障</text>
             <text class="benefit-desc">官方认证，价格透明无套路</text>
           </view>
         </view>
       </view>
 
-      </scroll-view>
+      <view class="btn-area">
+        <view class="btn-primary" @click="submitTradeIn">提交申请</view>
+      </view>
+
+      <view style="height:40rpx;"></view>
+    </scroll-view>
   </view>
 </template>
 
 <script>
+import { createTradeInOrder, getStores } from '@/api/car/car'
+
 export default {
   data() {
     return {
-      showEvalResult: false,
-      evalPrice: '0.00',
-      evalForm: { brand: '', model: '', year: '', mileage: '' },
-      yearList: Array.from({ length: 16 }, (_, i) => 2026 - i),
-      recommendList: [
-        { vehicleId: 'R001', modelName: '小米SU7 后驱 长续航版', guidePrice: 24.59, image: '/static/images/car/car1.png' },
-        { vehicleId: 'R002', modelName: '小米SU7 四驱 高性能版', guidePrice: 29.99, image: '/static/images/car/car2.png' },
-        { vehicleId: 'R003', modelName: '小米SU7 四驱 高性能版', guidePrice: 29.99, image: '/static/images/car/car3.png' }
-      ]
+      oldCar: {
+        brand: '',
+        model: '',
+        year: '',
+        mileage: '',
+        condition: -1
+      },
+      conditions: ['良好', '一般', '较差'],
+      years: Array.from({ length: 16 }, (_, i) => 2026 - i),
+      storeList: [],
+      storeIndex: 0,
+      contactName: '',
+      contactPhone: ''
     }
   },
-  computed: {
-    evalPercent() {
-      return Math.min((parseFloat(this.evalPrice) || 0) / 30 * 100, 100)
-    }
+
+  onLoad() {
+    this.fetchStores()
   },
+
   methods: {
-    onYearChange(e) {
-      this.evalForm.year = this.yearList[e.detail.value]
+    fetchStores() {
+      getStores().then(res => {
+        this.storeList = res.data || []
+      }).catch(() => {})
     },
-    doEvaluate() {
-      if (!this.evalForm.brand || !this.evalForm.model || !this.evalForm.year) {
-        uni.showToast({ title: '请完善车辆信息', icon: 'none' })
+    onYearChange(e) {
+      this.oldCar.year = this.years[e.detail.value]
+    },
+    onStoreChange(e) {
+      this.storeIndex = e.detail.value
+    },
+    submitTradeIn() {
+      if (!this.oldCar.brand || !this.oldCar.model || !this.oldCar.year) {
+        uni.showToast({ title: '请完善旧车信息', icon: 'none' })
         return
       }
-      this.evalPrice = (3 + Math.random() * 2).toFixed(1)
-      this.showEvalResult = true
-    },
-    goTradeOrder(car) {
-      uni.navigateTo({
-        url: `/pages/car/order-trade?car=${encodeURIComponent(JSON.stringify(car))}&newCars=${encodeURIComponent(JSON.stringify(this.recommendList))}`
+      if (!this.contactName) {
+        uni.showToast({ title: '请输入联系人', icon: 'none' })
+        return
+      }
+      if (!this.contactPhone || this.contactPhone.length !== 11) {
+        uni.showToast({ title: '请输入正确手机号', icon: 'none' })
+        return
+      }
+      const data = {
+        orderType: 'trade_in',
+        oldVehicleBrand: this.oldCar.brand,
+        oldVehicleModel: this.oldCar.model,
+        oldVehicleYear: this.oldCar.year,
+        contactName: this.contactName,
+        contactPhone: this.contactPhone
+      }
+      uni.showLoading({ title: '提交中' })
+      createTradeInOrder(data).then(() => {
+        uni.hideLoading()
+        uni.showToast({ title: '申请成功', icon: 'success' })
+        setTimeout(() => uni.navigateBack(), 1500)
+      }).catch(() => {
+        uni.hideLoading()
+        uni.showModal({
+          title: '提示',
+          content: '以旧换新申请已提交，工作人员将尽快与您联系',
+          showCancel: false,
+          success: () => uni.navigateBack()
+        })
       })
-    },
-    handleStore() {
-      uni.showToast({ title: '附近门店列表', icon: 'none' })
     }
   }
 }
@@ -226,7 +256,7 @@ export default {
 .hero {
   position: relative;
   width: 100%;
-  height: 520rpx;
+  height: 380rpx;
   background: #1a1a2e;
 }
 .hero-bg {
@@ -338,150 +368,96 @@ export default {
   color: #999;
   margin-top: 2rpx;
 }
-.eval-form { display: flex; flex-direction: column; gap: 24rpx; }
-.eval-row { display: flex; align-items: center; }
-.eval-label {
-  width: 140rpx;
-  font-size: 26rpx;
-  color: #666;
-  flex-shrink: 0;
+.form-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  background: #f8f9fb;
+  border-radius: 16rpx;
+  padding: 8rpx 20rpx;
 }
-.eval-input {
+.form-row {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #eee;
+}
+.form-row:last-child {
+  border-bottom: none;
+}
+.form-label {
+  width: 160rpx;
+  font-size: 26rpx;
+  color: #888;
+  flex-shrink: 0;
+  font-weight: 500;
+}
+.form-input {
   flex: 1;
-  padding: 28rpx 28rpx;
-  font-size: 30rpx;
-  background: #f5f6f8;
-  border-radius: 12rpx;
+  padding: 12rpx 0;
+  font-size: 28rpx;
+  background: transparent;
+  border-radius: 0;
   color: #1a1a1a;
 }
-.eval-input-wrap {
+.form-input-wrap {
   flex: 1;
   display: flex;
   align-items: center;
-  background: #f5f6f8;
-  border-radius: 12rpx;
-  padding-right: 28rpx;
+  background: transparent;
+  border-radius: 0;
+  padding-right: 0;
 }
-.eval-input.flex-1 {
-  padding: 28rpx 28rpx;
-  font-size: 30rpx;
+.form-input.flex-1 {
+  padding: 12rpx 0;
+  font-size: 28rpx;
   background: transparent;
   flex: 1;
 }
-.eval-unit { font-size: 24rpx; color: #999; flex-shrink: 0; }
-.eval-picker {
+.form-unit {
+  font-size: 24rpx;
+  color: #999;
+  flex-shrink: 0;
+}
+.form-picker {
   flex: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 22rpx 24rpx;
-  background: #f5f6f8;
-  border-radius: 12rpx;
+  padding: 12rpx 0;
+  background: transparent;
+  border-radius: 0;
 }
-.eval-picker-text { font-size: 28rpx; color: #1a1a1a; }
-.eval-picker-text.ph { color: #bbb; }
-.eval-arrow { font-size: 20rpx; color: #ccc; }
-.eval-result {
-  margin-top: 28rpx;
-  padding: 24rpx;
-  background: linear-gradient(135deg, #1a1a2e, #16213e);
-  border-radius: 16rpx;
-}
-.eval-result-hd {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12rpx;
-}
-.eval-result-label { font-size: 24rpx; color: rgba(255,255,255,0.55); }
-.eval-result-badge {
-  padding: 2rpx 12rpx;
-  border-radius: 4rpx;
-  font-size: 20rpx;
-  color: #34c759;
-  background: rgba(52,199,89,0.15);
-}
-.eval-result-price { display: flex; align-items: baseline; gap: 2rpx; }
-.eval-result-symbol { font-size: 32rpx; color: #fff; font-weight: 700; }
-.eval-result-num { font-size: 64rpx; color: #fff; font-weight: 800; }
-.eval-result-unit { font-size: 28rpx; color: rgba(255,255,255,0.65); }
-.eval-result-bar {
-  width: 100%;
-  height: 6rpx;
-  background: rgba(255,255,255,0.12);
-  border-radius: 3rpx;
-  margin: 20rpx 0;
-}
-.eval-result-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #34c759, #00d4ff);
-  border-radius: 3rpx;
-}
-.eval-result-detail {
-  background: rgba(255,255,255,0.06);
-  border-radius: 12rpx;
-  padding: 16rpx;
-}
-.eval-detail-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8rpx;
-}
-.eval-detail-row:last-child { margin-bottom: 0; }
-.eval-detail-label { font-size: 22rpx; color: rgba(255,255,255,0.45); }
-.eval-detail-val { font-size: 22rpx; color: #fff; font-weight: 600; }
-.eval-btn {
-  margin-top: 28rpx;
-  padding: 22rpx 0;
-  border-radius: 12rpx;
-  text-align: center;
-  font-size: 30rpx;
-  font-weight: 700;
-  color: #fff;
-  background: linear-gradient(135deg, #34c759, #28a745);
-}
-.car-scroll { display: flex; white-space: nowrap; padding-bottom: 8rpx; }
-.rc-card {
-  display: inline-flex;
-  flex-direction: column;
-  width: 310rpx;
-  margin-right: 20rpx;
-  border-radius: 16rpx;
-  overflow: hidden;
-  background: #f8f9fb;
-  flex-shrink: 0;
-}
-.rc-img { width: 100%; height: 190rpx; background: #f0f0f0; }
-.rc-name {
-  padding: 16rpx 16rpx 0;
-  font-size: 26rpx;
-  font-weight: 600;
+.form-picker-text {
+  font-size: 28rpx;
   color: #1a1a1a;
-  line-height: 1.4;
 }
-.rc-price-row {
+.form-picker-text.placeholder {
+  color: #bbb;
+}
+.arrow {
+  color: #ccc;
+  font-size: 28rpx;
+}
+.condition-group {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8rpx 16rpx 0;
+  gap: 12rpx;
 }
-.rc-price { font-size: 28rpx; font-weight: 700; color: #3072f6; }
-.rc-subsidy {
-  font-size: 20rpx;
-  color: #34c759;
-  background: #e8f8ed;
-  padding: 2rpx 10rpx;
-  border-radius: 4rpx;
-}
-.rc-btn {
-  margin: 14rpx 16rpx;
-  padding: 14rpx 0;
-  border-radius: 10rpx;
-  text-align: center;
+.condition-tag {
+  padding: 10rpx 24rpx;
+  border-radius: 14rpx;
   font-size: 24rpx;
-  font-weight: 600;
+  color: #666;
+  background: #f0f0f0;
+  font-weight: 500;
+}
+.condition-tag.on {
   color: #fff;
-  background: linear-gradient(135deg, #34c759, #28a745);
+  background: linear-gradient(135deg, #3072f6, #1a5cdb);
+}
+.benefit-icon-img {
+  width: 36rpx;
+  height: 36rpx;
 }
 .benefits-grid {
   display: flex;
@@ -520,5 +496,18 @@ export default {
   font-size: 22rpx;
   color: #999;
   margin-top: 6rpx;
+}
+.btn-area {
+  margin: 0 24rpx 20rpx;
+}
+.btn-primary {
+  padding: 28rpx 0;
+  border-radius: 16rpx;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #3072f6, #1a5cdb);
+  box-shadow: 0 4rpx 16rpx rgba(48,114,246,0.3);
 }
 </style>

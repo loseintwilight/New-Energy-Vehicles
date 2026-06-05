@@ -43,7 +43,7 @@
             @click="selectedWheel = i"
           >
             <view class="wheel-icon">
-              <text class="wheel-icon-text">{{ w.icon }}</text>
+              <image class="wheel-icon-img" :src="w.icon" mode="aspectFit"></image>
             </view>
             <view class="wheel-info">
               <text class="wheel-name">{{ w.name }}</text>
@@ -67,13 +67,12 @@
             @click="selectedDelivery = i"
           >
             <view class="delivery-left">
-              <text class="delivery-icon">{{ d.icon }}</text>
+              <image class="delivery-icon-img" :src="d.icon" mode="aspectFit"></image>
               <view>
                 <text class="delivery-name">{{ d.name }}</text>
                 <text class="delivery-desc">{{ d.desc }}</text>
               </view>
             </view>
-            <text class="delivery-check">✓</text>
           </view>
         </view>
       </view>
@@ -103,15 +102,27 @@
       <view class="section">
         <view class="section-hd">
           <text class="section-title">联系人信息</text>
+          <text class="section-sub">请填写您的联系方式</text>
         </view>
         <view class="contact-card">
           <view class="contact-row">
-            <text class="contact-label">联系人</text>
-            <input class="contact-input" v-model="contactName" placeholder="请输入姓名" />
+            <view class="contact-icon-wrap">
+              <image class="contact-icon" src="/static/images/car/icon/people.png" mode="aspectFit"></image>
+            </view>
+            <view class="contact-field">
+              <text class="contact-field-label">联系人</text>
+              <input class="contact-input" v-model="contactName" placeholder="请输入您的姓名" />
+            </view>
           </view>
+          <view class="contact-divider"></view>
           <view class="contact-row">
-            <text class="contact-label">联系电话</text>
-            <input class="contact-input" type="text" v-model="contactPhone" placeholder="请输入手机号" maxlength="11" />
+            <view class="contact-icon-wrap">
+              <image class="contact-icon" src="/static/images/car/icon/phone.png" mode="aspectFit"></image>
+            </view>
+            <view class="contact-field">
+              <text class="contact-field-label">联系电话</text>
+              <input class="contact-input" type="text" v-model="contactPhone" placeholder="请输入手机号" maxlength="11" />
+            </view>
           </view>
         </view>
       </view>
@@ -152,7 +163,7 @@
 </template>
 
 <script>
-import { createCarOrder } from '@/api/car/car'
+import { createCarOrder, getFinancePlans } from '@/api/car/car'
 
 export default {
   data() {
@@ -169,18 +180,16 @@ export default {
       exteriorColors: [
         { name: '海湾蓝', hex: '#4A7DB4' },
         { name: '星环灰', hex: '#8C8C8C' },
-        { name: '熔岩橙', hex: '#D4732A' },
-        { name: '珍珠白', hex: '#F0F0F0' },
-        { name: '橄榄绿', hex: '#5C7A4A' }
+        { name: '珍珠白', hex: '#F0F0F0' }
       ],
       wheelOptions: [
-        { icon: '⏺', name: '19英寸钻石轮毂', desc: '续航700km', price: '标配' },
-        { icon: '✧', name: '20英寸梅花轮毂', desc: '续航680km', price: '+¥0.8万' },
-        { icon: '✦', name: '21英寸运动轮毂', desc: '续航650km', price: '+¥1.6万' }
+        { icon: '/static/images/car/icon/star.png', name: '19英寸钻石轮毂', desc: '续航700km', price: '标配' },
+        { icon: '/static/images/car/icon/stars.png', name: '20英寸梅花轮毂', desc: '续航680km', price: '+¥0.8万' },
+        { icon: '/static/images/car/icon/starss.png', name: '21英寸运动轮毂', desc: '续航650km', price: '+¥1.6万' }
       ],
       deliveryOptions: [
-        { icon: '🏪', name: '门店自提', desc: '到店验车后提车，约2小时' },
-        { icon: '🚛', name: '送车上门', desc: '平板车配送至指定地址，约3-5天' }
+        { icon: '/static/images/car/icon/city.png', name: '门店自提', desc: '到店验车后提车，约2小时' },
+        { icon: '/static/images/car/icon/trucks.png', name: '送车上门', desc: '平板车配送至指定地址，约3-5天' }
       ],
       // vehicle_finance_plan: plan_type=full(全款)/installment(分期)
       financePlans: [
@@ -213,17 +222,7 @@ export default {
   onLoad(options) {
     if (options.car) {
       this.car = JSON.parse(decodeURIComponent(options.car))
-      const p = this.car.guidePrice || 0
-      this.financePlans[0].totalPrice = p
-      this.financePlans[1].monthlyPayment = Math.round(p * 10000 * 0.5 / 12)
-      this.financePlans[1].downPayment = Math.round(p * 0.5 * 100) / 100
-      this.financePlans[1].totalPrice = p
-      this.financePlans[2].monthlyPayment = Math.round(p * 10000 * 0.7 * 1.08 / 36)
-      this.financePlans[2].downPayment = Math.round(p * 0.3 * 100) / 100
-      this.financePlans[2].totalPrice = Math.round(p * 1.08 * 100) / 100
-      this.financePlans[3].monthlyPayment = Math.round(p * 10000 * 0.85 * 1.12 / 60)
-      this.financePlans[3].downPayment = Math.round(p * 0.15 * 100) / 100
-      this.financePlans[3].totalPrice = Math.round(p * 1.12 * 100) / 100
+      this.fetchFinancePlans()
     } else {
       this.car = {
         vehicleId: 'N001',
@@ -239,21 +238,32 @@ export default {
         wheel: '19英寸钻石轮毂',
         rangeKm: 700
       }
-      const p = this.car.guidePrice || 0
-      this.financePlans[0].totalPrice = p
-      this.financePlans[1].monthlyPayment = Math.round(p * 10000 * 0.5 / 12)
-      this.financePlans[1].downPayment = Math.round(p * 0.5 * 100) / 100
-      this.financePlans[1].totalPrice = p
-      this.financePlans[2].monthlyPayment = Math.round(p * 10000 * 0.7 * 1.08 / 36)
-      this.financePlans[2].downPayment = Math.round(p * 0.3 * 100) / 100
-      this.financePlans[2].totalPrice = Math.round(p * 1.08 * 100) / 100
-      this.financePlans[3].monthlyPayment = Math.round(p * 10000 * 0.85 * 1.12 / 60)
-      this.financePlans[3].downPayment = Math.round(p * 0.15 * 100) / 100
-      this.financePlans[3].totalPrice = Math.round(p * 1.12 * 100) / 100
+      this.fetchFinancePlans()
     }
   },
 
   methods: {
+    fetchFinancePlans() {
+      const vehicleId = this.car.vehicleId
+      if (!vehicleId) return
+      getFinancePlans(vehicleId).then(res => {
+        const plans = res.data || []
+        if (plans.length > 0) {
+          this.financePlans = plans.map(p => ({
+            planId: p.planId,
+            planName: p.planName,
+            planType: p.planType,
+            totalPrice: p.totalPrice || this.car.guidePrice || 0,
+            downPayment: p.downPayment || 0,
+            monthlyPayment: p.monthlyPayment || 0,
+            months: p.months || 0,
+            interestRate: p.interestRate || 0,
+            detail: p.planType === 'full' ? '一次性付清，无利息' : (p.months ? `首付${p.downPayment ? (p.downPayment/(this.car.guidePrice||1)*100).toFixed(0) : 0}%，${p.months}期` : '')
+          }))
+        }
+      }).catch(() => {})
+    },
+
     submitOrder() {
       if (!this.contactName) {
         uni.showToast({ title: '请输入联系人', icon: 'none' })
@@ -314,7 +324,6 @@ page {
 .scroll-wrap {
   flex: 1;
   height: 0;
-  padding-bottom: 140rpx;
 }
 .hero {
   position: relative;
@@ -433,6 +442,10 @@ page {
 .wheel-icon-text {
   font-size: 36rpx;
 }
+.wheel-icon-img {
+  width: 40rpx;
+  height: 40rpx;
+}
 .wheel-info {
   flex: 1;
 }
@@ -470,13 +483,61 @@ page {
   border-color: #3072f6;
   background: #f0f6ff;
 }
-.delivery-left {
+.contact-card {
+  background: #f8f9fb;
+  border-radius: 16rpx;
+  padding: 8rpx 20rpx;
+}
+.contact-row {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  padding: 20rpx 0;
+}
+.contact-icon-wrap {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: #eef2ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16rpx;
+  flex-shrink: 0;
+}
+.contact-icon {
+  font-size: 28rpx;
+  width: 36rpx;
+  height: 36rpx;
+}
+.contact-field {
+  flex: 1;
+}
+.contact-field-label {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 6rpx;
+  display: block;
+}
+.contact-input {
+  font-size: 28rpx;
+  color: #1a1a1a;
+  padding: 0;
+  background: transparent;
+  display: block;
+  width: 100%;
+}
+.contact-divider {
+  height: 1rpx;
+  background: #e8e8ed;
+  margin: 0 0 0 72rpx;
 }
 .delivery-icon {
   font-size: 40rpx;
+}
+.delivery-icon-img {
+  width: 44rpx;
+  height: 44rpx;
+  margin-right: 16rpx;
 }
 .delivery-name {
   display: block;
@@ -489,16 +550,6 @@ page {
   font-size: 22rpx;
   color: #999;
   margin-top: 4rpx;
-}
-.delivery-check {
-  font-size: 32rpx;
-  color: #3072f6;
-  font-weight: 700;
-}
-.finance-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
 }
 .finance-item {
   padding: 20rpx;

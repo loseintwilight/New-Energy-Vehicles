@@ -1,241 +1,740 @@
 <template>
-	<view class="page" :class="{ 'page-ready': isReady }">
-		<view class="glow-matrix">
-			<view class="glow-row" v-for="(row, ri) in glowRows" :key="ri">
-				<view class="glow-spot" v-for="(dot, ci) in row.dots" :key="ci" :style="dot.style"></view>
-			</view>
-		</view>
-		<view class="overlay-mask"></view>
+  <view class="page" :class="{ 'page-ready': isReady }">
+    <!-- 背景光晕矩阵（琥珀橙系） -->
+    <view class="glow-matrix">
+      <view class="glow-row" v-for="(row, ri) in glowRows" :key="ri">
+        <view class="glow-spot" v-for="(dot, ci) in row.dots" :key="ci" :style="dot.style"></view>
+      </view>
+    </view>
+    <view class="overlay-mask"></view>
 
-		<scroll-view scroll-y class="main-scroll" :show-scrollbar="false">
-			<view class="header">
-				<view class="header-bg"></view>
-				<view class="back-btn" hover-class="btn-hover" @tap="goBack">
-					<text class="back-icon">❮</text>
-				</view>
-				<view class="header-info">
-					<text class="header-title">添加车辆</text>
-					<text class="header-sub">录入新车信息</text>
-				</view>
-				<view class="header-right" @tap="submitForm">
-					<text class="submit-text">提交</text>
-				</view>
-			</view>
+    <!-- 主滚动区 -->
+    <scroll-view scroll-y class="main-scroll" :show-scrollbar="false">
+      <!-- 顶栏（琥珀渐变） -->
+      <view class="header">
+        <view class="header-bg"></view>
+        <view class="header-circle"></view>
+        <view class="back-btn" hover-class="btn-hover" @tap="goBack">
+          <text class="back-icon">‹</text>
+        </view>
+        <view class="header-info">
+          <text class="header-title">{{ isEdit ? '编辑车辆' : '新增车辆' }}</text>
+          <text class="header-sub">{{ isEdit ? '修改车辆信息' : '录入新车信息' }}</text>
+        </view>
+      </view>
 
-			<!-- 基本表单 -->
-			<view class="info-section">
-				<view class="section-title">
-					<view class="title-line"></view>
-					<text class="title-text">基本信息</text>
-				</view>
-				<view class="info-card">
-					<view class="form-row">
-						<text class="form-label">车型名称</text>
-						<input class="form-input" v-model="form.name" placeholder="请输入车型名称" placeholder-class="form-placeholder" />
-					</view>
-					<view class="form-row">
-						<text class="form-label">品牌</text>
-						<input class="form-input" v-model="form.brand" placeholder="请输入品牌" placeholder-class="form-placeholder" />
-					</view>
-					<view class="form-row">
-						<text class="form-label">车型类别</text>
-						<picker class="form-picker" :range="typeOptions" @change="onTypeChange">
-							<text class="picker-text" :class="{ placeholder: !form.type }">{{ form.type || '请选择车型类别' }}</text>
-							<text class="picker-arrow">❯</text>
-						</picker>
-					</view>
-					<view class="form-row">
-						<text class="form-label">售价(元)</text>
-						<input class="form-input" v-model="form.price" placeholder="请输入售价" placeholder-class="form-placeholder" type="number" />
-					</view>
-					<view class="form-row">
-						<text class="form-label">初始库存</text>
-						<input class="form-input" v-model="form.stock" placeholder="请输入库存数量" placeholder-class="form-placeholder" type="number" />
-					</view>
-				</view>
-			</view>
+      <!-- 基本信息卡（琥珀色条） -->
+      <view class="section-block sb-amber">
+        <view class="title-bar">
+          <view class="bar-line"></view>
+          <view class="icon-wrap iw-amber"><text class="bar-icon">📋</text></view>
+          <text class="bar-title">基本信息</text>
+        </view>
+        <view class="form-card fc-orange">
+          <view class="form-row">
+            <text class="form-label"><text class="req">*</text>车型名称</text>
+            <input class="form-input" v-model="form.name" placeholder="请输入车型完整名称" placeholder-class="ph" />
+          </view>
+          <view class="form-row">
+            <text class="form-label">年款</text>
+            <input class="form-input" v-model="form.year" placeholder="如：2026款" placeholder-class="ph" />
+          </view>
+          <view class="form-row">
+            <text class="form-label"><text class="req">*</text>状态</text>
+            <picker class="form-picker" :range="statusOptions" range-key="label" :value="statusIndex" @change="onStatusChange">
+              <text class="picker-txt" :class="{ 'ph-cls': !form.status }">{{ statusLabel || '请选择状态' }}</text>
+              <text class="picker-arrow">▸</text>
+            </picker>
+          </view>
+        </view>
+      </view>
 
-			<!-- 性能参数 -->
-			<view class="info-section">
-				<view class="section-title">
-					<view class="title-line line-green"></view>
-					<text class="title-text">性能参数</text>
-				</view>
-				<view class="info-card">
-					<view class="form-row">
-						<text class="form-label">续航里程(km)</text>
-						<input class="form-input" v-model="form.range" placeholder="请输入续航里程" placeholder-class="form-placeholder" type="number" />
-					</view>
-					<view class="form-row">
-						<text class="form-label">电池容量</text>
-						<input class="form-input" v-model="form.battery" placeholder="如：85.4kWh" placeholder-class="form-placeholder" />
-					</view>
-					<view class="form-row">
-						<text class="form-label">电机功率</text>
-						<input class="form-input" v-model="form.power" placeholder="如：180kW" placeholder-class="form-placeholder" />
-					</view>
-					<view class="form-row">
-						<text class="form-label">百公里加速</text>
-						<input class="form-input" v-model="form.acceleration" placeholder="如：3.9秒" placeholder-class="form-placeholder" />
-					</view>
-					<view class="form-row">
-						<text class="form-label">最高时速</text>
-						<input class="form-input" v-model="form.maxSpeed" placeholder="如：185km/h" placeholder-class="form-placeholder" />
-					</view>
-				</view>
-			</view>
+      <!-- 价格信息卡（绿色色条） -->
+      <view class="section-block sb-green">
+        <view class="title-bar">
+          <view class="bar-line bar-line-green"></view>
+          <view class="icon-wrap iw-green"><text class="bar-icon">💰</text></view>
+          <text class="bar-title">价格信息</text>
+        </view>
+        <view class="form-card fc-green">
+          <view class="form-row">
+            <text class="form-label"><text class="req">*</text>售价(元)</text>
+            <view class="input-wrap">
+              <text class="input-prefix">¥</text>
+              <input class="form-input input-no-border" type="digit" v-model="form.price" placeholder="0.00" placeholder-class="ph" />
+            </view>
+          </view>
+          <view class="form-row">
+            <text class="form-label">原价(元)</text>
+            <view class="input-wrap">
+              <text class="input-prefix">¥</text>
+              <input class="form-input input-no-border" type="digit" v-model="form.originalPrice" placeholder="0.00" placeholder-class="ph" />
+            </view>
+          </view>
+        </view>
+      </view>
 
-			<!-- 车辆描述 -->
-			<view class="info-section">
-				<view class="section-title">
-					<view class="title-line line-blue"></view>
-					<text class="title-text">车辆描述</text>
-				</view>
-				<view class="desc-card">
-					<textarea class="desc-textarea" v-model="form.description" placeholder="请输入车辆描述信息..." placeholder-class="desc-placeholder" :maxlength="500" />
-					<text class="desc-count">{{ form.description.length }}/500</text>
-				</view>
-			</view>
+      <!-- 规格参数卡（蓝色色条） -->
+      <view class="section-block sb-blue">
+        <view class="title-bar">
+          <view class="bar-line bar-line-blue"></view>
+          <view class="icon-wrap iw-blue"><text class="bar-icon">⚙️</text></view>
+          <text class="bar-title">规格参数</text>
+        </view>
+        <view class="spec-grid">
+          <view class="spec-form-item">
+            <text class="sf-label">续航(km)</text>
+            <input class="sf-input" type="digit" v-model="form.range" placeholder="0" placeholder-class="ph" />
+          </view>
+          <view class="spec-form-item">
+            <text class="sf-label">电池(kWh)</text>
+            <input class="sf-input" type="digit" v-model="form.batteryCapacity" placeholder="0" placeholder-class="ph" />
+          </view>
+          <view class="spec-form-item">
+            <text class="sf-label">快充时间</text>
+            <input class="sf-input" v-model="form.fastChargeTime" placeholder="如：28分钟" placeholder-class="ph" />
+          </view>
+        </view>
+      </view>
 
-			<!-- 上传图片 -->
-			<view class="info-section">
-				<view class="section-title">
-					<view class="title-line line-purple"></view>
-					<text class="title-text">车辆图片</text>
-				</view>
-				<view class="upload-grid">
-					<view class="upload-item" v-for="(img, idx) in uploadImages" :key="idx">
-						<view class="upload-img" :style="{ background: img.bg }">
-							<text class="upload-img-icon">{{ img.icon }}</text>
-						</view>
-					</view>
-					<view class="upload-item upload-add" @tap="addImage">
-						<text class="upload-add-icon">+</text>
-						<text class="upload-add-text">添加图片</text>
-					</view>
-				</view>
-			</view>
+      <!-- 车身颜色卡（紫色色条） -->
+      <view class="section-block sb-purple">
+        <view class="title-bar">
+          <view class="bar-line bar-line-purple"></view>
+          <view class="icon-wrap iw-purple"><text class="bar-icon">🎨</text></view>
+          <text class="bar-title">车身颜色</text>
+        </view>
+        <view class="color-card">
+          <view class="color-tag-list">
+            <view
+              v-for="(c, idx) in colorOptions"
+              :key="idx"
+              class="color-tag"
+              :class="{ 'ct-active': isColorSelected(c.name) }"
+              @tap="toggleColor(c)"
+            >
+              <view class="ct-dot" :style="{ background: c.value }"></view>
+              <text class="ct-name">{{ c.name }}</text>
+            </view>
+          </view>
+          <view v-if="form.colors.length === 0" class="color-empty-hint">
+            <text>点击选择车身颜色（可多选）</text>
+          </view>
+        </view>
+      </view>
 
-			<view style="height: 120rpx;"></view>
-		</scroll-view>
-	</view>
+      <!-- 详细描述入口卡（橙色色条） -->
+      <view class="section-block sb-orange">
+        <view class="title-bar">
+          <view class="bar-line bar-line-orange"></view>
+          <view class="icon-wrap iw-orange"><text class="bar-icon">📝</text></view>
+          <text class="bar-title">详细描述</text>
+        </view>
+        <view class="desc-entry" hover-class="desc-entry-hover" @tap="goDescEdit">
+          <view class="de-left">
+            <text class="de-icon">✏️</text>
+            <text class="de-text">{{ form.description ? '已填写描述，点击编辑' : '暂无描述，点击添加详细介绍' }}</text>
+          </view>
+          <text class="de-arrow">→</text>
+        </view>
+      </view>
+
+      <view style="height: 140rpx;"></view>
+    </scroll-view>
+
+    <!-- 底部保存按钮 -->
+    <view class="bottom-bar">
+      <view class="save-btn" hover-class="save-hover" @tap="submitForm">
+        <text class="save-text">{{ submitting ? '保存中...' : '保存' }}</text>
+      </view>
+    </view>
+  </view>
 </template>
 
 <script>
+var USE_MOCK = true
+
+var colorOptions = [
+  { name: '北极白', value: '#F5F5F5' },
+  { name: '迷雾灰', value: '#6B7280' },
+  { name: '海洋蓝', value: '#1E40AF' },
+  { name: '热情红', value: '#DC2626' },
+  { name: '星空黑', value: '#1F2937' },
+  { name: '翡翠绿', value: '#059669' }
+]
+
+function mockGetVehicleDetail(vehicleId) {
+  return {
+    code: 200,
+    data: {
+      vehicleId: vehicleId,
+      brand: '比亚迪',
+      model: '海豹',
+      year: '2026款',
+      type: 'ev',
+      price: '228000',
+      originalPrice: '249800',
+      range: '700',
+      batteryCapacity: '82.5',
+      fastChargeTime: '28分钟',
+      length: '4800',
+      width: '1875',
+      height: '1460',
+      wheelbase: '2920',
+      motorPower: '230',
+      colors: ['北极白', '海洋蓝'],
+      description: '<p>比亚迪海豹是基于e平台3.0打造的纯电中型轿车。</p>'
+    }
+  }
+}
+
 export default {
-	data() {
-		return {
-			isReady: false,
-			glowRows: [],
-			typeOptions: ['纯电动轿车', '纯电动SUV', '增程式SUV', '纯电动MPV', '纯电动跑车'],
-			form: {
-				name: '',
-				brand: '',
-				type: '',
-				price: '',
-				stock: '',
-				range: '',
-				battery: '',
-				power: '',
-				acceleration: '',
-				maxSpeed: '',
-				description: ''
-			},
-			uploadImages: [
-				{ icon: '🚗', bg: 'linear-gradient(135deg, #fef3c7, #fde68a)' },
-				{ icon: '📷', bg: 'linear-gradient(135deg, #dbeafe, #bfdbfe)' }
-			]
-		}
-	},
-	created() {
-		this.buildGlowRows()
-		var self = this
-		setTimeout(function() { self.isReady = true }, 200)
-	},
-	methods: {
-		buildGlowRows() {
-			var rows = []
-			var colors = ['#f59e0b', '#f97316', '#fb923c', '#fbbf24']
-			for (var r = 0; r < 5; r++) {
-				var dots = []
-				var count = 3 + Math.floor(Math.random() * 4)
-				for (var c = 0; c < count; c++) {
-					var color = colors[Math.floor(Math.random() * colors.length)]
-					dots.push({ style: 'width:' + (3 + Math.floor(Math.random() * 6)) + 'px;height:' + (3 + Math.floor(Math.random() * 6)) + 'px;background:' + color + ';animation-duration:' + (2 + Math.random() * 3) + 's;animation-delay:' + Math.random() * 2 + 's;' })
-				}
-				rows.push({ dots: dots })
-			}
-			this.glowRows = rows
-		},
-		goBack() { uni.navigateBack() },
-		onTypeChange(e) {
-			this.form.type = this.typeOptions[e.detail.value]
-		},
-		addImage() {
-			uni.showToast({ title: '选择图片', icon: 'none', duration: 1500 })
-		},
-		submitForm() {
-			if (!this.form.name) {
-				uni.showToast({ title: '请输入车型名称', icon: 'none' })
-				return
-			}
-			uni.showToast({ title: '提交成功', icon: 'success' })
-			setTimeout(function() { uni.navigateBack() }, 1500)
-		}
-	}
+  data: function() {
+    return {
+      isReady: false,
+      glowRows: [],
+      isEdit: false,
+      vehicleId: '',
+      submitting: false,
+      statusOptions: [
+        { label: '待审核', value: '0' },
+        { label: '在售', value: '1' },
+        { label: '已卖', value: '2' },
+        { label: '下架', value: '3' }
+      ],
+      colorOptions: colorOptions,
+      /* 表单字段（严格对齐stad_vehicle + stad_vehicle_spec表） */
+      form: {
+        name: '',            // stad_vehicle.model_name
+        year: '',             // stad_vehicle_spec.model_year
+        status: '1',          // stad_vehicle.status (默认在售)
+        price: '',            // stad_vehicle.guide_price
+        originalPrice: '',    // stad_vehicle.original_price
+        range: '',            // stad_vehicle_spec.range_km
+        batteryCapacity: '',  // stad_vehicle_spec.battery_capacity
+        fastChargeTime: '',   // stad_vehicle_spec.charge_time_fast
+        colors: [],           // stad_vehicle.color (单值，前端暂用数组)
+        description: ''       // stad_vehicle.description
+      }
+    }
+  },
+  computed: {
+    statusIndex: function() {
+      for (var i = 0; i < this.statusOptions.length; i++) {
+        if (this.statusOptions[i].value === this.form.status) return i
+      }
+      return -1
+    },
+    statusLabel: function() {
+      for (var i = 0; i < this.statusOptions.length; i++) {
+        if (this.statusOptions[i].value === this.form.status) return this.statusOptions[i].label
+      }
+      return ''
+    }
+  },
+  onLoad: function(options) {
+    var that = this
+    that.buildGlowRows()
+    if (options && options.editMode === '1' && options.vehicleId) {
+      that.isEdit = true
+      that.vehicleId = options.vehicleId
+      that.loadVehicleData()
+    }
+    setTimeout(function() { that.isReady = true }, 200)
+  },
+  methods: {
+    buildGlowRows: function() {
+      var rows = []
+      var colors = ['#f59e0b', '#f97316', '#fb923c', '#fbbf24', '#fcd34d', '#fde68a']
+      for (var r = 0; r < 8; r++) {
+        var dots = []
+        var count = 3 + Math.floor(Math.random() * 3)
+        for (var c = 0; c < count; c++) {
+          var color = colors[Math.floor(Math.random() * colors.length)]
+          var size = 60 + Math.floor(Math.random() * 80)
+          var dur = 2.5 + Math.random() * 2.5
+          var delay = Math.random() * 2.5
+          var alpha = 0.06 + Math.random() * 0.16
+          dots.push({
+            style: 'width:' + size + 'rpx;height:' + size + 'rpx;background:radial-gradient(circle,' + color + ',' + color + '00);opacity:' + alpha.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's;'
+          })
+        }
+        rows.push({ dots: dots })
+      }
+      this.glowRows = rows
+    },
+
+    loadVehicleData: function() {
+      var self = this
+      if (USE_MOCK) {
+        var res = mockGetVehicleDetail(self.vehicleId)
+        setTimeout(function() { self.fillFormData(res.data) }, 300)
+      } else {
+        uni.request({
+          url: '/merchant/vehicle/' + self.vehicleId,
+          method: 'GET',
+          success: function(res) {
+            if (res.data && res.data.code === 200) {
+              self.fillFormData(res.data.data)
+            }
+          },
+          fail: function() {
+            uni.showToast({ title: '获取数据失败', icon: 'none' })
+          }
+        })
+      }
+    },
+
+    fillFormData: function(data) {
+      if (!data) return
+      this.form.name = data.name || data.model_name || ''
+      this.form.year = data.year || data.model_year || ''
+      this.form.status = String(data.status || '1')
+      this.form.price = data.price !== undefined ? String(data.price) : (data.guide_price !== undefined ? String(data.guide_price) : '')
+      this.form.originalPrice = data.originalPrice !== undefined ? String(data.originalPrice) : ''
+      this.form.range = data.range !== undefined ? String(data.range) : (data.range_km !== undefined ? String(data.range_km) : '')
+      this.form.batteryCapacity = data.batteryCapacity !== undefined ? String(data.batteryCapacity) : (data.battery_capacity !== undefined ? String(data.battery_capacity) : '')
+      this.form.fastChargeTime = data.fastChargeTime || data.charge_time_fast || ''
+      this.form.colors = data.colors || (data.color ? [data.color] : [])
+      this.form.description = data.description || ''
+    },
+
+    onStatusChange: function(e) {
+      var idx = parseInt(e.detail.value)
+      if (idx >= 0 && idx < this.statusOptions.length) {
+        this.form.status = this.statusOptions[idx].value
+      }
+    },
+
+    isColorSelected: function(name) {
+      return this.form.colors.indexOf(name) > -1
+    },
+
+    toggleColor: function(c) {
+      var idx = this.form.colors.indexOf(c.name)
+      if (idx > -1) {
+        this.form.colors.splice(idx, 1)
+      } else {
+        this.form.colors.push(c.name)
+      }
+    },
+
+    goDescEdit: function() {
+      uni.navigateTo({
+        url: '/pages/mine/vehicle/vehicle-desc-edit?vehicleId=' + (this.vehicleId || '') + '&currentDesc=' + encodeURIComponent(this.form.description || '')
+      })
+    },
+
+    goBack: function() {
+      uni.navigateBack({ delta: 1 })
+    },
+
+    validateForm: function() {
+      if (!this.form.name || !this.form.name.trim()) {
+        uni.showToast({ title: '请输入车型名称', icon: 'none' }); return false
+      }
+      if (!this.form.price || !this.form.price.trim()) {
+        uni.showToast({ title: '请输入售价', icon: 'none' }); return false
+      }
+      var p = parseFloat(this.form.price)
+      if (isNaN(p) || p <= 0) {
+        uni.showToast({ title: '售价必须大于0', icon: 'none' }); return false
+      }
+      return true
+    },
+
+    submitForm: function() {
+      var self = this
+      if (!self.validateForm()) return
+      if (self.submitting) return
+      self.submitting = true
+
+      /* 提交数据严格对齐DB字段名 */
+      var postData = {
+        model_name: self.form.name,
+        year: self.form.year,
+        status: self.form.status,
+        guide_price: parseFloat(self.form.price),
+        original_price: self.form.originalPrice ? parseFloat(self.form.originalPrice) : null,
+        range_km: self.form.range ? parseInt(self.form.range) : null,
+        battery_capacity: self.form.batteryCapacity ? parseFloat(self.form.batteryCapacity) : null,
+        charge_time_fast: self.form.fastChargeTime,
+        color: self.form.colors.length > 0 ? self.form.colors[0] : '',
+        description: self.form.description
+      }
+
+      if (USE_MOCK) {
+        setTimeout(function() {
+          self.submitting = false
+          uni.showToast({
+            title: self.isEdit ? '修改成功' : '添加成功',
+            icon: 'success',
+            duration: 1500,
+            complete: function() {
+              setTimeout(function() { uni.navigateBack({ delta: 1 }) }, 1500)
+            }
+          })
+        }, 600)
+      } else {
+        var method = self.isEdit ? 'PUT' : 'POST'
+        var url = '/merchant/vehicle' + (self.isEdit ? '/' + self.vehicleId : '')
+        uni.request({
+          url: url,
+          method: method,
+          data: postData,
+          success: function(res) {
+            self.submitting = false
+            if (res.data && res.data.code === 200) {
+              uni.showToast({ title: self.isEdit ? '修改成功' : '添加成功', icon: 'success' })
+              setTimeout(function() { uni.navigateBack({ delta: 1 }) }, 1200)
+            } else {
+              uni.showToast({ title: (res.data && res.data.msg) || '操作失败', icon: 'none' })
+            }
+          },
+          fail: function() {
+            self.submitting = false
+            uni.showToast({ title: '网络异常，请重试', icon: 'none' })
+          }
+        })
+      }
+    }
+  }
 }
 </script>
 
 <style scoped>
-.page { min-height: 100vh; background: linear-gradient(180deg, #fff7ed 0%, #fffbeb 30%, #fefce8 60%, #fff7ed 100%); opacity: 0; transition: opacity 0.5s ease; }
-.page-ready { opacity: 1; }
-.glow-matrix { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-.glow-row { display: flex; justify-content: space-around; padding: 20rpx 30rpx; }
-.glow-spot { border-radius: 50%; filter: blur(6px); opacity: 0; animation: glowPulse ease-in-out infinite alternate; }
-@keyframes glowPulse { 0% { opacity: 0; transform: scale(0.6); } 50% { opacity: 0.5; } 100% { opacity: 0; transform: scale(1.4); } }
-.overlay-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, rgba(255,247,237,0.3) 0%, rgba(255,251,235,0.43) 38%, rgba(254,252,232,0.55) 66%, rgba(255,247,237,0.63) 100%); z-index: 1; pointer-events: none; }
-.main-scroll { position: relative; z-index: 2; }
+/* ========== 页面容器 ========== */
+.page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #fff7ed 0%, #fffbeb 30%, #fefce8 60%, #fffbeb 100%);
+  position: relative;
+  overflow-x: hidden;
+}
 
-.header { position: relative; padding: 30rpx 28rpx 24rpx; display: flex; align-items: center; }
-.header-bg { position: absolute; top: -60rpx; left: -40rpx; right: -40rpx; bottom: 0; background: radial-gradient(ellipse at 20% 30%, rgba(251,146,60,0.12) 0%, transparent 60%), radial-gradient(ellipse at 80% 50%, rgba(250,204,21,0.1) 0%, transparent 55%); border-radius: 0 0 60rpx 60rpx; }
-.back-btn { width: 60rpx; height: 60rpx; border-radius: 30rpx; background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 1; box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06); }
-.back-icon { font-size: 28rpx; color: #92400e; }
-.btn-hover { opacity: 0.7; transform: scale(0.95); }
-.header-info { flex: 1; margin-left: 20rpx; z-index: 1; }
-.header-title { font-size: 36rpx; font-weight: 700; color: #451a03; display: block; }
-.header-sub { font-size: 24rpx; color: #a16207; margin-top: 4rpx; display: block; }
-.header-right { z-index: 1; }
-.submit-text { font-size: 28rpx; color: #f59e0b; font-weight: 600; }
+/* ========== 入场动画 ========== */
+.page-ready .section-block:nth-of-type(1) { animation: fadeSlideUp 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; animation-delay: 0.08s; }
+.page-ready .section-block:nth-of-type(2) { animation: fadeSlideUp 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; animation-delay: 0.16s; }
+.page-ready .section-block:nth-of-type(3) { animation: fadeSlideUp 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; animation-delay: 0.24s; }
+.page-ready .section-block:nth-of-type(4) { animation: fadeSlideUp 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; animation-delay: 0.32s; }
+.page-ready .section-block:nth-of-type(5) { animation: fadeSlideUp 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; animation-delay: 0.40s; }
 
-.info-section { margin: 0 24rpx 20rpx; }
-.section-title { display: flex; align-items: center; margin-bottom: 16rpx; }
-.title-line { width: 6rpx; height: 32rpx; border-radius: 3rpx; background: linear-gradient(180deg, #f59e0b, #f97316); margin-right: 12rpx; }
-.line-green { background: linear-gradient(180deg, #22c55e, #16a34a); }
-.line-blue { background: linear-gradient(180deg, #3b82f6, #2563eb); }
-.line-purple { background: linear-gradient(180deg, #a855f7, #9333ea); }
-.title-text { font-size: 30rpx; font-weight: 700; color: #1c1917; }
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(30rpx) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 
-.info-card { background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); border-radius: 20rpx; padding: 8rpx 0; box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.04); }
-.form-row { display: flex; align-items: center; padding: 20rpx 24rpx; border-bottom: 1rpx solid #f5f5f4; }
+/* ========== 背景光晕矩阵 ========== */
+.glow-matrix {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.glow-row {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 24rpx 20rpx;
+}
+.glow-spot {
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: glowPulse ease-in-out infinite alternate;
+}
+@keyframes glowPulse {
+  0% { opacity: 0.12; transform: scale(0.85); }
+  50% { opacity: 0.55; }
+  100% { opacity: 0.12; transform: scale(1.25); }
+}
+
+.overlay-mask {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(180deg,
+    rgba(255, 247, 237, 0.92) 0%,
+       rgba(255, 251, 235, 0.95) 35%,
+       rgba(254, 252, 232, 0.96) 65%,
+       rgba(255, 251, 235, 0.97) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.main-scroll {
+  position: relative;
+  z-index: 2;
+  height: 100vh;
+}
+
+/* ========== 顶栏 ========== */
+.header {
+  position: relative;
+  padding: 28rpx 28rpx 24rpx;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+.header-bg {
+  position: absolute;
+  top: -80rpx; left: -40rpx; right: -40rpx; bottom: -20rpx;
+  background: linear-gradient(135deg, #f59e0b 0%, #f97316 35%, #fb923c 65%, #fdba74 100%);
+  border-radius: 0 0 60rpx 60rpx;
+}
+.header-circle {
+  position: absolute;
+  top: -50rpx; right: -30rpx;
+  width: 300rpx; height: 300rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+.back-btn {
+  width: 64rpx; height: 64rpx;
+  border-radius: 32rpx;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  box-shadow: 0 4rpx 14rpx rgba(0, 0, 0, 0.1);
+}
+.btn-hover { transform: scale(0.9); background: rgba(255, 255, 255, 0.45); }
+.back-icon { font-size: 36rpx; color: #ffffff; font-weight: 300; }
+.header-info {
+  flex: 1; margin-left: 20rpx; z-index: 2;
+  display: flex; flex-direction: column;
+}
+.header-title {
+  font-size: 38rpx; font-weight: 800; color: #ffffff;
+  letter-spacing: 1rpx;
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+.header-sub {
+  font-size: 24rpx; color: rgba(255, 255, 255, 0.88);
+  margin-top: 6rpx; font-weight: 500;
+}
+
+/* ========== 区块通用 ========== */
+.section-block {
+  margin: 0 24rpx 20rpx;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 24rpx;
+  padding: 24rpx 22rpx;
+  box-shadow: 0 6rpx 28rpx rgba(0, 0, 0, 0.05), inset 0 1rpx 0 rgba(255, 255, 255, 0.9);
+  border: 1rpx solid rgba(255, 255, 255, 0.8);
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.title-bar {
+  display: flex; flex-direction: row;
+  align-items: center;
+  margin-bottom: 18rpx;
+}
+.bar-line {
+  width: 7rpx; height: 32rpx;
+  border-radius: 4rpx;
+  margin-right: 12rpx;
+  background: linear-gradient(180deg, #f59e0b, #f97316);
+  box-shadow: 0 0 12rpx rgba(245, 158, 11, 0.35);
+}
+.bar-line-green { background: linear-gradient(180deg, #d97706, #f59e0b); box-shadow: 0 0 12rpx rgba(217,119,6,0.35); }
+.bar-line-blue { background: linear-gradient(180deg, #f59e0b, #fb923c); box-shadow: 0 0 12rpx rgba(245,158,11,0.35); }
+.bar-line-purple { background: linear-gradient(180deg, #fb923c, #fbbf24); box-shadow: 0 0 12rpx rgba(251,146,60,0.35); }
+.bar-line-orange { background: linear-gradient(180deg, #f97316, #ea580c); box-shadow: 0 0 12rpx rgba(249, 115, 22, 0.35); }
+
+.icon-wrap {
+  width: 48rpx; height: 48rpx;
+  border-radius: 14rpx;
+  display: flex; align-items: center; justify-content: center;
+  margin-right: 12rpx;
+}
+.iw-amber { background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(251, 146, 60, 0.08)); }
+.iw-green { background: linear-gradient(135deg, rgba(217,119,6,0.15), rgba(245,158,11,0.08)); }
+.iw-blue { background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(251,146,60,0.08)); }
+.iw-purple { background: linear-gradient(135deg, rgba(251,146,60,0.15), rgba(251,191,36,0.08)); }
+.iw-orange { background: linear-gradient(135deg, rgba(249, 115, 22, 0.15), rgba(234, 88, 12, 0.08)); }
+.bar-icon { font-size: 26rpx; }
+.bar-title {
+  font-size: 30rpx; font-weight: 800; color: #1c1917;
+  flex: 1; letter-spacing: 0.5rpx;
+}
+
+/* ========== 表单卡片 ========== */
+.form-card {
+  background: linear-gradient(135deg, rgba(254, 251, 236, 0.98), rgba(255, 255, 255, 1));
+  border-radius: 18rpx;
+  padding: 4rpx 18rpx;
+  border: 1rpx solid rgba(245, 158, 11, 0.08);
+}
+.fc-green {
+  background: linear-gradient(135deg, rgba(240, 253, 244, 0.98), rgba(255, 255, 255, 1));
+  border-color: rgba(34, 197, 94, 0.08);
+}
+
+.form-row {
+  display: flex; align-items: center;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid rgba(0, 0, 0, 0.04);
+}
 .form-row:last-child { border-bottom: none; }
-.form-label { width: 160rpx; font-size: 26rpx; color: #78716c; flex-shrink: 0; }
-.form-input { flex: 1; font-size: 26rpx; color: #1c1917; text-align: right; }
-.form-placeholder { color: #a8a29e; }
-.form-picker { flex: 1; display: flex; align-items: center; justify-content: flex-end; }
-.picker-text { font-size: 26rpx; color: #1c1917; }
-.picker-text.placeholder { color: #a8a29e; }
-.picker-arrow { font-size: 20rpx; color: #a8a29e; margin-left: 8rpx; }
+.form-label {
+  width: 180rpx; flex-shrink: 0;
+  font-size: 26rpx; color: #78716c; font-weight: 600;
+}
+.req { color: #ef4444; margin-right: 4rpx; font-weight: 700; }
 
-.desc-card { background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); border-radius: 20rpx; padding: 24rpx; box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.04); position: relative; }
-.desc-textarea { width: 100%; height: 200rpx; font-size: 26rpx; color: #1c1917; line-height: 1.6; }
-.desc-placeholder { color: #a8a29e; }
-.desc-count { text-align: right; font-size: 22rpx; color: #a8a29e; margin-top: 8rpx; display: block; }
+.form-input {
+  flex: 1; height: 72rpx; line-height: 72rpx;
+  font-size: 27rpx; color: #1c1917; text-align: right;
+  background: transparent;
+}
+.input-no-border { border: none; box-shadow: none; background: transparent; }
+.ph { color: #a8a29e; font-weight: 400; }
 
-.upload-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16rpx; }
-.upload-item { width: 100%; aspect-ratio: 1; border-radius: 16rpx; overflow: hidden; }
-.upload-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-.upload-img-icon { font-size: 48rpx; }
-.upload-add { background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); border: 2rpx dashed #e5e7eb; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.upload-add-icon { font-size: 48rpx; color: #a8a29e; }
-.upload-add-text { font-size: 20rpx; color: #a8a29e; margin-top: 4rpx; }
+.input-wrap {
+  flex: 1; display: flex; align-items: center;
+  background: linear-gradient(135deg, rgba(250, 250, 250, 0.85), rgba(255, 255, 255, 0.95));
+  border: 1.5rpx solid rgba(0, 0, 0, 0.06);
+  border-radius: 14rpx;
+  overflow: hidden;
+}
+.input-prefix {
+  height: 72rpx; line-height: 72rpx;
+  padding: 0 14rpx 0 20rpx;
+  font-size: 27rpx; color: #d97706; font-weight: 700;
+  flex-shrink: 0;
+}
+
+.form-picker {
+  flex: 1; display: flex; align-items: center; justify-content: flex-end;
+}
+.picker-txt { font-size: 27rpx; color: #1c1917; }
+.ph-cls { color: #a8a29e; }
+.picker-arrow { font-size: 22rpx; color: #a8a29e; margin-left: 10rpx; }
+
+/* ========== 规格网格 ========== */
+.spec-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12rpx;
+}
+.spec-form-item {
+  background: linear-gradient(135deg, rgba(238, 242, 255, 0.98), rgba(255, 255, 255, 1));
+  border-radius: 14rpx;
+  padding: 14rpx 12rpx;
+  display: flex; flex-direction: column;
+  border: 1rpx solid rgba(59, 130, 246, 0.06);
+}
+.sf-label {
+  font-size: 22rpx; color: #475569; font-weight: 600;
+  margin-bottom: 8rpx;
+}
+.sf-input {
+  font-size: 26rpx; color: #1c1917; font-weight: 500;
+  height: 64rpx; line-height: 64rpx;
+}
+
+/* ========== 颜色选择 ========== */
+.color-card {
+  background: linear-gradient(135deg, rgba(250, 245, 255, 0.98), rgba(255, 255, 255, 1));
+  border-radius: 18rpx;
+  padding: 18rpx 20rpx;
+  border: 1rpx solid rgba(168, 85, 247, 0.08);
+}
+.color-tag-list {
+  display: flex; flex-wrap: wrap; gap: 16rpx;
+}
+.color-tag {
+  display: flex; align-items: center; gap: 10rpx;
+  padding: 12rpx 22rpx;
+  border-radius: 32rpx;
+  background: rgba(245, 245, 245, 0.8);
+  border: 2rpx solid transparent;
+  transition: all 0.2s ease;
+}
+.ct-active {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(147, 51, 234, 0.06));
+  border-color: rgba(168, 85, 247, 0.35);
+  box-shadow: 0 2rpx 12rpx rgba(168, 85, 247, 0.15);
+}
+.ct-dot {
+  width: 26rpx; height: 26rpx;
+  border-radius: 50%;
+  border: 2rpx solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.08);
+}
+.ct-name {
+  font-size: 24rpx; color: #78716c; font-weight: 600;
+}
+.ct-active .ct-name { color: #d97706; font-weight: 700; }
+.color-empty-hint {
+  display: flex; align-items: center; justify-content: center;
+  padding: 20rpx;
+  border: 2rpx dashed rgba(168, 85, 247, 0.15);
+  border-radius: 14rpx;
+}
+.color-empty-hint text {
+  font-size: 24rpx; color: #a8a29e;
+}
+
+/* ========== 描述入口 ========== */
+.desc-entry {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 28rpx 24rpx;
+  background: linear-gradient(135deg, rgba(255, 247, 237, 0.98), rgba(255, 255, 255, 1));
+  border-radius: 18rpx;
+  border: 1rpx solid rgba(249, 115, 22, 0.08);
+  transition: all 0.2s ease;
+}
+.desc-entry-hover {
+  transform: scale(0.98);
+  box-shadow: 0 4rpx 16rpx rgba(249, 115, 22, 0.12);
+}
+.de-left { display: flex; align-items: center; gap: 14rpx; flex: 1; }
+.de-icon { font-size: 32rpx; }
+.de-text {
+  font-size: 26rpx; color: #78716c; font-weight: 500;
+}
+.de-arrow {
+  font-size: 32rpx; color: #f97316; font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ========== 底部按钮栏 ========== */
+.bottom-bar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  padding: 20rpx 32rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 -4rpx 30rpx rgba(0, 0, 0, 0.08), 0 0 40rpx rgba(245, 158, 11, 0.08);
+  border-top: 1rpx solid rgba(245, 158, 11, 0.1);
+  z-index: 100;
+}
+.save-btn {
+  width: 100%; height: 92rpx;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #f59e0b 0%, #f97316 40%, #fb923c 70%, #fdba74 100%);
+  border-radius: 46rpx;
+  box-shadow: 0 8rpx 28rpx rgba(245, 158, 11, 0.4), inset 0 1rpx 0 rgba(255, 255, 255, 0.25);
+  transition: all 0.2s ease;
+}
+.save-hover {
+  transform: scale(0.97);
+  box-shadow: 0 4rpx 16rpx rgba(245, 158, 11, 0.5), inset 0 1rpx 0 rgba(255, 255, 255, 0.25);
+}
+.save-text {
+  font-size: 32rpx; font-weight: 800; color: #ffffff;
+  letter-spacing: 2rpx;
+  text-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
+}
 </style>

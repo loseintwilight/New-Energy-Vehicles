@@ -1,4 +1,4 @@
-﻿<template>
+<template>
 	<view class="page" :class="{ 'page-ready': isReady }">
 		<view class="glow-matrix">
 			<view class="glow-row" v-for="(row, ri) in glowRows" :key="ri">
@@ -212,8 +212,8 @@ export default {
 .info-section { margin: 0 24rpx 20rpx; }
 .section-title { display: flex; align-items: center; margin-bottom: 16rpx; }
 .title-line { width: 6rpx; height: 28rpx; border-radius: 3rpx; background: linear-gradient(180deg, #f59e0b, #f97316); margin-right: 12rpx; }
-.title-line.line-green { background: linear-gradient(180deg, #22c55e, #16a34a); }
-.title-line.line-blue { background: linear-gradient(180deg, #3b82f6, #2563eb); }
+.title-line.line-green { background: linear-gradient(180deg, #d97706, #f59e0b); }
+.title-line.line-blue { background: linear-gradient(180deg, #f59e0b, #fb923c); }
 .title-text { font-size: 28rpx; font-weight: 700; color: #1c1917; }
 .info-card { background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); border-radius: 20rpx; overflow: hidden; box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.04); }
 .info-row { display: flex; justify-content: space-between; align-items: center; padding: 24rpx; border-bottom: 1rpx solid #f5f5f4; }

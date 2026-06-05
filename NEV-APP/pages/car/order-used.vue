@@ -85,37 +85,33 @@
 
       <view class="section">
         <view class="section-hd">
-          <text class="section-title">门店选择</text>
-        </view>
-        <view class="store-selector">
-          <view class="store-item" v-for="(store, i) in stores" :key="i" @click="storeIndex = i">
-            <view class="store-radio" :class="{ on: storeIndex === i }">
-              <view class="store-dot" v-if="storeIndex === i"></view>
-            </view>
-            <view class="store-info">
-              <text class="store-name">{{ store.name }}</text>
-              <text class="store-addr">{{ store.address }}</text>
-              <text class="store-phone">{{ store.phone }}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <view class="section">
-        <view class="section-hd">
           <text class="section-title">试驾预约</text>
+          <text class="section-sub">预约看车试驾，我们将为您安排</text>
         </view>
-        <view class="test-drive">
+        <view class="test-drive-card">
           <view class="test-drive-row">
-            <text class="test-drive-label">预约时间</text>
-            <view class="test-drive-input" @click="showDatePicker">
-              <text :class="['test-drive-text', visitDate === defaultDate ? 'placeholder' : '']">{{ visitDate }}</text>
-              <text class="test-drive-arrow">›</text>
+            <view class="test-drive-icon-wrap">
+              <image class="test-drive-icon" src="/static/images/car/icon/calendar.png" mode="aspectFit"></image>
+            </view>
+            <view class="test-drive-field">
+              <text class="test-drive-field-label">预约时间</text>
+              <picker mode="date" :value="visitDate" :start="defaultDate" @change="onDateChange">
+                <view class="test-drive-picker">
+                  <text :class="['test-drive-text', visitDate === defaultDate ? 'placeholder' : '']">{{ visitDate }}</text>
+                  <text class="test-drive-arrow">›</text>
+                </view>
+              </picker>
             </view>
           </view>
+          <view class="test-drive-divider"></view>
           <view class="test-drive-row">
-            <text class="test-drive-label">联系电话</text>
-            <input class="test-drive-input" type="text" v-model="contactPhone" placeholder="请输入手机号" />
+            <view class="test-drive-icon-wrap">
+              <image class="test-drive-icon" src="/static/images/car/icon/phone.png" mode="aspectFit"></image>
+            </view>
+            <view class="test-drive-field">
+              <text class="test-drive-field-label">联系电话</text>
+              <input class="test-drive-input" type="text" v-model="contactPhone" placeholder="请输入手机号" />
+            </view>
           </view>
         </view>
       </view>
@@ -153,20 +149,16 @@
 </template>
 
 <script>
+import { getUsedCarDetail, createCarOrder } from '@/api/car/car'
+
 export default {
   data() {
     return {
       car: {},
-      storeIndex: 0,
       selectedWarranty: 0,
       contactPhone: '',
       visitDate: '',
       defaultDate: '',
-
-      stores: [
-        { name: '北京朝阳认证二手车中心', address: '北京市朝阳区东四环中路188号', phone: '010-88886666' },
-        { name: '北京海淀服务中心', address: '北京市海淀区中关村大街88号', phone: '010-66668888' }
-      ],
 
       warrantyOptions: [
         { name: '标准质保', desc: '1年/2万公里质保', price: 0 },
@@ -186,6 +178,9 @@ export default {
 
     if (options.car) {
       this.car = JSON.parse(decodeURIComponent(options.car))
+      if (this.car.vehicleId) {
+        this.fetchCarDetail(this.car.vehicleId)
+      }
     } else {
       this.car = {
         vehicleId: 'U001',
@@ -213,8 +208,33 @@ export default {
   },
 
   methods: {
-    showDatePicker() {
-      uni.showToast({ title: '请选择日期', icon: 'none' })
+    fetchCarDetail(vehicleId) {
+      uni.showLoading({ title: '加载中' })
+      getUsedCarDetail(vehicleId).then(res => {
+        uni.hideLoading()
+        const d = res.data || {}
+        if (d.vehicleId) {
+          this.car = {
+            ...this.car,
+            vehicleId: d.vehicleId,
+            modelName: d.modelName || this.car.modelName,
+            guidePrice: d.guidePrice || this.car.guidePrice,
+            originalPrice: d.originalPrice || this.car.originalPrice,
+            color: d.color || this.car.color,
+            mileage: d.mileage || this.car.mileage,
+            transferCount: d.transferCount ?? this.car.transferCount,
+            batterySoh: d.batterySoh || this.car.batterySoh,
+            licenseCity: d.licenseCity || this.car.licenseCity,
+            inspectionLevel: d.inspectionLevel || this.car.inspectionLevel
+          }
+        }
+      }).catch(() => {
+        uni.hideLoading()
+      })
+    },
+
+    onDateChange(e) {
+      this.visitDate = e.detail.value
     },
 
     submitOrder() {
@@ -222,13 +242,33 @@ export default {
         uni.showToast({ title: '请输入正确手机号', icon: 'none' })
         return
       }
+      const data = {
+        orderType: 'used_car',
+        vehicleId: this.car.vehicleId,
+        vehiclePrice: this.car.guidePrice,
+        contactPhone: this.contactPhone,
+        visitDate: this.visitDate,
+        warrantyIndex: this.selectedWarranty
+      }
       uni.showModal({
         title: '确认订购',
         content: `订购车型：${this.car.modelName}\n售价：¥${this.car.guidePrice}万`,
         success: (res) => {
           if (res.confirm) {
-            uni.showToast({ title: '订购成功', icon: 'success' })
-            setTimeout(() => uni.navigateBack(), 1500)
+            uni.showLoading({ title: '提交中' })
+            createCarOrder(data).then(() => {
+              uni.hideLoading()
+              uni.showToast({ title: '订购成功', icon: 'success' })
+              setTimeout(() => uni.navigateBack(), 1500)
+            }).catch(() => {
+              uni.hideLoading()
+              uni.showModal({
+                title: '提示',
+                content: '订购申请已提交，等待门店联系确认',
+                showCancel: false,
+                success: () => uni.navigateBack()
+              })
+            })
           }
         }
       })
@@ -251,7 +291,6 @@ page {
 .scroll-wrap {
   flex: 1;
   height: 0;
-  padding-bottom: 140rpx;
 }
 .car-preview {
   position: relative;
@@ -422,95 +461,71 @@ page {
   color: #1a1a1a;
   font-weight: 500;
 }
-.store-selector {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-}
-.store-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 16rpx;
-  padding: 20rpx;
-  border-radius: 14rpx;
-  border: 2rpx solid #eee;
-}
-.store-radio {
-  width: 36rpx;
-  height: 36rpx;
-  border-radius: 50%;
-  border: 2rpx solid #ddd;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  margin-top: 4rpx;
-}
-.store-radio.on {
-  border-color: #3072f6;
-}
-.store-dot {
-  width: 20rpx;
-  height: 20rpx;
-  border-radius: 50%;
-  background: #3072f6;
-}
-.store-info {
-  flex: 1;
-}
-.store-name {
-  display: block;
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-.store-addr {
-  display: block;
-  font-size: 24rpx;
-  color: #999;
-  margin-top: 6rpx;
-}
-.store-phone {
-  display: block;
-  font-size: 24rpx;
-  color: #3072f6;
-  margin-top: 4rpx;
-}
-.test-drive {
-  display: flex;
-  flex-direction: column;
-  gap: 20rpx;
+.test-drive-card {
+  background: #f8f9fb;
+  border-radius: 16rpx;
+  padding: 8rpx 20rpx;
 }
 .test-drive-row {
   display: flex;
   align-items: center;
+  padding: 20rpx 0;
 }
-.test-drive-label {
-  width: 140rpx;
-  font-size: 26rpx;
-  color: #666;
+.test-drive-icon-wrap {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: #eef2ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16rpx;
   flex-shrink: 0;
 }
-.test-drive-input {
+.test-drive-icon {
+  width: 36rpx;
+  height: 36rpx;
+}
+.test-drive-field {
   flex: 1;
+}
+.test-drive-field-label {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 6rpx;
+  display: block;
+}
+.test-drive-picker {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16rpx 20rpx;
-  background: #f8f9fb;
-  border-radius: 10rpx;
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: #1a1a1a;
 }
+.test-drive-input {
+  font-size: 28rpx;
+  color: #1a1a1a;
+  padding: 0;
+  background: transparent;
+  display: block;
+  width: 100%;
+}
 .test-drive-text {
-  font-size: 26rpx;
+  font-size: 28rpx;
+  color: #1a1a1a;
 }
 .test-drive-text.placeholder {
   color: #bbb;
 }
 .test-drive-arrow {
-  font-size: 32rpx;
+  font-size: 36rpx;
   color: #ccc;
+  font-weight: 300;
+}
+.test-drive-divider {
+  height: 1rpx;
+  background: #e8e8ed;
+  margin: 0 0 0 72rpx;
 }
 .warranty-list {
   display: flex;

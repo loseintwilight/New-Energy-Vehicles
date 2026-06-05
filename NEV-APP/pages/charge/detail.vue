@@ -358,7 +358,7 @@
 </template>
 
 <script>
-import { getStationDetail, getPileList } from '@/api/charge/station.js'
+import { getStationDetail, getPileList, toggleFavorite, getFavoriteStatus } from '@/api/charge/station.js'
 import safeAreaMixin from '@/mixins/safe-area.js'
 import amap from '@/utils/amap.js'
 import ChargeHeader from '@/components/charge-header/charge-header.vue'
@@ -442,38 +442,91 @@ export default {
       try {
         const res = await getStationDetail(this.stationId)
         const data = res.data || {}
-        console.log('[DEBUG fetchDetail] API返回:', data, 'API返回lat:', data.lat, 'lng:', data.lng)
-        this.stationAddress = data.address
-        this.openTime = data.openTime
-        this.freeParkTime = data.freeParkTime
-        this.stationScore = data.score || 4.8
+        console.log('[DEBUG fetchDetail] API返回:', data)
+        this.stationName = data.name || this.stationName
+        this.stationAddress = data.address || ''
+        this.openTime = data.openTime || ''
+        this.stationType = data.stationType || '公用'
+        this.operatorName = data.operatorName || '新能源充电'
         this.currentPrice = data.price || '1.28'
         this.electricPrice = data.electricPrice || '0.88'
         this.servicePrice = data.servicePrice || '0.40'
         this.freePiles = data.freePiles || 0
         this.totalPiles = data.totalPiles || 0
+        this.parkFee = data.parkFee || '免费'
+        this.stationScore = data.score || 4.8
         if (data.lat) this.lat = Number(data.lat)
         if (data.lng) this.lng = Number(data.lng)
+        if (data.distance) this.distanceVal = data.distance
         if (data.tags) this.tagList = data.tags
+        if (data.timePrices && data.timePrices.length > 0) {
+          this.timePrices = data.timePrices.map(p => ({
+            timeRange: p.timeRange || (p.startTime + '-' + p.endTime),
+            electric: p.electricPrice || '0',
+            service: p.servicePrice || '0',
+            total: p.totalPrice || '0',
+            isCurrent: p.isCurrent || false
+          }))
+          // 设置当前电价
+          const current = this.timePrices.find(p => p.isCurrent) || this.timePrices[0]
+          this.currentPrice = current.total || this.currentPrice
+          this.electricPrice = current.electric || this.electricPrice
+          this.servicePrice = current.service || this.servicePrice
+        }
+        this.tagList = [
+          { text: this.freePiles > 0 ? (this.freePiles + '个空闲' + (this.totalPiles > 0 ? '/' + this.totalPiles + '总' : '')) : '暂无空闲', type: 'green' },
+          { text: this.parkFee === '免费' ? '免费停车' : '停车收费', type: 'orange' },
+          { text: '新人券可用', type: 'blue' }
+        ]
+        // 获取收藏状态
+        this.loadFavoriteStatus()
+        // 获取充电桩列表
+        this.fetchPileList()
       } catch (e) {
-        console.log('[DEBUG fetchDetail] API失败:', e)
+        console.log('[DEBUG fetchDetail] API失败，使用兜底数据:', e)
+        this.loadMockDetail()
       }
-      if (!this.pileList.length) this.loadMockDetail()
-      console.log('[DEBUG fetchDetail] 最终坐标 → this.lat:', this.lat, 'this.lng:', this.lng)
     },
 
-    loadMockDetail() {
-      this.stationAddress = '山东省济南市长清区文常山公园停车场'
-      this.openTime = '24小时营业'
-      this.freeParkTime = 2
-      this.stationScore = 4.8
-      this.tagList = [
-        { text: '新人券可用', type: 'blue' },
-        { text: '免费停车2小时', type: 'orange' }
-      ]
-      this.freePiles = 12
-      this.totalPiles = 17
-      this.pileList = [
+    async fetchPileList() {
+      try {
+        const res = await getPileList(this.stationId)
+        const piles = res.data || []
+        if (piles && piles.length > 0) {
+          this.pileList = piles.map(p => ({
+            number: p.pileCode || p.number || '',
+            type: p.pileType === 'dc' ? '快充' : (p.pileType === 'ac' ? '慢充' : (p.type || '快充')),
+            status: p.pileStatus === '0' ? 'free' : (p.pileStatus === '1' ? 'charging' : (p.pileStatus === '3' ? 'fault' : (p.status || 'free'))),
+            power: p.powerKw ? p.powerKw + 'kW' : (p.power || '120kW'),
+            statusText: p.pileStatus === '0' ? '空闲' : (p.pileStatus === '1' ? '使用中' : (p.pileStatus === '3' ? '故障维护' : (p.statusText || '空闲'))),
+            connectorType: p.connectorType || 'GB/T直流',
+            online: p.pileStatus !== '2',
+            position: p.position || '',
+            floor: p.floor || '',
+            pileCode: p.pileCode || '',
+            name: p.name || '',
+            gunCode: p.gunCode || '',
+            voltage: p.voltage || '',
+            standard: p.standard || '',
+            soc: p.soc || 0,
+            current: p.current || 0,
+            voltageReal: p.voltageReal || 0,
+            remainTime: p.remainTime || ''
+          }))
+          this.totalPiles = this.pileList.length
+          return
+        }
+      } catch (e) {
+        console.log('[DEBUG fetchPileList] API失败，使用兜底数据:', e)
+      }
+      // API 无数据或失败时，使用部分模拟桩数据补充（不覆盖已有详情数据）
+      if (!this.pileList.length) {
+        this.pileList = this.getMockPileList()
+      }
+    },
+
+    getMockPileList() {
+      return [
   { number: 'A01', type: '快充', status: 'free', power: '120kW', statusText: '空闲', connectorType: 'GB/T直流', floor: 'B1', position: 'A区-01号', online: true,
     pileCode: '3740190000020104', name: '3号桩', gunCode: '3740190000020104001', voltage: '750V', standard: '国标2015', soc: 89, current: 18.9, voltageReal: 406.5 },
   { number: 'A02', type: '快充', status: 'free', power: '120kW', statusText: '空闲', connectorType: 'GB/T直流', floor: 'B1', position: 'A区-02号', online: true,
@@ -509,6 +562,29 @@ export default {
   { number: 'C03', type: '快充', status: 'charging', power: '180kW', statusText: '使用中', connectorType: 'GB/T直流', floor: 'B1', position: 'C区超充-03号', online: true,
     pileCode: '3740190000020303', name: '超充3号', gunCode: '3740190000020303001', voltage: '1000V', standard: '国标2015+', soc: 25, current: 98.6, voltageReal: 788.0, remainTime: '25分钟' }
 ]
+    },
+
+    async loadFavoriteStatus() {
+      try {
+        const res = await getFavoriteStatus(this.stationId)
+        this.isFavorite = res.data === true
+      } catch (e) {
+        this.isFavorite = false
+      }
+    },
+
+    loadMockDetail() {
+      this.stationAddress = '山东省济南市长清区文常山公园停车场'
+      this.openTime = '24小时营业'
+      this.freeParkTime = 2
+      this.stationScore = 4.8
+      this.tagList = [
+        { text: '新人券可用', type: 'blue' },
+        { text: '免费停车2小时', type: 'orange' }
+      ]
+      this.freePiles = 12
+      this.totalPiles = 17
+      this.pileList = this.getMockPileList()
     },
 
     goBack() {
@@ -664,8 +740,13 @@ export default {
     },
 
     toggleFavorite() {
-      this.isFavorite = !this.isFavorite
-      uni.showToast({ title: this.isFavorite ? '已收藏' : '已取消收藏', icon: 'none' })
+      toggleFavorite(this.stationId).then(res => {
+        const action = res.data
+        this.isFavorite = action === 'favorite'
+        uni.showToast({ title: action === 'favorite' ? '已收藏' : '已取消收藏', icon: 'none' })
+      }).catch(() => {
+        uni.showToast({ title: '操作失败', icon: 'none' })
+      })
     },
 
     showCert() {

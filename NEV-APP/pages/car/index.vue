@@ -22,14 +22,32 @@
     <view class="filter-bar" v-if="activeTab < 2">
       <scroll-view scroll-x class="filter-scroll" show-scrollbar="false">
         <view
-          v-for="(f, i) in filterOptions"
-          :key="i"
           class="filter-tag"
-          :class="{ on: activeFilter === i }"
-          @click="onFilterClick(i)"
+          :class="{ on: !selectedColor && !selectedModel && priceSortDir === null }"
+          @click="resetFilter"
         >
-          <text class="filter-tag-label">{{ f.label }}</text>
-          <text v-if="i === 1" class="sort-arrow">{{ priceSortDir === 'asc' ? '↑' : '↓' }}</text>
+          <text class="filter-tag-label">全部</text>
+        </view>
+        <picker mode="selector" :range="colorOptions" @change="onColorChange">
+          <view class="filter-tag" :class="{ on: selectedColor }">
+            <text class="filter-tag-label">{{ selectedColor || '颜色' }}</text>
+            <text class="arrow">▾</text>
+          </view>
+        </picker>
+        <picker mode="selector" :range="modelOptions" @change="onModelChange">
+          <view class="filter-tag" :class="{ on: selectedModel }">
+            <text class="filter-tag-label">{{ selectedModel || '车型' }}</text>
+            <text class="arrow">▾</text>
+          </view>
+        </picker>
+        <view
+          class="filter-tag"
+          :class="{ on: priceSortDir !== null }"
+          @click="togglePriceSort"
+        >
+          <text class="filter-tag-label">价格</text>
+          <text v-if="priceSortDir === 'asc'" class="sort-arrow">↑</text>
+          <text v-else-if="priceSortDir === 'desc'" class="sort-arrow">↓</text>
         </view>
       </scroll-view>
     </view>
@@ -46,6 +64,7 @@
 import NewCarContent from './components/NewCarContent'
 import UsedCarContent from './components/UsedCarContent'
 import TradeInContent from './components/TradeInContent'
+import { getFilterColors, getFilterModels } from '@/api/car/car'
 
 export default {
   components: { NewCarContent, UsedCarContent, TradeInContent },
@@ -53,42 +72,71 @@ export default {
   data() {
     return {
       bannerList: [
-        { image: '/static/images/car/car1.png' },
-        { image: '/static/images/car/car2.png' },
-        { image: '/static/images/car/car3.png' }
+        { image: '/static/images/car/轮播图1.jpg' },
+        { image: '/static/images/car/轮播图2.jpg' },
+        { image: '/static/images/car/轮播图3.jpg' }
       ],
       activeTab: 0,
-      activeFilter: 0,
-      priceSortDir: 'asc',
+      priceSortDir: null,
       tabList: [
         { name: '全新现车' },
         { name: '二手车' },
         { name: '以旧换新' }
       ],
-      filterOptions: [
-        { label: '全部' },
-        { label: '价格' }
-      ]
+      colorOptions: [],
+      modelOptions: [],
+      selectedColor: '',
+      selectedModel: ''
     }
   },
 
   computed: {
     computedFilter() {
-      if (this.activeFilter === 1) return this.priceSortDir === 'asc' ? 1 : 2
-      return this.activeFilter
+      return {
+        color: this.selectedColor,
+        model: this.selectedModel,
+        sortDir: this.priceSortDir
+      }
     }
   },
 
+  created() {
+    this.fetchFilterColors()
+    this.fetchFilterModels()
+  },
+
   methods: {
-    onFilterClick(i) {
-      if (i === 1) {
-        this.priceSortDir = this.priceSortDir === 'asc' ? 'desc' : 'asc'
-      }
-      this.activeFilter = i
+    fetchFilterColors() {
+      getFilterColors().then(res => {
+        this.colorOptions = res.data || []
+      }).catch(() => {})
+    },
+    fetchFilterModels() {
+      getFilterModels().then(res => {
+        this.modelOptions = res.data || []
+      }).catch(() => {})
+    },
+    resetFilter() {
+      this.selectedColor = ''
+      this.selectedModel = ''
+      this.priceSortDir = null
+    },
+    onColorChange(e) {
+      this.selectedColor = this.colorOptions[e.detail.value] || ''
+      this.priceSortDir = null
+    },
+    onModelChange(e) {
+      this.selectedModel = this.modelOptions[e.detail.value] || ''
+      this.priceSortDir = null
+    },
+    togglePriceSort() {
+      if (this.priceSortDir === null) this.priceSortDir = 'asc'
+      else if (this.priceSortDir === 'asc') this.priceSortDir = 'desc'
+      else this.priceSortDir = null
     },
     onTabClick(i) {
       this.activeTab = i
-      this.activeFilter = 0
+      this.resetFilter()
     },
     navigateToOrder(car) {
       if (this.activeTab === 0) {
@@ -118,7 +166,7 @@ page {
 }
 .banner {
   width: 100%;
-  height: 180rpx;
+  height: 360rpx;
   flex-shrink: 0;
 }
 .banner-img {
@@ -169,6 +217,10 @@ page {
   white-space: nowrap;
   padding: 0 24rpx;
 }
+.filter-scroll picker {
+  display: inline-flex;
+  vertical-align: middle;
+}
 .filter-tag {
   display: inline-flex;
   padding: 12rpx 28rpx;
@@ -192,6 +244,11 @@ page {
 .sort-arrow {
   font-size: 22rpx;
   margin-left: 4rpx;
+}
+.arrow {
+  font-size: 20rpx;
+  margin-left: 4rpx;
+  color: #999;
 }
 .content-area {
   flex: 1;

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mapper.OrderMapper">
+
+    <!-- 分页查询用户订单列表 -->
+    <select id="selectOrderList" resultType="java.util.LinkedHashMap">
+        SELECT
+            o.order_id AS orderId,
+            o.order_no AS orderNo,
+            o.station_id AS stationId,
+            s.station_name AS stationName,
+            o.pile_code AS pileNo,
+            CASE WHEN p.pile_type = 'dc' THEN '快充' WHEN p.pile_type = 'ac' THEN '慢充' ELSE p.pile_type END AS chargeType,
+            o.start_time AS startTime,
+            o.end_time AS endTime,
+            o.duration,
+            o.total_energy AS energy,
+            o.total_amount AS amount,
+            o.energy_price AS electricFee,
+            o.service_price AS serviceFee,
+            o.discount_amount AS discountAmount,
+            o.order_status AS `status`,
+            CASE
+                WHEN o.order_status = '0' THEN '充电中'
+                WHEN o.order_status = '1' THEN '已完成'
+                WHEN o.order_status = '2' THEN '已取消'
+                ELSE o.order_status
+            END AS statusText,
+            o.pay_status AS payStatus,
+            o.create_time AS createTime,
+            o.end_time AS endTimeVal
+        FROM stad_charging_order o
+        LEFT JOIN stad_charging_station s ON o.station_id = s.station_id
+        LEFT JOIN stad_charging_pile p ON o.pile_id = p.pile_id
+        WHERE o.user_id = #{userId}
+        <if test="status != null and status != ''">
+            AND o.order_status = #{status}
+        </if>
+        ORDER BY o.create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 查询用户订单总数 -->
+    <select id="selectOrderCount" resultType="Long">
+        SELECT COUNT(*) FROM stad_charging_order o
+        WHERE o.user_id = #{userId}
+        <if test="status != null and status != ''">
+            AND o.order_status = #{status}
+        </if>
+    </select>
+
+    <!-- 根据订单号查询订单 -->
+    <select id="selectOrderByOrderNo" resultType="java.util.LinkedHashMap">
+        SELECT
+            o.order_id AS orderId,
+            o.order_no AS orderNo,
+            o.station_id AS stationId,
+            s.station_name AS stationName,
+            o.pile_code AS pileNo,
+            CASE WHEN p.pile_type = 'dc' THEN '快充' WHEN p.pile_type = 'ac' THEN '慢充' ELSE p.pile_type END AS chargeType,
+            o.start_time AS startTime,
+            o.end_time AS endTime,
+            o.duration,
+            o.total_energy AS energy,
+            o.total_amount AS amount,
+            o.energy_price AS electricFee,
+            o.service_price AS serviceFee,
+            o.discount_amount AS discountAmount,
+            o.order_status AS `status`,
+            CASE
+                WHEN o.order_status = '0' THEN '充电中'
+                WHEN o.order_status = '1' THEN '已完成'
+                WHEN o.order_status = '2' THEN '已取消'
+                ELSE o.order_status
+            END AS statusText,
+            o.pay_status AS payStatus,
+            o.create_time AS createTime
+        FROM stad_charging_order o
+        LEFT JOIN stad_charging_station s ON o.station_id = s.station_id
+        LEFT JOIN stad_charging_pile p ON o.pile_id = p.pile_id
+        WHERE o.order_no = #{orderNo}
+        LIMIT 1
+    </select>
+
+    <!-- 插入订单 -->
+    <insert id="insertOrder" parameterType="java.util.Map">
+        INSERT INTO stad_charging_order (
+            order_no, user_id, station_id, pile_code, pile_id,
+            start_time, total_energy, total_amount, energy_price, service_price,
+            order_status, pay_status, create_time
+        ) VALUES (
+            #{orderNo}, #{userId}, #{stationId}, #{pileNo}, #{pileId},
+            NOW(), #{energy}, #{amount}, #{electricPrice}, #{servicePrice},
+            '0', '0', NOW()
+        )
+    </insert>
+
+    <!-- 停止充电更新 -->
+    <update id="updateOrderForStop" parameterType="java.util.Map">
+        UPDATE stad_charging_order
+        SET end_time = NOW(),
+            duration = #{duration},
+            total_energy = #{energy},
+            total_amount = #{totalAmount},
+            energy_price = #{electricFee},
+            service_price = #{serviceFee},
+            order_status = '1',
+            pay_status = '0'
+        WHERE order_no = #{orderNo} AND order_status = '0'
+    </update>
+
+    <!-- 支付订单 -->
+    <update id="updateOrderPay">
+        UPDATE stad_charging_order
+        SET pay_status = '1', payment_method = #{payMethod}
+        WHERE order_no = #{orderNo} AND pay_status = '0'
+    </update>
+
+    <!-- 取消订单 -->
+    <update id="cancelOrder">
+        UPDATE stad_charging_order
+        SET order_status = '2'
+        WHERE order_no = #{orderNo} AND order_status = '0'
+    </update>
+
+</mapper>

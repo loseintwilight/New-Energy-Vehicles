@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mapper.StationMapper">
+
+    <!-- 通用列 -->
+    <sql id="stationColumns">
+        s.station_id, s.station_name, s.station_code, s.merchant_id,
+        s.province, s.city, s.district, s.address,
+        s.longitude, s.latitude, s.marker_icon_url, s.marker_size,
+        s.total_piles, s.available_piles, s.occupying_piles,
+        s.open_time, s.close_time, s.parking_fee, s.service_phone,
+        s.facilities_info, s.images, s.station_status,
+        s.create_time, s.update_time
+    </sql>
+
+    <!-- 分页查询充电站列表（带距离计算） -->
+    <select id="selectStationListWithDistance" resultType="java.util.LinkedHashMap">
+        SELECT
+            s.station_id AS stationId,
+            s.station_name AS name,
+            s.address,
+            s.latitude AS lat,
+            s.longitude AS lng,
+            s.total_piles AS totalPiles,
+            s.available_piles AS freePiles,
+            s.occupying_piles,
+            s.parking_fee AS parkFee,
+            s.open_time,
+            s.close_time,
+            s.images,
+            ROUND(6371 * 2 * ASIN(SQRT(
+                POW(SIN((#{lat} - s.latitude) * PI() / 360), 2)
+                + COS(#{lat} * PI() / 180) * COS(s.latitude * PI() / 180)
+                * POW(SIN((#{lng} - s.longitude) * PI() / 360), 2)
+            )), 1) AS distance,
+            s.facilities_info AS facilitiesInfo,
+            s.station_status AS stationStatus
+        FROM stad_charging_station s
+        WHERE s.station_status = '1'
+        <if test="filter == 'fast'">AND s.total_piles > 0</if>
+        ORDER BY
+        <choose>
+            <when test="orderByColumn == 'distance'">distance</when>
+            <when test="orderByColumn == 'price'">s.station_id</when>
+            <otherwise>s.create_time</otherwise>
+        </choose>
+        <if test="isAsc == 'asc'">ASC</if>
+        <if test="isAsc == 'desc' or isAsc == null or isAsc == ''">DESC</if>
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 查询充电站总数 -->
+    <select id="selectStationCount" resultType="Long">
+        SELECT COUNT(*) FROM stad_charging_station s
+        WHERE s.station_status = '1'
+    </select>
+
+    <!-- 搜索充电站 -->
+    <select id="searchStations" resultType="java.util.LinkedHashMap">
+        SELECT
+            s.station_id AS stationId,
+            s.station_name AS name,
+            s.address,
+            s.latitude AS lat,
+            s.longitude AS lng,
+            s.total_piles AS totalPiles,
+            s.available_piles AS freePiles,
+            s.parking_fee AS parkFee,
+            s.open_time,
+            s.close_time,
+            ROUND(6371 * 2 * ASIN(SQRT(
+                POW(SIN((#{lat} - s.latitude) * PI() / 360), 2)
+                + COS(#{lat} * PI() / 180) * COS(s.latitude * PI() / 180)
+                * POW(SIN((#{lng} - s.longitude) * PI() / 360), 2)
+            )), 1) AS distance,
+            s.station_status AS stationStatus
+        FROM stad_charging_station s
+        WHERE s.station_status = '1'
+          AND (s.station_name LIKE CONCAT('%', #{keyword}, '%')
+            OR s.address LIKE CONCAT('%', #{keyword}, '%'))
+        ORDER BY distance ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 搜索充电站总数 -->
+    <select id="searchStationCount" resultType="Long">
+        SELECT COUNT(*) FROM stad_charging_station s
+        WHERE s.station_status = '1'
+          AND (s.station_name LIKE CONCAT('%', #{keyword}, '%')
+            OR s.address LIKE CONCAT('%', #{keyword}, '%'))
+    </select>
+
+    <!-- 搜索建议 -->
+    <select id="selectSuggestions" resultType="java.util.LinkedHashMap">
+        SELECT
+            s.station_name AS name,
+            CONCAT(s.province, s.city, s.district, s.address) AS address
+        FROM stad_charging_station s
+        WHERE s.station_status = '1'
+          AND (s.station_name LIKE CONCAT('%', #{keyword}, '%')
+            OR s.address LIKE CONCAT('%', #{keyword}, '%'))
+        LIMIT 10
+    </select>
+
+    <!-- 获取城市列表（去重） -->
+    <select id="selectCityList" resultType="java.util.LinkedHashMap">
+        SELECT DISTINCT
+            CONCAT(s.province, s.city) AS code,
+            s.city AS name
+        FROM stad_charging_station s
+        WHERE s.city IS NOT NULL AND s.city != ''
+        ORDER BY s.city
+    </select>
+
+    <!-- 获取充电站详情 -->
+    <select id="selectStationById" resultType="com.ruoyi.business.domain.StadChargingStation">
+        SELECT <include refid="stationColumns"/>
+        FROM stad_charging_station s
+        WHERE s.station_id = #{stationId}
+    </select>
+
+    <!-- 获取充电站关联费率 -->
+    <select id="selectRatesByStationId" resultType="java.util.LinkedHashMap">
+        SELECT
+            r.rate_id AS rateId,
+            r.rate_name AS rateName,
+            r.pile_type AS pileType,
+            rp.period_id AS periodId,
+            rp.period_name AS periodName,
+            DATE_FORMAT(rp.start_time, '%H:%i') AS startTime,
+            DATE_FORMAT(rp.end_time, '%H:%i') AS endTime,
+            rp.energy_price AS electricPrice,
+            rp.service_fee AS servicePrice,
+            rp.total_price AS totalPrice
+        FROM stad_charging_rate r
+        LEFT JOIN stad_charging_rate_period rp ON r.rate_id = rp.rate_id
+        WHERE r.station_id = #{stationId} AND r.is_active = 1
+        ORDER BY r.sort_order, rp.sort_order
+    </select>
+
+    <!-- 热门搜索 -->
+    <select id="selectHotSearches" resultType="java.util.LinkedHashMap">
+        SELECT s.station_name AS name, 0 AS `count`
+        FROM stad_charging_station s
+        WHERE s.station_status = '1'
+        ORDER BY s.total_piles DESC
+        LIMIT 10
+    </select>
+
+</mapper>

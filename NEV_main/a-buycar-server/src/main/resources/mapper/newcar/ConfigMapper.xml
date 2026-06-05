@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.newcar.mapper.ConfigMapper">
+
+    <select id="selectCities" resultType="string">
+        SELECT DISTINCT city FROM stad_gov_nev_registration ORDER BY city
+    </select>
+
+    <select id="selectStores" resultType="string">
+        SELECT shop_name FROM stad_maintenance_shop ORDER BY shop_name
+    </select>
+
+    <select id="selectDistinctColors" resultType="string">
+        SELECT DISTINCT color FROM stad_vehicle WHERE color IS NOT NULL AND color != '' ORDER BY color
+    </select>
+
+    <select id="selectDistinctModels" resultType="string">
+        SELECT DISTINCT description FROM stad_vehicle WHERE description IS NOT NULL AND description != '' ORDER BY description
+    </select>
+
+</mapper>

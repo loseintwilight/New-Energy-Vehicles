@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.newcar.mapper.VehicleSpecMapper">
+
+    <resultMap id="VehicleSpecResult" type="com.ruoyi.newcar.domain.VehicleSpec">
+        <id     property="specId"           column="spec_id"            />
+        <result property="vehicleId"        column="vehicle_id"         />
+        <result property="rangeKm"          column="range_km"           />
+        <result property="batteryCapacity"  column="battery_capacity"   />
+        <result property="chargeTimeFast"   column="charge_time_fast"   />
+        <result property="chargeTimeSlow"   column="charge_time_slow"   />
+        <result property="modelYear"        column="model_year"         />
+        <result property="createTime"       column="create_time"        />
+    </resultMap>
+
+    <select id="selectByVehicleId" parameterType="Long" resultMap="VehicleSpecResult">
+        select * from stad_vehicle_spec where vehicle_id = #{vehicleId}
+    </select>
+
+    <select id="selectListByVehicleId" parameterType="Long" resultMap="VehicleSpecResult">
+        select * from stad_vehicle_spec where vehicle_id = #{vehicleId}
+    </select>
+
+</mapper>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.newcar.mapper.UsedCarMapper">
+
+    <resultMap id="UsedCarResult" type="com.ruoyi.newcar.domain.UsedCar">
+        <id     property="usedId"           column="used_id"          />
+        <result property="vehicleId"        column="vehicle_id"       />
+        <result property="licenseYear"      column="license_year"     />
+        <result property="licenseMonth"     column="license_month"    />
+        <result property="licenseCity"      column="license_city"     />
+        <result property="mileage"          column="mileage"          />
+        <result property="transferCount"    column="transfer_count"   />
+        <result property="batterySoh"       column="battery_soh"      />
+        <result property="batteryCycles"    column="battery_cycles"   />
+        <result property="batteryDiagnosis" column="battery_diagnosis"/>
+        <result property="batteryReport"    column="battery_report"   />
+        <result property="valuationPrice"   column="valuation_price"  />
+        <result property="valuationInfo"    column="valuation_info"   />
+        <result property="createTime"       column="create_time"      />
+    </resultMap>
+
+    <select id="selectByVehicleId" parameterType="Long" resultMap="UsedCarResult">
+        select * from stad_vehicle_used where vehicle_id = #{vehicleId}
+    </select>
+
+</mapper>

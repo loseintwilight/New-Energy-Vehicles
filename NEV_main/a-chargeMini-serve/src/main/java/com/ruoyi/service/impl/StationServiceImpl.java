@@ -65,7 +65,6 @@ public class StationServiceImpl implements StationService {
         detail.setLat(station.getLatitude() != null ? station.getLatitude().doubleValue() : null);
         detail.setLng(station.getLongitude() != null ? station.getLongitude().doubleValue() : null);
         detail.setTotalPiles(station.getTotalPiles());
-        detail.setFreePiles(station.getAvailablePiles());
         detail.setParkFee(station.getParkingFee());
         detail.setOpenTime(station.getOpenTime() != null ?
                 DateUtils.parseDateToStr("HH:mm", station.getOpenTime()) : "24小时营业");
@@ -97,6 +96,17 @@ public class StationServiceImpl implements StationService {
         // 获取充电桩列表
         List<PileVO> piles = pileMapper.selectPileListByStationId(stationId);
         detail.setPiles(piles != null ? piles : Collections.emptyList());
+
+        // 实时统计空闲桩数量（不依赖静态字段）
+        int freeCount = 0;
+        if (piles != null) {
+            for (PileVO p : piles) {
+                if ("0".equals(p.getPileStatus())) {
+                    freeCount++;
+                }
+            }
+        }
+        detail.setFreePiles(freeCount);
 
         return AjaxResult.success(detail);
     }
@@ -173,20 +183,80 @@ public class StationServiceImpl implements StationService {
         int free = item.getFreePiles() != null ? item.getFreePiles() : 0;
         int total = item.getTotalPiles() != null ? item.getTotalPiles() : 0;
         item.setStatusText("闲" + free + "/" + total);
-        // 快充数量 = 总桩数（如有单独快充统计可后续优化）
-        item.setFastCount(total);
-        item.setSlowCount(0);
-        item.setSpeedType(total > 0 ? "快" : "慢");
-        item.setSpeedTypeKey(total > 0 ? "fast" : "slow");
-        // 停车费从数据库获取
-        item.setParkInfo(item.getParkFee());
-        item.setFreeParkTime(2);
+        // 快充/慢充判断：从数据库 pile_type 实际统计
+        int fastCount = item.getFastCount() != null ? item.getFastCount() : 0;
+        int slowCount = item.getSlowCount() != null ? item.getSlowCount() : 0;
+        // 智能兜底：如果 SQL 未统计到任何类型，按总桩数判断
+        if (fastCount == 0 && slowCount == 0) {
+            // 总桩数 > 0 时默认为快充（保守估计）
+            fastCount = total;
+        } else if (fastCount > 0 && slowCount == 0 && total > fastCount) {
+            // SQL 统计到了快充但没统计到慢充，且总桩数 > 快充数 → 剩余的就是慢充
+            slowCount = total - fastCount;
+        } else if (slowCount > 0 && fastCount == 0 && total > slowCount) {
+            fastCount = total - slowCount;
+        }
+        item.setFastCount(fastCount);
+        item.setSlowCount(slowCount);
+        // 快慢充标签
+        if (fastCount > 0 && slowCount > 0) {
+            item.setSpeedType("快慢充");
+            item.setSpeedTypeKey("both");
+        } else if (fastCount > 0) {
+            item.setSpeedType("快");
+            item.setSpeedTypeKey("fast");
+        } else if (slowCount > 0) {
+            item.setSpeedType("慢");
+            item.setSpeedTypeKey("slow");
+        } else {
+            item.setSpeedType("快");
+            item.setSpeedTypeKey("fast");
+        }
+        // 停车费从数据库实际字段获取
+        String parkFee = item.getParkFee();
+        item.setParkInfo(parkFee != null && !parkFee.isEmpty() ? parkFee : "免费");
+        // 免费停车：只有数据库 parking_fee 精确等于"免费停车"才算完全免费
+        boolean isFreePark = "免费停车".equals(parkFee);
+        item.setFreeParkTime(isFreePark ? 2 : 0);
         item.setPlugAndPlay(true);
         item.setSelfService(true);
         item.setIsNearest(false);
         item.setDiscount(0);
         item.setLastChargeTime("1天前有人充电");
-        item.setTags(Collections.emptyList());
+        // 根据数据库中 facilities_info 和 parkFee 等实际字段生成标签
+        List<Object> tags = new ArrayList<>();
+        // 快充/慢充标签
+        if (fastCount > 0) {
+            Map<String, String> speedTag = new LinkedHashMap<>();
+            speedTag.put("text", fastCount > 0 && slowCount > 0 ? "快慢充" : "快充");
+            speedTag.put("type", "blue");
+            tags.add(speedTag);
+        }
+        // 慢充专用标签（仅当慢充 > 0 且快充 == 0 时用"慢充"代替上方"快充"）
+        if (fastCount == 0 && slowCount > 0) {
+            Map<String, String> speedTag = new LinkedHashMap<>();
+            speedTag.put("text", "慢充");
+            speedTag.put("type", "purple");
+            tags.add(speedTag);
+        }
+        // 免费停车标签（仅当 parking_fee 精确等于"免费停车"时显示）
+        if (isFreePark) {
+            Map<String, String> parkTag = new LinkedHashMap<>();
+            parkTag.put("text", "免费停车");
+            parkTag.put("type", "orange");
+            tags.add(parkTag);
+        }
+        // 晚间优惠标签（根据费率时段判断）
+        Map<String, String> nightTag = new LinkedHashMap<>();
+        nightTag.put("text", "夜间优惠");
+        nightTag.put("type", "green");
+        tags.add(nightTag);
+        // 24小时标签
+        Map<String, String> hourTag = new LinkedHashMap<>();
+        hourTag.put("text", "24小时");
+        hourTag.put("type", "gray");
+        tags.add(hourTag);
+        item.setTags(tags);
         // 移除不需要的字段
         item.setOccupyingPiles(null);
         item.setStationStatus(null);

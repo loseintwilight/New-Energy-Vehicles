@@ -199,9 +199,25 @@ export default {
   onLoad() {
     this.loadHistory()
     this.loadHotSearches()
+    this.initLocation()
   },
 
   methods: {
+    initLocation() {
+      // 获取用户当前位置（来自 Sensor 面板或真实 GPS），替换硬编码坐标
+      uni.getLocation({
+        type: 'gcj02',
+        timeout: 10000,
+        success: (res) => {
+          this.searchParams.lat = res.latitude
+          this.searchParams.lng = res.longitude
+          console.log('[search] 获取到位置:', res.latitude, res.longitude)
+        },
+        fail: (e) => {
+          console.log('[search] 定位失败，使用默认坐标:', e.errMsg || e)
+        }
+      })
+    },
     loadHistory() {
       const saved = uni.getStorageSync('searchHistory')
       this.historyList = saved || []
@@ -307,7 +323,7 @@ export default {
           ...this.searchParams,
           keyword: this.keyword
         })
-        const list = res.rows || []
+        const list = res.data?.rows || res.rows || []
 
         if (isRefresh) {
           this.resultList = list
@@ -331,24 +347,28 @@ export default {
         {
           stationId: 2001, name: '济南西站充电站', address: '济南市槐荫区日照路',
           distance: '6.7', price: '1.35', freePiles: 8, statusText: '空闲',
+          lat: 36.668, lng: 116.896,
           tags: [{ text: '快充', type: 'blue' }, { text: '免费停车', type: 'orange' }],
           matchReason: '距您搜索的"济南西站"约200米'
         },
         {
           stationId: 2002, name: '济南西站公共充电站', address: '济南西站停车场B2层',
           distance: '6.8', price: '1.28', freePiles: 5, statusText: '空闲',
+          lat: 36.670, lng: 116.898,
           tags: [{ text: '快充', type: 'blue' }, { text: '24小时', type: 'gray' }],
           matchReason: '位于济南西站内'
         },
         {
           stationId: 2003, name: '济南西部新城充电站', address: '济南市槐荫区青岛路',
           distance: '8.2', price: '1.18', freePiles: 12, statusText: '空闲',
+          lat: 36.680, lng: 116.910,
           tags: [{ text: '慢充', type: 'purple' }, { text: '夜间优惠', type: 'green' }],
           matchReason: '相关推荐'
         },
         {
           stationId: 2004, name: '济南市图书馆充电站', address: '济南市槐荫区经六路',
           distance: '9.1', price: '1.42', freePiles: 3, statusText: '较紧张',
+          lat: 36.650, lng: 116.920,
           tags: [{ text: '快充', type: 'blue' }],
           matchReason: ''
         }

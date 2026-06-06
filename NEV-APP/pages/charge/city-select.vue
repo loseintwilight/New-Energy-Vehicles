@@ -11,7 +11,7 @@
       <view class="cs-search">
         <u-icon name="search" size="28" color="#bbb"></u-icon>
         <input class="cs-search-input" v-model="searchKeyword" placeholder="输入城市名称搜索" placeholder-style="color: #bfbfbf; font-size: 24rpx;" @input="onSearchInput" />
-        <text v-if="searchKeyword" class="cs-search-clear" @click="searchKeyword = ''">清除</text>
+        <text v-if="searchKeyword" class="cs-search-clear" @click="clearSearch">清除</text>
       </view>
     </view>
     <view class="cs-current" @click="selectCity(currentCity)">
@@ -20,20 +20,35 @@
       <text class="cs-current-name">{{ currentCity }}</text>
     </view>
     <scroll-view class="cs-list" scroll-y :scroll-into-view="scrollInto">
-      <view v-if="filteredCities.length === 0" class="cs-empty">
+      <view v-if="visibleSections.length === 0" class="cs-empty">
         <text>未找到匹配城市</text>
       </view>
-      <view class="cs-section" v-for="(section, si) in citySections" :key="si" v-show="section.list.length > 0">
+      <view class="cs-section" v-for="(section, si) in visibleSections" :key="si">
         <view class="cs-section-title" :id="'letter-' + section.letter">{{ section.letter }}</view>
         <view
           v-for="(city, ci) in section.list"
           :key="ci"
-          class="cs-city-item"
-          :class="{ selected: currentCity === city.name }"
-          @click="selectCity(city.name)"
+          class="cs-city-group"
         >
-          <text class="cs-city-name">{{ city.name }}</text>
-          <u-icon v-if="currentCity === city.name" name="checkbox-mark" size="32" color="#07c160"></u-icon>
+          <view
+            class="cs-city-header"
+            :class="{ selected: currentCity === city.name }"
+            @click="selectCity(city.name)"
+          >
+            <text class="cs-city-name">{{ city.name }}</text>
+            <u-icon v-if="currentCity === city.name" name="checkbox-mark" size="32" color="#07c160"></u-icon>
+            <u-icon v-else name="arrow-right" size="24" color="#ccc"></u-icon>
+          </view>
+          <view class="cs-district-list" v-if="city.districts && city.districts.length > 0">
+            <view
+              v-for="(district, di) in city.districts"
+              :key="di"
+              class="cs-district-item"
+              @click="selectCity(city.name)"
+            >
+              <text class="cs-district-name">{{ district }}</text>
+            </view>
+          </view>
         </view>
       </view>
     </scroll-view>
@@ -55,6 +70,32 @@
 import { getCityList } from '@/api/charge/station.js'
 import safeAreaMixin from '@/mixins/safe-area.js'
 
+const CITY_LETTER_MAP = {
+  '滨州市': 'B', '德州市': 'D', '东营市': 'D', '菏泽市': 'H',
+  '济南市': 'J', '济宁市': 'J', '聊城市': 'L', '临沂市': 'L',
+  '青岛市': 'Q', '日照市': 'R', '泰安市': 'T',
+  '潍坊市': 'W', '威海市': 'W', '烟台市': 'Y', '枣庄市': 'Z', '淄博市': 'Z'
+}
+
+const CITY_DISTRICTS = {
+  '济南市': ['历下区', '市中区', '槐荫区', '天桥区', '历城区', '长清区', '章丘区', '济阳区', '莱芜区', '钢城区', '平阴县', '商河县'],
+  '青岛市': ['市南区', '市北区', '李沧区', '崂山区', '城阳区', '即墨区', '西海岸新区', '胶州市', '平度市', '莱西市'],
+  '淄博市': ['张店区', '淄川区', '博山区', '临淄区', '周村区', '桓台县', '高青县', '沂源县'],
+  '枣庄市': ['市中区', '薛城区', '峄城区', '台儿庄区', '山亭区', '滕州市'],
+  '东营市': ['东营区', '河口区', '垦利区', '利津县', '广饶县'],
+  '烟台市': ['芝罘区', '福山区', '牟平区', '莱山区', '蓬莱区', '龙口市', '莱阳市', '莱州市', '招远市', '栖霞市', '海阳市'],
+  '潍坊市': ['潍城区', '寒亭区', '坊子区', '奎文区', '青州市', '诸城市', '寿光市', '安丘市', '高密市', '昌邑市', '临朐县', '昌乐县'],
+  '济宁市': ['任城区', '兖州区', '曲阜市', '邹城市', '微山县', '鱼台县', '金乡县', '嘉祥县', '汶上县', '泗水县', '梁山县'],
+  '泰安市': ['泰山区', '岱岳区', '新泰市', '肥城市', '宁阳县', '东平县'],
+  '威海市': ['环翠区', '文登区', '荣成市', '乳山市'],
+  '日照市': ['东港区', '岚山区', '五莲县', '莒县'],
+  '临沂市': ['兰山区', '罗庄区', '河东区', '沂南县', '郯城县', '沂水县', '兰陵县', '费县', '平邑县', '莒南县', '蒙阴县', '临沭县'],
+  '德州市': ['德城区', '陵城区', '乐陵市', '禹城市', '宁津县', '庆云县', '临邑县', '齐河县', '平原县', '夏津县', '武城县'],
+  '聊城市': ['东昌府区', '临清市', '阳谷县', '莘县', '茌平区', '东阿县', '冠县', '高唐县'],
+  '滨州市': ['滨城区', '沾化区', '惠民县', '阳信县', '无棣县', '博兴县', '邹平市'],
+  '菏泽市': ['牡丹区', '定陶区', '曹县', '单县', '成武县', '巨野县', '郓城县', '鄄城县', '东明县']
+}
+
 export default {
   mixins: [safeAreaMixin],
   data() {
@@ -65,57 +106,73 @@ export default {
       scrollInto: '',
       allCities: [],
       citySections: [],
-      letters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+      letters: []
     }
   },
   computed: {
-    filteredCities() {
-      if (!this.searchKeyword) return this.allCities
-      return this.allCities.filter(c => c.name.includes(this.searchKeyword))
+    visibleSections() {
+      if (!this.searchKeyword) return this.citySections
+      return this.citySections.map(s => ({
+        ...s,
+        list: s.list.filter(c => c.name.includes(this.searchKeyword) ||
+          (c.districts && c.districts.some(d => d.includes(this.searchKeyword))))
+      })).filter(s => s.list.length > 0)
     }
   },
   onLoad() {
     this.loadCityList()
   },
-
   methods: {
-    async loadCityList() {
+    loadCityList() {
+      const cityNames = Object.keys(CITY_LETTER_MAP)
+      this.allCities = cityNames.map(name => ({
+        name,
+        letter: CITY_LETTER_MAP[name],
+        districts: CITY_DISTRICTS[name] || []
+      }))
+      this.citySections = this.buildSections(this.allCities)
+      this.letters = this.citySections.map(s => s.letter)
+
+      this.fetchApiCities()
+    },
+    async fetchApiCities() {
       try {
         const res = await getCityList()
         const data = res.data || []
-        this.allCities = data.map(item => {
+        if (!data.length) return
+        const apiCities = data.map(item => {
           const name = item.city || item.name || ''
-          const letter = name ? name.charAt(0).toUpperCase() : '#'
-          return { name, letter }
-        })
+          if (!name || CITY_LETTER_MAP[name]) return null
+          return { name, letter: name.charAt(0), districts: [] }
+        }).filter(Boolean)
+        const merged = new Map()
+        this.allCities.forEach(c => merged.set(c.name, c))
+        apiCities.forEach(c => { if (!merged.has(c.name)) merged.set(c.name, c) })
+        this.allCities = Array.from(merged.values())
         this.citySections = this.buildSections(this.allCities)
-      } catch (e) {
-        this.allCities = []
-        this.citySections = this.buildSections([])
-      }
+        this.letters = this.citySections.map(s => s.letter)
+      } catch (_) {}
     },
     buildSections(cities) {
-      const sections = []
-      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
       const grouped = {}
       cities.forEach(c => {
-        if (!grouped[c.letter]) grouped[c.letter] = []
-        grouped[c.letter].push(c)
+        const letter = c.letter || '#'
+        if (!grouped[letter]) grouped[letter] = []
+        grouped[letter].push(c)
       })
-      letters.forEach(letter => {
-        if (grouped[letter]) {
-          sections.push({ letter, list: grouped[letter] })
-        } else {
-          sections.push({ letter, list: [] })
-        }
-      })
-      return sections
+      return Object.keys(grouped).sort().map(letter => ({
+        letter,
+        list: grouped[letter]
+      }))
     },
-    onSearchInput() {
-      this.citySections = this.buildSections(this.filteredCities)
+    onSearchInput() {},
+    clearSearch() {
+      this.searchKeyword = ''
     },
     selectCity(cityName) {
-      uni.setStorageSync('selectedCity', cityName)
+      const name = cityName.replace(/[市区县].*$/, '') + '市'
+      const finalName = CITY_LETTER_MAP[name] ? name : cityName
+      uni.setStorageSync('selectedCity', finalName)
       uni.navigateBack()
     },
     scrollToLetter(letter) {
@@ -228,28 +285,57 @@ export default {
       color: #999;
       padding: 20rpx 0 12rpx;
       font-weight: 600;
+      letter-spacing: 2rpx;
     }
 
-    .cs-city-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 22rpx 0;
-      border-bottom: 1rpx solid #f8f8f8;
+    .cs-city-group {
+      margin-bottom: 8rpx;
 
-      .cs-city-name {
-        font-size: 28rpx;
-        color: #333;
-      }
+      .cs-city-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20rpx 0 12rpx;
+        border-bottom: 1rpx solid #f0f0f0;
 
-      &.selected {
         .cs-city-name {
-          color: #07c160;
+          font-size: 28rpx;
+          color: #333;
           font-weight: 600;
         }
+
+        &.selected {
+          .cs-city-name {
+            color: #07c160;
+            font-weight: 700;
+          }
+        }
+
+        &:active { background: #f8fffb; }
       }
 
-      &:active { background: #f8fffb; }
+      .cs-district-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12rpx;
+        padding: 10rpx 0 10rpx 20rpx;
+
+        .cs-district-item {
+          padding: 6rpx 16rpx;
+          background: #f5f6fa;
+          border-radius: 8rpx;
+
+          .cs-district-name {
+            font-size: 24rpx;
+            color: #666;
+          }
+
+          &:active {
+            background: #e8f8ee;
+            .cs-district-name { color: #07c160; }
+          }
+        }
+      }
     }
   }
 }

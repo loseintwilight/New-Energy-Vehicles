@@ -31,7 +31,6 @@
         :latitude="mapCenter.lat"
         :longitude="mapCenter.lng"
         :scale="15"
-        :show-location="true"
         :markers="mapMarkers"
         :enable-scroll="true"
         :enable-zoom="true"
@@ -88,7 +87,7 @@
       @refresherrefresh="onRefresh"
       :enhanced="true"
       :bounces="false"
-      :style="{ paddingBottom: (16 + safeBottom) + 'px' }"
+      :style="{ height: listHeightPx + 'px', paddingBottom: (16 + safeBottom - 50) + 'px' }"
     >
       <view
         v-for="(station, idx) in stationList"
@@ -207,7 +206,7 @@
       </view>
     </uni-popup>
 
-    <uni-popup ref="filterPopup" type="bottom" :safe-area="true">
+    <uni-popup ref="filterPopup" type="bottom" :safe-area="false">
       <view class="filter-panel">
         <view class="filter-header">
           <text class="filter-cancel" @click="resetMoreFilter">重置</text>
@@ -230,6 +229,7 @@
             </view>
           </view>
         </view>
+        <view class="filter-bottom-safe"></view>
       </view>
     </uni-popup>
 
@@ -249,14 +249,13 @@
         <input
           class="loc-addr-input"
           v-model="locationSearchKey"
-          placeholder="输入街道/门牌号/地标名称，如：大学路3501号"
+          placeholder="输入街道/门牌号/地标名称，如xx路xx号"
           @confirm="searchLocation"
         />
 
         <view class="loc-btn-row">
           <button class="loc-btn-primary" @click="searchLocation" :disabled="!canSearch">
-            <u-icon name="search" size="28" color="#fff"></u-icon>
-            <text>搜索</text>
+            <text>确认</text>
           </button>
           <button class="loc-btn-secondary" @click="pickLocationOnMap">
             <u-icon name="map" size="28" color="#1989fa"></u-icon>
@@ -314,7 +313,7 @@ export default {
       moreFilterOptions: [
         { key: 'freePark', label: '免费停车', selected: false },
         { key: 'highway', label: '高速路站', selected: false },
-        { key: 'discount', label: '优惠活动', selected: false },
+        { key: 'free', label: '空闲优先', selected: false },
         { key: 'plugAndPlay', label: '即插即充', selected: false },
         { key: 'selfService', label: '自助服务', selected: false },
         { key: '24h', label: '24小时营业', selected: false }
@@ -336,8 +335,8 @@ export default {
         { key: 'freePark', label: '免费停车' },
         { key: 'fast', label: '快充优先' },
         { key: 'slow', label: '慢充优先' },
+        { key: 'free', label: '空闲优先' },
         { key: 'highway', label: '高速路站' },
-        { key: 'discount', label: '优惠活动' },
         { key: 'more', label: '更多筛选', hasDropdown: true }
       ],
       activeFilter: 'distance',
@@ -352,6 +351,7 @@ export default {
       sortOrder: 'asc',
 
       stationList: [],
+      rawStationList: [], // 保存完整列表，用于本地分类过滤
       queryParams: {
         pageNum: 1,
         pageSize: 10,
@@ -381,6 +381,7 @@ export default {
 
   async onLoad() {
     await this.initLocation()
+    // 地图蓝点定位交给 onReady 的 retryMoveToLocation 处理
     this.fetchStationList()
   },
 
@@ -400,42 +401,54 @@ export default {
 
   onReady() {
     this.mapCtx = uni.createMapContext('chargeMap', this)
-    // 分多次调用 moveToLocation，确保地图组件已经拿到GPS蓝点位置
-    // show-location=true 会让地图组件自己获取GPS位置显示蓝点
-    // moveToLocation() 会把地图中心移动到蓝点位置
-    const tryMoveToLocation = (delay) => {
+    // 确保地图视角定位到当前位置
+    const retryMoveToLocation = (attempts = 0) => {
+      if (attempts > 6) return
       setTimeout(() => {
         if (this.mapCtx) {
-          this.mapCtx.moveToLocation()
+          this.mapCtx.moveToLocation({
+            latitude: this.mapCenter.lat,
+            longitude: this.mapCenter.lng
+          })
         }
-      }, delay)
+        retryMoveToLocation(attempts + 1)
+      }, 500)
     }
-    tryMoveToLocation(400)
-    tryMoveToLocation(1000)
-    tryMoveToLocation(2000)
+    retryMoveToLocation()
   },
 
   methods: {
     async initLocation() {
       this.locating = true
       try {
-        // 优先使用 isHighAccuracy 获取精准GPS
-        const pos = await amap.getLocation()
+        // 优先使用 uni.getLocation() — 它在微信开发者工具中直接读取 Sensor 面板的模拟坐标
+        const pos = await this.getUniLocation()
         this.setLocation(pos.latitude, pos.longitude)
         this.locationReady = true
       } catch (e) {
-        console.log('[locate] highAccuracy failed:', e.errMsg || e)
-        // 退而求其次：不要求高精度，用网络定位
+        console.log('[locate] uni.getLocation failed:', e.errMsg || e)
+        // 退而求其次：用高德SDK获取精准GPS（真机上效果更好，但Sensor面板不支持）
         try {
-          const pos = await this.getNetworkLocation()
+          const pos = await amap.getLocation()
           this.setLocation(pos.latitude, pos.longitude)
           this.locationReady = true
         } catch (e2) {
-          console.log('[locate] networkLocation failed:', e2.errMsg || e2)
+          console.log('[locate] amap.getLocation also failed:', e2.errMsg || e2)
           this.locationReady = false
         }
       }
       this.locating = false
+    },
+
+    getUniLocation() {
+      return new Promise((resolve, reject) => {
+        uni.getLocation({
+          type: 'gcj02',
+          timeout: 10000,
+          success: (res) => resolve({ latitude: res.latitude, longitude: res.longitude }),
+          fail: reject
+        })
+      })
     },
 
     getNetworkLocation() {
@@ -458,11 +471,31 @@ export default {
     reLocate() {
       if (this.locating) return
       this.locating = true
-      // 先让地图的蓝点自己定位
-      if (this.mapCtx) {
-        this.mapCtx.moveToLocation()
-      }
-      // 同时获取GPS坐标用于数据查询和地图中心
+      uni.showLoading({ title: '定位中...', mask: true })
+      // 获取GPS坐标（优先用 uni.getLocation 以支持 Sensor 面板）
+      this.getUniLocation().then(pos => {
+        this.setLocation(pos.latitude, pos.longitude)
+        this.locationReady = true
+        // 移动地图到当前位置
+        if (this.mapCtx) {
+          this.mapCtx.moveToLocation({
+            latitude: pos.latitude,
+            longitude: pos.longitude
+          })
+        }
+        this.queryParams.pageNum = 1
+        this.stationList = []
+        this.fetchStationList(true)
+        this.locating = false
+        uni.hideLoading()
+      }).catch(() => {
+        uni.hideLoading()
+        // 降级：尝试高精度GPS（真机）
+        this.getHighAccuracyLocation()
+      })
+    },
+
+    getHighAccuracyLocation() {
       uni.getLocation({
         type: 'gcj02',
         isHighAccuracy: true,
@@ -476,30 +509,33 @@ export default {
           this.locating = false
         },
         fail: () => {
-          // 尝试不要求高精度
-          uni.getLocation({
-            type: 'gcj02',
-            timeout: 8000,
+          // 最终降级：不要求高精度
+          this.getNetworkFallbackLocation()
+        }
+      })
+    },
+
+    getNetworkFallbackLocation() {
+      uni.getLocation({
+        type: 'gcj02',
+        timeout: 8000,
+        success: (res) => {
+          this.setLocation(res.latitude, res.longitude)
+          this.locationReady = true
+          this.queryParams.pageNum = 1
+          this.stationList = []
+          this.fetchStationList(true)
+          this.locating = false
+        },
+        fail: () => {
+          this.locating = false
+          uni.showModal({
+            title: '定位失败',
+            content: '请确保手机GPS已开启且在室外。您也可以手动搜索当前位置。',
+            confirmText: '手动输入地址',
+            cancelText: '取消',
             success: (res) => {
-              this.setLocation(res.latitude, res.longitude)
-              this.locationReady = true
-              this.queryParams.pageNum = 1
-              this.stationList = []
-              this.fetchStationList(true)
-              this.locating = false
-            },
-            fail: () => {
-              this.locating = false
-              // 保持当前地图状态不变，提示用户
-              uni.showModal({
-                title: '定位失败',
-                content: '请确保手机GPS已开启且在室外。您也可以手动搜索当前位置。',
-                confirmText: '手动输入地址',
-                cancelText: '取消',
-                success: (res) => {
-                  if (res.confirm) this.openLocationPicker()
-                }
-              })
+              if (res.confirm) this.openLocationPicker()
             }
           })
         }
@@ -602,14 +638,22 @@ export default {
 
       try {
         const res = await getStationList(this.queryParams)
-        const list = res.data.rows || []
+        const list = (res.data.rows || []).map(s => this.normalizeStation(s))
 
         if (isRefresh) {
-          this.stationList = list
+          this.rawStationList = list
+          const filtered = this.applySort(this.applyFilter(list))
+          this.stationList = filtered
           this.isRefreshing = false
           this.queryParams.pageNum = 1
         } else {
-          this.stationList = [...this.stationList, ...list]
+          this.rawStationList = [...this.rawStationList, ...list]
+          // 如果有激活的分类过滤，对增量数据也应用过滤
+          if (this.activeFilter !== 'distance') {
+            this.stationList = this.applySort(this.applyFilter([...this.rawStationList]))
+          } else {
+            this.stationList = [...this.stationList, ...list]
+          }
         }
 
         this.loadStatus = list.length < this.queryParams.pageSize ? 'noMore' : 'more'
@@ -623,9 +667,57 @@ export default {
       this.loading = false
     },
 
+    /** 根据 fastCount/slowCount 自动计算 speedType/speedTypeKey */
+    normalizeStation(station) {
+      const fast = station.fastCount || 0
+      const slow = station.slowCount || 0
+      const total = station.totalPiles || 0
+      // 确保数值类型
+      station.freePiles = Number(station.freePiles) || 0
+      station.totalPiles = total
+      // 智能判断：如果总桩数 > 已知快充数，说明还有慢充
+      let realFast = fast
+      let realSlow = slow
+      if (fast > 0 && slow === 0 && total > fast) {
+        realSlow = total - fast
+      } else if (slow > 0 && fast === 0 && total > slow) {
+        realFast = total - slow
+      }
+      if (realFast > 0 && realSlow > 0) {
+        station.speedType = '快慢充'
+        station.speedTypeKey = 'both'
+      } else if (realFast > 0) {
+        station.speedType = '快'
+        station.speedTypeKey = 'fast'
+      } else if (realSlow > 0) {
+        station.speedType = '慢'
+        station.speedTypeKey = 'slow'
+      }
+      // 从 piles 数组统计空闲的快充/慢充数量（用于快充优先/慢充优先排序）
+      let freeFastCount = 0
+      let freeSlowCount = 0
+      if (station.piles && Array.isArray(station.piles)) {
+        station.piles.forEach(p => {
+          if (p.status === 'free') {
+            if (p.type === '快充') freeFastCount++
+            else if (p.type === '慢充') freeSlowCount++
+          }
+        })
+      } else if (station.fastCount != null && station.slowCount != null) {
+        // API 返回没有 piles 数组时，按快慢充比例从 freePiles 估算
+        const total = station.fastCount + station.slowCount
+        if (total > 0 && station.freePiles != null) {
+          freeFastCount = Math.round(station.freePiles * station.fastCount / total)
+          freeSlowCount = Math.round(station.freePiles * station.slowCount / total)
+        }
+      }
+      station.freeFastCount = freeFastCount
+      station.freeSlowCount = freeSlowCount
+      return station
+    },
+
     buildMarkers(list) {
-      console.log('[DEBUG buildMarkers] 列表首个桩坐标:', list[0]?.lat, list[0]?.lng, '总数:', list.length)
-      this.mapMarkers = list.slice(0, 25).map((item, i) => ({
+      const markers = list.slice(0, 25).map((item, i) => ({
         id: item.stationId || i + 1000,
         latitude: item.lat,
         longitude: item.lng,
@@ -642,6 +734,17 @@ export default {
           textAlign: 'center'
         }
       }))
+      // 添加当前位置蓝色定位大头针标记
+      markers.unshift({
+        id: 9999,
+        latitude: this.mapCenter.lat,
+        longitude: this.mapCenter.lng,
+        width: 32,
+        height: 40,
+        iconPath: '/static/images/charge/location-pin-blue.svg',
+        anchor: { x: 0.5, y: 1 }
+      })
+      this.mapMarkers = markers
     },
 
     loadMockData() {
@@ -657,12 +760,12 @@ export default {
       const mockStations = [
         {
           stationId: 1001, name: '文常山公园充电站',
-          distance: '3.7', price: '0.51', speedType: '快', speedTypeKey: 'fast',
+          distance: '3.7', price: '0.51', speedType: '快慢充', speedTypeKey: 'both',
           totalPiles: 17, freePiles: 12, statusText: '闲12/17',
           lastChargeTime: '1天前有人充电',
-          tags: [{ text: '车电服务包更优惠', type: 'green' }, { text: '新人券可用', type: 'blue' }],
+          tags: [{ text: '快慢充', type: 'blue' }, { text: '免费停车', type: 'orange' }, { text: '车电服务包更优惠', type: 'green' }, { text: '新人券可用', type: 'blue' }],
           plugAndPlay: true, selfService: true, isNearest: true, discount: 0.12, freeParkTime: 2,
-          parkInfo: '免费',
+          parkInfo: '免费停车',
           lat: 36.680, lng: 116.990, electricPrice: '0.88', servicePrice: '0.40',
           score: 4.8,
           fastCount: 11, slowCount: 6,
@@ -691,11 +794,12 @@ export default {
           distance: '6.7', price: '0.88', speedType: '快', speedTypeKey: 'fast',
           totalPiles: 12, freePiles: 8, statusText: '闲8/12',
           lastChargeTime: '10分钟前有人充电',
-          tags: [{ text: '免费停车', type: 'orange' }],
-          plugAndPlay: true, selfService: false, isNearest: false, discount: 0, freeParkTime: 4,
+          tags: [{ text: '免费停车4小时', type: 'orange' }],
+          plugAndPlay: true, selfService: false, isNearest: false, discount: 0, freeParkTime: 0,
           parkInfo: '免费停车4小时',
           lat: 36.668, lng: 116.896, electricPrice: '0.95', servicePrice: '0.40',
           score: 4.6,
+          fastCount: 12, slowCount: 0,
           piles: this.generatePiles(12, '快', '120kW')
         },
         {
@@ -708,6 +812,7 @@ export default {
           parkInfo: '收费 5元/小时',
           lat: 36.685, lng: 117.130, electricPrice: '0.78', servicePrice: '0.40',
           score: 4.5,
+          fastCount: 0, slowCount: 16,
           piles: this.generatePiles(16, '慢', '7kW')
         },
         {
@@ -716,10 +821,11 @@ export default {
           totalPiles: 20, freePiles: 14, statusText: '闲14/20',
           lastChargeTime: '刚刚有人充电',
           tags: [{ text: '24小时', type: 'gray' }, { text: '免费停车2小时', type: 'orange' }],
-          plugAndPlay: true, selfService: false, isNearest: false, discount: 0, freeParkTime: 2,
+          plugAndPlay: true, selfService: false, isNearest: false, discount: 0, freeParkTime: 0,
           parkInfo: '免费停车2小时',
           lat: 36.690, lng: 117.120, electricPrice: '1.02', servicePrice: '0.40',
           score: 4.7,
+          fastCount: 20, slowCount: 0,
           piles: this.generatePiles(20, '快', '120kW')
         },
         {
@@ -728,10 +834,11 @@ export default {
           totalPiles: 10, freePiles: 3, statusText: '闲3/10',
           lastChargeTime: '1小时前有人充电',
           tags: [{ text: '购物满减', type: 'red' }],
-          plugAndPlay: true, selfService: false, isNearest: false, discount: 0.30, freeParkTime: 1,
+          plugAndPlay: true, selfService: false, isNearest: false, discount: 0.30, freeParkTime: 0,
           parkInfo: '收费 8元/小时',
           lat: 36.658, lng: 117.020, electricPrice: '1.15', servicePrice: '0.40',
           score: 4.3,
+          fastCount: 10, slowCount: 0,
           piles: this.generatePiles(10, '快', '120kW')
         },
         {
@@ -744,6 +851,7 @@ export default {
           parkInfo: '收费 6元/小时',
           lat: 36.700, lng: 117.150, electricPrice: '0.90', servicePrice: '0.40',
           score: 4.4,
+          fastCount: 14, slowCount: 0,
           piles: this.generatePiles(14, '快', '120kW')
         },
         {
@@ -752,18 +860,19 @@ export default {
           totalPiles: 24, freePiles: 18, statusText: '闲18/24',
           lastChargeTime: '刚刚有人充电',
           tags: [{ text: '高速路站', type: 'blue' }, { text: '24小时', type: 'gray' }],
-          plugAndPlay: true, selfService: false, isNearest: false, discount: 0, freeParkTime: 3,
+          plugAndPlay: true, selfService: false, isNearest: false, discount: 0, freeParkTime: 0,
           parkInfo: '免费停车3小时',
           lat: 36.720, lng: 117.140, electricPrice: '0.98', servicePrice: '0.40',
           score: 4.4,
-          piles: this.generatePiles(24, '快', '120kW')
+          fastCount: 24, slowCount: 0,
         }
       ]
 
       const shifted = mockStations.map(s => {
         const { lat, lng } = shiftCoord(s.lat, s.lng)
-        return { ...s, lat, lng }
+        return this.normalizeStation({ ...s, lat, lng })
       })
+      this.rawStationList = shifted
       this.stationList = this.applySort(this.applyFilter(shifted))
       this.loadStatus = 'noMore'
       this.buildMarkers(shifted)
@@ -799,10 +908,12 @@ export default {
         return
       }
       this.activeFilter = item.key
-      this.queryParams.filter = item.key === 'distance' ? '' : item.key
-      this.queryParams.pageNum = 1
-      this.stationList = []
-      this.fetchStationList(true)
+      // 数据还没加载完成时，仅记录分类，API 返回后会自行过滤
+      if (this.rawStationList.length === 0) return
+      const filtered = this.applyFilter([...this.rawStationList])
+      const sorted = this.applySort(filtered)
+      this.stationList = sorted
+      this.buildMarkers(this.stationList)
     },
 
     onSortChange(s) {
@@ -830,6 +941,37 @@ export default {
     applySort(list) {
       const order = this.sortOrder === 'asc' ? 1 : -1
       const sorted = [...list]
+
+      // 当选中空闲优先时，按空闲桩数降序排列
+      if (this.activeFilter === 'free') {
+        sorted.sort((a, b) => (b.freePiles || 0) - (a.freePiles || 0))
+        return sorted
+      }
+      // 当选中免费停车时：完全免费内按免费时长降序
+      if (this.activeFilter === 'freePark') {
+        sorted.sort((a, b) => (b.freeParkTime || 0) - (a.freeParkTime || 0))
+        return sorted
+      }
+
+      // 快充优先：按空闲快充桩数降序排列
+      if (this.activeFilter === 'fast') {
+        sorted.sort((a, b) => {
+          const va = a.freeFastCount != null ? a.freeFastCount : (a.fastCount || 0)
+          const vb = b.freeFastCount != null ? b.freeFastCount : (b.fastCount || 0)
+          return vb - va
+        })
+        return sorted
+      }
+      // 慢充优先：按空闲慢充桩数降序排列
+      if (this.activeFilter === 'slow') {
+        sorted.sort((a, b) => {
+          const va = a.freeSlowCount != null ? a.freeSlowCount : (a.slowCount || 0)
+          const vb = b.freeSlowCount != null ? b.freeSlowCount : (b.slowCount || 0)
+          return vb - va
+        })
+        return sorted
+      }
+
       switch (this.currentSort) {
         case 'distance':
           sorted.sort((a, b) => (parseFloat(a.distance) - parseFloat(b.distance)) * order)
@@ -849,15 +991,22 @@ export default {
     applyFilter(list) {
       const filterKey = this.activeFilter
       if (filterKey === 'all' || filterKey === 'distance') return list
-      if (filterKey === 'fast') return list.filter(s => s.speedTypeKey === 'fast')
-      if (filterKey === 'slow') return list.filter(s => s.speedTypeKey === 'slow')
+      // fast: 有快充（快充或快慢充）均可
+      if (filterKey === 'fast') return list.filter(s => s.speedTypeKey === 'fast' || s.speedTypeKey === 'both')
+      if (filterKey === 'slow') return list.filter(s => s.speedTypeKey === 'slow' || s.speedTypeKey === 'both')
       if (filterKey === 'free') return list.filter(s => s.freePiles > 0)
-      if (filterKey === 'freePark') return list.filter(s => s.freeParkTime > 0)
-      if (filterKey === 'highway') return list.filter(s => s.tags.some(t => t.text.includes('高速')))
-      if (filterKey === 'discount') return list.filter(s => s.discount > 0)
+      // freePark: 只显示 parkInfo 严格等于"免费停车"的站点
+      if (filterKey === 'freePark') return list.filter(s => s.parkInfo && s.parkInfo.trim() === '免费停车')
+      // highway: 根据数据库 facilities_info 或站点名称判断
+      if (filterKey === 'highway') return list.filter(s =>
+        (s.facilitiesInfo && s.facilitiesInfo.includes('高速')) ||
+        (s.name && s.name.includes('高速'))
+      )
       if (filterKey === 'plugAndPlay') return list.filter(s => s.plugAndPlay)
       if (filterKey === 'selfService') return list.filter(s => s.selfService)
-      if (filterKey === '24h') return list.filter(s => s.tags.some(t => t.text === '24小时'))
+      if (filterKey === '24h') return list.filter(s =>
+        !s.openTime || s.openTime === '24小时营业' || s.openTime === '00:00'
+      )
       return list
     },
 
@@ -907,9 +1056,6 @@ export default {
     },
 
     goDetail(station) {
-      console.log('[DEBUG goDetail] 选中桩:', station.stationId, station.name,
-        '坐标:', station.lat, station.lng,
-        '类型:', typeof station.lat)
       uni.navigateTo({
         url: `/pages/charge/detail?stationId=${station.stationId}&name=${encodeURIComponent(station.name)}&lat=${station.lat}&lng=${station.lng}`
       })
@@ -961,6 +1107,11 @@ export default {
   },
 
   computed: {
+    listHeightPx() {
+      // 确保滚动列表高度至少 480px，兼顾小屏设备用计算值
+      const autoH = this.systemInfo.windowHeight - this.statusBarHeight - this.safeBottom - this.rpx2px(720)
+      return Math.max(480, autoH)
+    },
     canSearch() {
       return this.regionText && this.locationSearchKey.trim()
     },
@@ -1225,7 +1376,6 @@ export default {
 }
 
 .station-list {
-  flex: 1;
   padding: 16rpx 20rpx;
 }
 
@@ -1331,6 +1481,7 @@ export default {
       &.tag-orange { color: #fa8c16; background: #fff7e6; }
       &.tag-red { color: #f5222d; background: #fff1f0; }
       &.tag-gray { color: #8c8c8c; background: #fafafa; }
+      &.tag-purple { color: #722ed1; background: #f9f0ff; }
     }
 
     .mini-tag {
@@ -1397,6 +1548,7 @@ export default {
 
         &.speed-fast { color: #fff; background: #ffa940; }
         &.speed-slow { color: #fff; background: #07c160; }
+        &.speed-both { color: #fff; background: linear-gradient(90deg, #ffa940 0%, #07c160 100%); }
       }
 
       .pile-status-text {
@@ -1626,7 +1778,7 @@ export default {
 .filter-panel {
   background: #fff;
   border-radius: 24rpx 24rpx 0 0;
-  padding-bottom: 60rpx;
+  padding-bottom: 0;
 
   .filter-header {
     display: flex;
@@ -1689,6 +1841,11 @@ export default {
       }
     }
   }
+}
+
+.filter-bottom-safe {
+  height: env(safe-area-inset-bottom, 0);
+  background: #fff;
 }
 
 .loc-picker-popup {

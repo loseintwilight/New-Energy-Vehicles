@@ -125,7 +125,7 @@
                 <view class="pdc-row">
                   <text class="pdc-label">桩 编 号</text>
                   <text class="pdc-value">{{ pile.pileCode }}</text>
-                  <image class="pdc-copy-img" src="/static/images/charge/copy.png" mode="aspectFit"></image>
+                  <image class="pdc-copy-img" src="/static/images/charge/copy.png" mode="aspectFit" @click="copyPileCode(pile.pileCode)"></image>
                 </view>
                 <view class="pdc-row">
                   <text class="pdc-label">桩 名 称</text>
@@ -652,9 +652,7 @@ export default {
       uni.scanCode({
         onlyFromCamera: false,
         success: (res) => {
-          const code = res.result || ''
-          this.manualPileNumber = code
-          uni.showToast({ title: '扫码成功，请确认连接', icon: 'success' })
+          this.manualPileNumber = res.result || ''
         },
         fail: () => {}
       })
@@ -662,33 +660,38 @@ export default {
 
     confirmManualStart() {
       if (!this.manualPileNumber || this.manualPileNumber.trim() === '') {
-        uni.showToast({ title: '请输入或扫描充电桩编号', icon: 'none' })
+        this.connectionError = '请输入充电桩编号'
+        this.connectionStep = 'failed'
         return
       }
-      this.startConnect(this.manualPileNumber.trim())
-    },
-
-    /** 开始连接充电桩 */
-    startConnect(pileNumber) {
+      var input = this.manualPileNumber.trim()
+      // 立即显示小车加载动画（1.5秒），同时在列表中查桩
       this.connectionStep = 'connecting'
-      // 模拟2秒连接过程
-      setTimeout(() => {
-        // 90%成功率，10%失败率（模拟网络异常）
-        const success = Math.random() > 0.1
-        if (success) {
-          this.connectionStep = 'connected'
-          // 连接成功后停留1.5秒，再跳转到充电页面
-          setTimeout(() => {
-            if (this.$refs.scanPopup) this.$refs.scanPopup.close()
-            this.connectionStep = 'input'
-            this.manualPileNumber = ''
-            this.doNavigateToCharge(pileNumber)
-          }, 1500)
-        } else {
-          this.connectionStep = 'failed'
-          this.connectionError = '连接超时，请检查充电桩状态后重试'
+      this.connectionError = ''
+      var self = this
+      setTimeout(function() {
+        var matched = false
+        for (var i = 0; i < self.pileList.length; i++) {
+          var pile = self.pileList[i]
+          if (pile.pileCode === input || pile.number === input || pile.gunCode === input) {
+            matched = true
+            break
+          }
         }
-      }, 2000)
+        if (matched) {
+          self.connectionStep = 'connected'
+          // 0.8秒后跳转充电页面（关闭弹窗）
+          setTimeout(function() {
+            if (self.$refs.scanPopup) self.$refs.scanPopup.close()
+            self.connectionStep = 'input'
+            self.manualPileNumber = ''
+            self.doNavigateToCharge(input)
+          }, 800)
+        } else {
+          self.connectionError = '未找到该编号的充电桩'
+          self.connectionStep = 'failed'
+        }
+      }, 1500)
     },
 
     /** 重试连接 */
@@ -724,12 +727,15 @@ export default {
 
     goNavi() {
       console.log('[DEBUG goNavi] this.lat:', this.lat, 'this.lng:', this.lng,
-        '| parseFloat:', parseFloat(this.lat), parseFloat(this.lng),
         '| stationName:', this.stationName,
         '| stationAddress:', this.stationAddress)
+      if (!this.lat || !this.lng) {
+        uni.showToast({ title: '暂无位置信息', icon: 'none' })
+        return
+      }
       amap.navigateTo({
-        lat: parseFloat(this.lat || 36.548),
-        lng: parseFloat(this.lng || 116.801),
+        lat: parseFloat(this.lat),
+        lng: parseFloat(this.lng),
         name: this.stationName,
         address: this.stationAddress
       })
@@ -737,6 +743,16 @@ export default {
 
     callStation() {
       uni.makePhoneCall({ phoneNumber: '0531-88886666' })
+    },
+
+    /** 复制充电桩编号到剪贴板 */
+    copyPileCode(code) {
+      uni.setClipboardData({
+        data: code,
+        success: () => {
+          uni.showToast({ title: '已复制', icon: 'success' })
+        }
+      })
     },
 
     toggleFavorite() {

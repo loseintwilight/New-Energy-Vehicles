@@ -23,6 +23,8 @@
         <result column="price" property="price"/>
         <result column="electricPrice" property="electricPrice"/>
         <result column="servicePrice" property="servicePrice"/>
+        <result column="fastCount" property="fastCount"/>
+        <result column="slowCount" property="slowCount"/>
     </resultMap>
 
     <!-- 费率时段 ResultMap -->
@@ -71,8 +73,8 @@
             s.latitude AS lat,
             s.longitude AS lng,
             s.total_piles AS totalPiles,
-            s.available_piles AS freePiles,
-            s.occupying_piles AS occupyingPiles,
+            (SELECT COUNT(*) FROM stad_charging_pile p WHERE p.station_id = s.station_id AND p.pile_status = '0') AS freePiles,
+            (SELECT COUNT(*) FROM stad_charging_pile p WHERE p.station_id = s.station_id AND p.pile_status = '1') AS occupyingPiles,
             s.parking_fee AS parkFee,
             s.open_time AS openTime,
             s.close_time AS closeTime,
@@ -93,7 +95,9 @@
                 * POW(SIN((#{lng} - s.longitude) * PI() / 360), 2)
             )), 1) AS distance,
             s.facilities_info AS facilitiesInfo,
-            s.station_status AS stationStatus
+            s.station_status AS stationStatus,
+            (SELECT COUNT(*) FROM stad_charging_pile p WHERE p.station_id = s.station_id AND (p.pile_type LIKE '%快%' OR p.pile_type LIKE '%直流%' OR p.pile_type LIKE '%DC%' OR p.pile_type LIKE '%120%' OR p.pile_type LIKE '%60%')) AS fastCount,
+            (SELECT COUNT(*) FROM stad_charging_pile p WHERE p.station_id = s.station_id AND (p.pile_type LIKE '%慢%' OR p.pile_type LIKE '%交流%' OR p.pile_type LIKE '%AC%' OR p.pile_type LIKE '%7kW%' OR p.pile_type LIKE '%3.5kW%')) AS slowCount
         FROM stad_charging_station s
         WHERE s.station_status = '1'
         <if test="filter == 'fast'">AND s.total_piles > 0</if>
@@ -123,7 +127,7 @@
             s.latitude AS lat,
             s.longitude AS lng,
             s.total_piles AS totalPiles,
-            s.available_piles AS freePiles,
+            (SELECT COUNT(*) FROM stad_charging_pile p WHERE p.station_id = s.station_id AND p.pile_status = '0') AS freePiles,
             s.parking_fee AS parkFee,
             s.open_time AS openTime,
             s.close_time AS closeTime,

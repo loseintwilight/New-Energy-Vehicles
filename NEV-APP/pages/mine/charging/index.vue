@@ -51,52 +51,80 @@
 </template>
 
 <script>
+import { getOrderList } from '@/api/charge/station.js'
+
 export default {
   data() {
     return {
-      records: [
-        {
-          id: 1, stationName: '星星充电站（槐荫区）', status: 'completed',
-          startTime: '2026-06-01 18:30', duration: '45分钟', power: 42.5, cost: 38.25,
-          address: '济南市槐荫区经十路与纬十二路交叉口'
-        },
-        {
-          id: 2, stationName: '特来电充电站（历下区）', status: 'completed',
-          startTime: '2026-05-30 08:15', duration: '1小时20分', power: 58.0, cost: 52.20,
-          address: '济南市历下区泉城路188号'
-        },
-        {
-          id: 3, stationName: '国网充电站（高新区）', status: 'completed',
-          startTime: '2026-05-27 12:00', duration: '32分钟', power: 28.3, cost: 25.47,
-          address: '济南市高新区舜华路2000号'
-        },
-        {
-          id: 4, stationName: '星星充电站（天桥区）', status: 'completed',
-          startTime: '2026-05-22 19:45', duration: '55分钟', power: 45.8, cost: 41.22,
-          address: '济南市天桥区北园大街99号'
-        },
-        {
-          id: 5, stationName: '万马爱充（市中区）', status: 'completed',
-          startTime: '2026-05-18 07:30', duration: '1小时10分', power: 52.1, cost: 46.89,
-          address: '济南市市中区经四路66号'
-        }
-      ]
+      records: [],
+      loading: false
     }
   },
+
+  onLoad() {
+    this.fetchRecords()
+  },
+
+  onShow() {
+    // 每次显示时刷新（刚充完电回来能看到新记录）
+    this.fetchRecords()
+  },
+
+  methods: {
+    async fetchRecords() {
+      if (this.loading) return
+      this.loading = true
+      try {
+        const res = await getOrderList({ pageNum: 1, pageSize: 50 })
+        // res = AjaxResult.success({rows: [...], total: N})
+        if (res && res.data && res.data.rows) {
+          this.records = res.data.rows.map(item => ({
+            id: item.orderId || item.orderNo,
+            stationName: item.stationName || '充电站',
+            status: item.status === '0' ? 'charging' : 'completed',
+            startTime: item.createTime || '-',
+            duration: item.durationText || (item.duration ? item.duration + '秒' : '-'),
+            power: item.energy || 0,
+            cost: item.amount || 0,
+            address: '',
+            orderNo: item.orderNo
+          }))
+        }
+      } catch (e) {
+        console.log('[充电记录] API失败，使用兜底数据', e)
+        this.useMockData()
+      }
+      this.loading = false
+    },
+
+    useMockData() {
+      this.records = [
+        { id: 1, stationName: '星星充电站（槐荫区）', status: 'completed',
+          startTime: '2026-06-01 18:30', duration: '45分钟', power: 42.5, cost: 38.25,
+          address: '济南市槐荫区经十路与纬十二路交叉口' },
+        { id: 2, stationName: '特来电充电站（历下区）', status: 'completed',
+          startTime: '2026-05-30 08:15', duration: '1小时20分', power: 58.0, cost: 52.20,
+          address: '济南市历下区泉城路188号' }
+      ]
+    },
+
+    handleDetail(item) {
+      // 跳转到充电订单详情
+      uni.navigateTo({
+        url: '/pages/charge/order'
+      })
+    }
+  },
+
   computed: {
     totalCount() {
       return this.records.length
     },
     totalPower() {
-      return this.records.reduce((sum, r) => sum + r.power, 0).toFixed(1)
+      return this.records.reduce((sum, r) => sum + (parseFloat(r.power) || 0), 0).toFixed(1)
     },
     totalCost() {
-      return this.records.reduce((sum, r) => sum + r.cost, 0).toFixed(2)
-    }
-  },
-  methods: {
-    handleDetail(item) {
-      uni.showToast({ title: '查看充电详情：' + item.stationName, icon: 'none' })
+      return this.records.reduce((sum, r) => sum + (parseFloat(r.cost) || 0), 0).toFixed(2)
     }
   }
 }

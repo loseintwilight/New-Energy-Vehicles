@@ -65,7 +65,7 @@
 
         <!-- 库存卡片 -->
         <view v-for="(item, idx) in filteredStock" :key="item.vehicleId"
-          class="stock-card" hover-class="card-hover">
+          class="stock-card" hover-class="card-hover" @tap="goDetail(item)">
           <!-- 左侧彩色竖条 -->
           <view class="color-bar" :class="'cb-' + item.stockStatus"></view>
           <!-- 卡片主体 -->
@@ -123,6 +123,9 @@
 </template>
 
 <script>
+import { listVehicle, updateVehicle } from '@/api/vehicle/vehicle'
+import { listOrder } from '@/api/vehicle/vehicle'
+
 export default {
   data: function() {
     return {
@@ -131,20 +134,7 @@ export default {
       activeTab: 0,
       tabs: ['全部', '库存充足', '库存紧张', '缺货'],
 
-      mockStocks: [
-        { vehicleId: 1, name: '比亚迪海豹 EV 700km 四驱旗舰版', type: 'ev', typeLabel: '纯电动',
-          stock: 5, sold: 23, minStock: 3, lastInTime: '2026-06-01', status: '充足' },
-        { vehicleId: 2, name: '特斯拉 Model Y 后驱版', type: 'ev', typeLabel: '纯电动',
-          stock: 3, sold: 18, minStock: 3, lastInTime: '2026-05-30', status: '紧张' },
-        { vehicleId: 3, name: '蔚来 ES6 75kWh 运动版', type: 'ev', typeLabel: '纯电动',
-          stock: 2, sold: 12, minStock: 2, lastInTime: '2026-05-28', status: '紧张' },
-        { vehicleId: 5, name: '比亚迪汉 DM-i 冠军版', type: 'phev', typeLabel: '插电混动',
-          stock: 6, sold: 31, minStock: 3, lastInTime: '2026-06-02', status: '充足' },
-        { vehicleId: 4, name: '理想 L7 Pro 增程版', type: 'erev', typeLabel: '增程式',
-          stock: 4, sold: 8, minStock: 2, lastInTime: '2026-05-29', status: '充足' },
-        { vehicleId: 6, name: '问界 M5 纯电版', type: 'ev', typeLabel: '纯电动',
-          stock: 0, sold: 15, minStock: 2, lastInTime: '2026-05-20', status: '缺货' }
-      ]
+      stockList: []
     }
   },
 
@@ -152,10 +142,11 @@ export default {
     /* 计算每辆车的库存状态码 */
     enrichedStocks: function() {
       var that = this
-      return that.mockStocks.map(function(item) {
-        var s = item.stock
+      return that.stockList.map(function(item) {
+        var s = item.stock || 0
         var code = s >= 5 ? 'ok' : (s >= 1 ? 'warn' : 'empty')
-        return Object.assign({}, item, { stockStatus: code })
+        var statusText = s >= 5 ? '充足' : (s >= 1 ? '紧张' : '缺货')
+        return Object.assign({}, item, { stockStatus: code, status: statusText })
       })
     },
 
@@ -170,16 +161,16 @@ export default {
     },
 
     /* 统计数据 */
-    totalModels: function() { return this.mockStocks.length },
+    totalModels: function() { return this.stockList.length },
     totalStock: function() {
       var sum = 0
-      for (var i = 0; i < this.mockStocks.length; i++) sum += this.mockStocks[i].stock
+      for (var i = 0; i < this.stockList.length; i++) sum += (this.stockList[i].stock || 0)
       return sum
     },
     lowCount: function() {
       var c = 0
-      for (var i = 0; i < this.mockStocks.length; i++) {
-        if (this.mockStocks[i].stock < this.mockStocks[i].minStock) c++
+      for (var i = 0; i < this.stockList.length; i++) {
+        if ((this.stockList[i].stock || 0) < 3) c++
       }
       return c
     }
@@ -187,11 +178,56 @@ export default {
 
   created: function() {
     this.buildGlowRows()
+    this.loadStockData()
     var that = this
     setTimeout(function() { that.isReady = true }, 200)
   },
 
   methods: {
+    loadStockData: function() {
+      var self = this
+      listVehicle({ pageNum: 1, pageSize: 100 }).then(function(res) {
+        if (res.code === 200 && res.rows) {
+          self.stockList = res.rows.map(function(v) {
+            var vt = v.vehicleType || 'new'
+            return {
+              vehicleId: v.vehicleId,
+              name: v.modelName || v.title || '-',
+              type: vt,
+              typeLabel: vt === 'used' ? '二手车' : (vt === 'new' ? '新车' : vt),
+              stock: v.stock || 0,
+              sold: 0,
+              minStock: 3,
+              lastInTime: v.createTime ? v.createTime.substring(0, 10) : '-'
+            }
+          })
+          // 加载订单数据，按车辆统计已售数量
+          self.loadSoldCount()
+        }
+      }).catch(function() {
+        console.log('获取库存数据失败')
+      })
+    },
+
+    loadSoldCount: function() {
+      var self = this
+      listOrder({ pageNum: 1, pageSize: 999 }).then(function(res) {
+        if (res.code === 200 && res.data && Array.isArray(res.data.list)) {
+          // 按 vehicleId 统计已完成/已支付订单数
+          var soldMap = {}
+          res.data.list.forEach(function(o) {
+            if (o.vehicleId && (o.status === 'completed' || o.status === 'paid' || o.status === 'confirmed')) {
+              soldMap[o.vehicleId] = (soldMap[o.vehicleId] || 0) + 1
+            }
+          })
+          // 回填到 stockList
+          self.stockList.forEach(function(item) {
+            item.sold = soldMap[item.vehicleId] || 0
+          })
+        }
+      }).catch(function() {})
+    },
+
     buildGlowRows: function() {
       var rows = []
       var colors = ['#f59e0b', '#f97316', '#fb923c', '#fbbf24', '#fcd34d', '#fde68a']
@@ -217,20 +253,27 @@ export default {
 
     goBack: function() { uni.navigateBack({ delta: 1 }) },
 
+    goDetail: function(item) {
+      uni.navigateTo({ url: '/pages/mine/vehicle/stock-detail?id=' + item.vehicleId })
+    },
+
     doIn: function(item) {
       var that = this
       uni.showModal({
         title: '入库操作',
-        content: '请输入「' + item.name + '」的入库数量：',
         editable: true,
         placeholderText: '请输入数量',
         success: function(res) {
           if (res.confirm && res.content) {
             var num = parseInt(res.content)
             if (!isNaN(num) && num > 0) {
-              item.stock += num
-              item.lastInTime = '2026-06-04'
-              uni.showToast({ title: '已入库 ' + num + ' 台', icon: 'success' })
+              var newStock = item.stock + num
+              updateVehicle({ vehicleId: item.vehicleId, stock: newStock }).then(function() {
+                item.stock = newStock
+                uni.showToast({ title: '已入库 ' + num + ' 台', icon: 'success' })
+              }).catch(function() {
+                uni.showToast({ title: '入库失败', icon: 'none' })
+              })
             } else {
               uni.showToast({ title: '请输入有效数量', icon: 'none' })
             }
@@ -247,16 +290,19 @@ export default {
       }
       uni.showModal({
         title: '出库操作',
-        content: '请输入「' + item.name + '」的出库数量（当前库存 ' + item.stock + ' 台）：',
         editable: true,
         placeholderText: '请输入数量',
         success: function(res) {
           if (res.confirm && res.content) {
             var num = parseInt(res.content)
             if (!isNaN(num) && num > 0 && num <= item.stock) {
-              item.stock -= num
-              item.sold += num
-              uni.showToast({ title: '已出库 ' + num + ' 台', icon: 'success' })
+              var newStock = item.stock - num
+              updateVehicle({ vehicleId: item.vehicleId, stock: newStock }).then(function() {
+                item.stock = newStock
+                uni.showToast({ title: '已出库 ' + num + ' 台', icon: 'success' })
+              }).catch(function() {
+                uni.showToast({ title: '出库失败', icon: 'none' })
+              })
             } else {
               uni.showToast({ title: '数量无效或超出库存', icon: 'none' })
             }
@@ -266,22 +312,11 @@ export default {
     },
 
     doEdit: function(item) {
-      uni.showToast({ title: '编辑：' + item.name, icon: 'none' })
+      uni.navigateTo({ url: '/pages/mine/vehicle/vehicle-detail?vehicleId=' + item.vehicleId })
     },
 
     quickIn: function() {
-      uni.showModal({
-        title: '快速入库',
-        content: '请选择要入库的车型或输入新增信息：',
-        showCancel: true,
-        confirmText: '选择车型',
-        cancelText: '取消',
-        success: function(res) {
-          if (res.confirm) {
-            uni.showToast({ title: '请从列表中选择车型入库', icon: 'none' })
-          }
-        }
-      })
+      uni.navigateTo({ url: '/pages/mine/vehicle/vehicle-add' })
     }
   }
 }

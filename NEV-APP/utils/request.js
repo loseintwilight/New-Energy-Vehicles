@@ -31,12 +31,22 @@ const request = config => {
       }).then(response => {
         let [error, res] = response
         if (error) {
-          toast('后端接口连接异常')
-          reject('后端接口连接异常')
+          reject(error)
+          return
+        }
+        if (!res || !res.data) {
+          reject('响应数据为空')
+          return
+        }
+        // 如果后端返回的不是JSON对象（如错误HTML），直接reject
+        if (typeof res.data === 'string') {
+          reject('后端服务异常，返回非JSON数据')
           return
         }
         const code = res.data.code || 200
         const msg = errorCode[code] || res.data.msg || errorCode['default']
+        // 成功状态码: 200(标准RuoYi) 和 1(自定义R.success())
+        const successCodes = [200, 1]
         if (code === 401) {
           showConfirm('登录状态已过期，您可以继续留在该页面，或者重新登录?').then(res => {
             if (res.confirm) {
@@ -49,7 +59,7 @@ const request = config => {
         } else if (code === 500) {
           toast(msg)
           reject('500')
-        } else if (code !== 200) {
+        } else if (!successCodes.includes(code)) {
           toast(msg)
           reject(code)
         }

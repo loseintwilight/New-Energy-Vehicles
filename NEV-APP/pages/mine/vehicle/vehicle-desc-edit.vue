@@ -120,7 +120,9 @@
 </template>
 
 <script>
-var USE_MOCK = true
+var USE_MOCK = false
+
+import request from '@/utils/request'
 
 export default {
 	data: function() {
@@ -304,23 +306,21 @@ export default {
 				}, 600)
 			} else {
 				uni.showLoading({ title: '保存中...' })
-				uni.request({
-					url: '/merchant/vehicle/updateDescription',
-					method: 'PUT',
-					data: { vehicleId: self.vehicleId, description: self.descContent },
-					success: function(res) {
-						uni.hideLoading()
-						if (res.data.code === 200) {
-							uni.showToast({ title: '保存成功', icon: 'success' })
-							setTimeout(function() { uni.navigateBack() }, 1200)
-						} else {
-							uni.showToast({ title: res.data.msg || '保存失败', icon: 'none' })
-						}
-					},
-					fail: function() {
-						uni.hideLoading()
-						uni.showToast({ title: '网络异常', icon: 'none' })
+				request({
+					url: '/merchant/vehicle',
+					method: 'put',
+					data: { vehicleId: self.vehicleId, description: self.descContent }
+				}).then(function(res) {
+					uni.hideLoading()
+					if (res.code === 1) {
+						uni.showToast({ title: '保存成功', icon: 'success' })
+						setTimeout(function() { uni.navigateBack() }, 1200)
+					} else {
+						uni.showToast({ title: res.msg || '保存失败', icon: 'none' })
 					}
+				}).catch(function() {
+					uni.hideLoading()
+					uni.showToast({ title: '网络异常', icon: 'none' })
 				})
 			}
 		},

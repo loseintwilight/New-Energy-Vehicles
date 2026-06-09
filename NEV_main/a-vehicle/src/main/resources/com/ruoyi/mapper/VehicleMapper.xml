@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mapper.VehicleMapper">
+    <resultMap type="com.ruoyi.domain.Vehicle" id="VehicleResult">
+        <result property="vehicleId"      column="vehicle_id"       />
+        <result property="vehicleType"    column="vehicle_type"     />
+        <result property="modelName"      column="model_name"       />
+        <result property="title"          column="title"            />
+        <result property="guidePrice"     column="guide_price"      />
+        <result property="originalPrice"  column="original_price"   />
+        <result property="color"          column="color"            />
+        <result property="stock"          column="stock"            />
+        <result property="merchantId"     column="merchant_id"      />
+        <result property="description"    column="description"      />
+        <result property="tags"           column="tags"             />
+        <result property="viewCount"      column="view_count"       />
+        <result property="status"         column="status"           />
+        <result property="publishTime"    column="publish_time"     />
+        <result property="createTime"     column="create_time"      />
+        <result property="updateTime"     column="update_time"      />
+        <result property="merchantName"   column="merchant_name"    />
+        <result property="usedId"         column="used_id"          />
+        <result property="mileage"        column="mileage"           />
+        <result property="licenseYear"    column="license_year"      />
+        <result property="licenseMonth"   column="license_month"     />
+        <result property="licenseCity"    column="license_city"      />
+        <result property="transferCount"  column="transfer_count"    />
+        <result property="batterySoh"     column="battery_soh"       />
+        <result property="batteryCycles"  column="battery_cycles"    />
+        <result property="batteryDiagnosis" column="battery_diagnosis" />
+        <result property="rangeKm"        column="range_km"          />
+        <result property="batteryCapacity" column="battery_capacity"  />
+        <result property="chargeTimeFast"  column="charge_time_fast"   />
+    </resultMap>
+
+    <resultMap type="com.ruoyi.domain.Vehicle" id="VehicleDetailResult" extends="VehicleResult">
+        <association property="vehicleSpec" javaType="com.ruoyi.domain.Vehicle$VehicleSpec" resultMap="VehicleSpecResult"/>
+    </resultMap>
+
+    <resultMap type="com.ruoyi.domain.Vehicle$VehicleSpec" id="VehicleSpecResult">
+        <result property="specId"           column="spec_id"           />
+        <result property="vehicleId"        column="spec_vehicle_id"   />
+        <result property="rangeKm"          column="range_km"          />
+        <result property="batteryCapacity"  column="battery_capacity"  />
+        <result property="chargeTimeFast"   column="charge_time_fast"  />
+        <result property="chargeTimeSlow"   column="charge_time_slow"  />
+        <result property="modelYear"        column="model_year"        />
+    </resultMap>
+
+    <sql id="selectVehicleVo">
+        select v.vehicle_id, v.vehicle_type, v.model_name, v.title, v.guide_price,
+               v.original_price, v.color, v.stock, v.merchant_id, v.description,
+               v.tags, v.view_count, v.status, v.publish_time, v.create_time,
+               v.update_time,
+               m.merchant_name,
+               u.used_id, u.mileage, u.license_year, u.license_month,
+               u.license_city, u.transfer_count, u.battery_soh,
+               u.battery_cycles, u.battery_diagnosis,
+               s.range_km, s.battery_capacity, s.charge_time_fast
+        from stad_vehicle v
+        left join stad_merchant m on v.merchant_id = m.merchant_id
+        left join stad_vehicle_used u on v.vehicle_id = u.vehicle_id
+        left join stad_vehicle_spec s on v.vehicle_id = s.vehicle_id
+    </sql>
+
+    <!-- 根据ID查询车辆 -->
+    <select id="selectVehicleById" parameterType="Long" resultMap="VehicleResult">
+        <include refid="selectVehicleVo"/>
+        where vehicle_id = #{vehicleId}
+    </select>
+
+    <!-- 查询车辆详情 -->
+    <select id="selectVehicleDetailById" parameterType="Long" resultMap="VehicleDetailResult">
+        select v.vehicle_id, v.vehicle_type, v.model_name, v.title, v.guide_price,
+               v.original_price, v.color, v.stock, v.merchant_id, v.description,
+               v.tags, v.view_count, v.status, v.publish_time, v.create_time,
+               v.update_time,
+               m.merchant_name,
+               s.spec_id, s.vehicle_id as spec_vehicle_id,
+               s.range_km, s.battery_capacity, s.charge_time_fast, s.charge_time_slow, s.model_year
+        from stad_vehicle v
+        left join stad_merchant m on v.merchant_id = m.merchant_id
+        left join stad_vehicle_spec s on v.vehicle_id = s.vehicle_id
+        where v.vehicle_id = #{vehicleId}
+    </select>
+
+    <!-- 查询车辆列表 -->
+    <select id="selectVehicleList" parameterType="com.ruoyi.domain.Vehicle" resultMap="VehicleResult">
+        <include refid="selectVehicleVo"/>
+        <where>
+            <if test="vehicleType != null and vehicleType != ''">
+                AND vehicle_type = #{vehicleType}
+            </if>
+            <if test="modelName != null and modelName != ''">
+                AND model_name like concat('%', #{modelName}, '%')
+            </if>
+            <if test="title != null and title != ''">
+                AND title like concat('%', #{title}, '%')
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="merchantId != null">
+                AND merchant_id = #{merchantId}
+            </if>
+            <if test="color != null and color != ''">
+                AND color = #{color}
+            </if>
+        </where>
+        order by vehicle_id desc
+    </select>
+
+    <!-- 新增车辆 -->
+    <insert id="insertVehicle" parameterType="com.ruoyi.domain.Vehicle" useGeneratedKeys="true" keyProperty="vehicleId">
+        insert into stad_vehicle
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="vehicleType != null and vehicleType != ''">vehicle_type,</if>
+            <if test="modelName != null and modelName != ''">model_name,</if>
+            <if test="title != null and title != ''">title,</if>
+            <if test="guidePrice != null">guide_price,</if>
+            <if test="originalPrice != null">original_price,</if>
+            <if test="color != null">color,</if>
+            <if test="stock != null">stock,</if>
+            <if test="merchantId != null">merchant_id,</if>
+            <if test="description != null">description,</if>
+            <if test="tags != null">tags,</if>
+            <if test="status != null">status,</if>
+            <if test="publishTime != null">publish_time,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="vehicleType != null and vehicleType != ''">#{vehicleType},</if>
+            <if test="modelName != null and modelName != ''">#{modelName},</if>
+            <if test="title != null and title != ''">#{title},</if>
+            <if test="guidePrice != null">#{guidePrice},</if>
+            <if test="originalPrice != null">#{originalPrice},</if>
+            <if test="color != null">#{color},</if>
+            <if test="stock != null">#{stock},</if>
+            <if test="merchantId != null">#{merchantId},</if>
+            <if test="description != null">#{description},</if>
+            <if test="tags != null">#{tags},</if>
+            <if test="status != null">#{status},</if>
+            <if test="publishTime != null">#{publishTime},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <!-- 修改车辆 -->
+    <update id="updateVehicle" parameterType="com.ruoyi.domain.Vehicle">
+        update stad_vehicle
+        <set>
+            <if test="vehicleType != null and vehicleType != ''">vehicle_type = #{vehicleType},</if>
+            <if test="modelName != null and modelName != ''">model_name = #{modelName},</if>
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="guidePrice != null">guide_price = #{guidePrice},</if>
+            <if test="originalPrice != null">original_price = #{originalPrice},</if>
+            <if test="color != null">color = #{color},</if>
+            <if test="stock != null">stock = #{stock},</if>
+            <if test="merchantId != null">merchant_id = #{merchantId},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="tags != null">tags = #{tags},</if>
+            <if test="viewCount != null">view_count = #{viewCount},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="publishTime != null">publish_time = #{publishTime},</if>
+            update_time = sysdate()
+        </set>
+        where vehicle_id = #{vehicleId}
+    </update>
+
+    <!-- 删除车辆（单条） -->
+    <delete id="deleteVehicleById" parameterType="Long">
+        delete from stad_vehicle where vehicle_id = #{vehicleId}
+    </delete>
+
+    <!-- 删除车辆（批量） -->
+    <delete id="deleteVehicleByIds" parameterType="Long">
+        delete from stad_vehicle where vehicle_id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 新增车辆规格 -->
+    <insert id="insertVehicleSpec" parameterType="com.ruoyi.domain.Vehicle$VehicleSpec">
+        insert into stad_vehicle_spec (vehicle_id, range_km, battery_capacity, charge_time_fast, charge_time_slow, model_year)
+        values (#{vehicleId}, #{rangeKm}, #{batteryCapacity}, #{chargeTimeFast}, #{chargeTimeSlow}, #{modelYear})
+    </insert>
+
+    <!-- 仪表盘统计 -->
+    <select id="selectDashboardStats" resultType="java.util.Map">
+        SELECT
+            (SELECT COUNT(*)
+             FROM stad_vehicle)
+                AS vehicleCount,
+            IFNULL((SELECT COUNT(*)
+                    FROM stad_unified_order
+                    WHERE DATE(create_time) = CURDATE()), 0)
+                AS todayOrderCount,
+            IFNULL((SELECT SUM(total_amount)
+                    FROM stad_unified_order
+                    WHERE DATE(create_time) = CURDATE()
+AND status IN ('2','3')), 0)
+                AS todayRevenue,
+            IFNULL((SELECT COUNT(DISTINCT user_id)
+                    FROM stad_unified_order
+                    WHERE DATE(create_time) = CURDATE()), 0)
+                AS activeUserCount
+    </select>
+
+    <!-- 车辆销售数据统计 -->
+    <select id="selectVehicleSales" resultType="java.util.Map" parameterType="Long">
+        SELECT
+            (SELECT COUNT(*)
+             FROM stad_unified_order
+             WHERE vehicle_id = #{vehicleId}
+               AND status IN ('2','3'))
+                AS totalSales,
+            (SELECT COUNT(*)
+             FROM stad_unified_order
+             WHERE vehicle_id = #{vehicleId}
+               AND status IN ('2','3')
+               AND DATE_FORMAT(create_time, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m'))
+                AS monthSales,
+            (SELECT COUNT(*)
+             FROM stad_vehicle_review
+             WHERE vehicle_id = #{vehicleId}
+               AND status = '1')
+                AS reviewCount,
+            IFNULL((SELECT ROUND(AVG(rating), 1)
+                    FROM stad_vehicle_review
+                    WHERE vehicle_id = #{vehicleId}
+                      AND status = '1'), 0)
+                AS avgRating
+    </select>
+
+    <!-- 电池诊断查询 -->
+    <select id="selectVehicleBatteryDiagnosis" parameterType="Long" resultMap="VehicleResult">
+        select v.vehicle_id, v.vehicle_type,
+               u.used_id, u.battery_soh, u.battery_cycles, u.battery_diagnosis
+        from stad_vehicle v
+        left join stad_vehicle_used u on v.vehicle_id = u.vehicle_id
+        where v.vehicle_id = #{vehicleId}
+    </select>
+</mapper>

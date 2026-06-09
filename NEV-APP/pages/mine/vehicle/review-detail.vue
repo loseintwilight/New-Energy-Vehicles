@@ -63,18 +63,6 @@
         </view>
       </view>
 
-      <!-- 商家回复区（绿色引用样式卡片） -->
-      <view class="reply-section" v-if="review.reply">
-        <view class="reply-box">
-          <view class="reply-header">
-            <text class="reply-label">商家回复</text>
-            <view class="reply-dot"></view>
-          </view>
-          <text class="reply-content">{{ review.reply }}</text>
-          <text class="reply-time">回复于 {{ review.replyTime }}</text>
-        </view>
-      </view>
-
       <!-- 操作区：返回列表按钮 -->
       <view class="action-area">
         <view class="back-list-btn" hover-class="btn-press" @tap="goBack">
@@ -88,6 +76,8 @@
 </template>
 
 <script>
+import { getReview } from '@/api/vehicle/vehicle'
+
 export default {
   data: function() {
     return {
@@ -98,22 +88,48 @@ export default {
   },
   onLoad: function(options) {
     var that = this
-    this.review = {
-      reviewId: options.reviewId || 1,
-      userName: '张**',
-      avatarLetter: '张',
-      rating: 5,
-      vehicleName: '比亚迪海豹 EV 700km 四驱旗舰版',
-      content: '车子非常满意！续航真实，内饰做工精细，销售服务态度很好。提车当天就跑了200公里高速，电耗很满意。\n\n几点感受：\n1. 续航700km完全够用，实际跑下来大概650km左右\n2. 内饰用料很扎实，没有异味\n3. 智能驾驶辅助在高速上很好用\n\n推荐购买！',
-      images: [],
-      reply: '感谢您的信任与支持！祝您用车愉快~如有任何问题随时联系我们。',
-      replyTime: '2026-05-31 14:30',
-      createTime: '2026-05-31 10:15'
-    }
-    this.buildGlowRows()
-    setTimeout(function() {
-      that.isReady = true
-    }, 200)
+    var reviewId = options.reviewId || 1
+    that.buildGlowRows()
+    // 从后端加载评价详情
+    getReview(reviewId).then(function(res) {
+      if (res.code === 1 && res.data) {
+        var data = res.data
+        that.review = {
+          reviewId: data.reviewId,
+          userName: data.nickName || '匿名用户',
+          avatarLetter: (data.nickName || '匿').substring(0, 1),
+          rating: data.rating || 0,
+          vehicleName: data.vehicleName || '-',
+          content: data.content || '',
+          images: data.imageUrl ? data.imageUrl.split(',').filter(function(i) { return i }) : [],
+          createTime: data.createTime || ''
+        }
+      } else {
+        that.review = {
+          reviewId: reviewId,
+          userName: '未知用户',
+          avatarLetter: '未',
+          rating: 0,
+          vehicleName: '-',
+          content: '暂无评价内容',
+          images: [],
+          createTime: ''
+        }
+      }
+      setTimeout(function() { that.isReady = true }, 200)
+    }).catch(function() {
+      that.review = {
+        reviewId: reviewId,
+        userName: '未知用户',
+        avatarLetter: '未',
+        rating: 0,
+        vehicleName: '-',
+        content: '加载失败',
+        images: [],
+        createTime: ''
+      }
+      setTimeout(function() { that.isReady = true }, 200)
+    })
   },
   methods: {
     buildGlowRows: function() {
@@ -159,7 +175,7 @@ export default {
 }
 .page-ready .header { animation: fadeSlideDown 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; }
 .page-ready .review-card { animation: fadeSlideUp 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; animation-delay: 0.12s; }
-.page-ready .reply-section { animation: fadeSlideUp 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; animation-delay: 0.22s; }
+.page-ready .image-grid { animation: fadeSlideUp 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; animation-delay: 0.22s; }
 .page-ready .action-area { animation: fadeSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards; animation-delay: 0.32s; }
 
 @keyframes fadeSlideDown {
@@ -414,50 +430,6 @@ export default {
   height: 200rpx;
   border-radius: 14rpx;
   background: #f5f5f4;
-}
-
-/* ========== 商家回复区（绿色引用样式卡片） ========== */
-.reply-section {
-  padding: 20rpx 24rpx 0;
-}
-.reply-box {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.07), rgba(74, 222, 128, 0.03));
-  border-radius: 18rpx;
-  padding: 22rpx 24rpx;
-  border-left: 5rpx solid #22c55e;
-  box-shadow: inset 0 1rpx 3rpx rgba(34, 197, 94, 0.08), 0 4rpx 16rpx rgba(0, 0, 0, 0.03);
-}
-.reply-header {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  margin-bottom: 12rpx;
-}
-.reply-label {
-  font-size: 25rpx;
-  color: #16a34a;
-  font-weight: 700;
-}
-.reply-dot {
-  width: 8rpx;
-  height: 8rpx;
-  border-radius: 50%;
-  background: #22c55e;
-  margin-left: 10rpx;
-  opacity: 0.6;
-}
-.reply-content {
-  font-size: 27rpx;
-  color: #57534e;
-  line-height: 1.7;
-  display: block;
-}
-.reply-time {
-  font-size: 23rpx;
-  color: #a8a29e;
-  margin-top: 14rpx;
-  display: block;
-  text-align: right;
 }
 
 /* ========== 操作区 ========== */

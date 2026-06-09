@@ -12,11 +12,11 @@
 			<view class="header">
 				<view class="header-bg"></view>
 				<view class="back-btn" hover-class="btn-hover" @tap="goBack">
-					<text class="back-icon">❮</text>
-				</view>
-				<view class="header-info">
+				<text class="back-icon">‹</text>
+			</view>
+			<view class="header-info">
 					<text class="header-title">结算中心</text>
-					<text class="header-sub">管理您的收益与提现</text>
+					<text class="header-sub">{{ settlementList.length }} 条结算单</text>
 				</view>
 				<view class="header-right" @tap="goRecord">
 					<text class="record-icon">📋</text>
@@ -26,21 +26,21 @@
 			<!-- 余额卡片 -->
 			<view class="balance-card">
 				<view class="balance-bg"></view>
-				<text class="balance-label">可提现余额</text>
-				<text class="balance-amount">¥12,680.50</text>
+				<text class="balance-label">可提现余额（待结算总额）</text>
+				<text class="balance-amount">¥{{ summary.totalAmount }}</text>
 				<view class="balance-row">
 					<view class="balance-item">
-						<text class="balance-item-val">¥8,920.00</text>
-						<text class="balance-item-label">本月收入</text>
+						<text class="balance-item-val">¥{{ summary.settleAmount }}</text>
+						<text class="balance-item-label">已结算金额</text>
 					</view>
 					<view class="balance-divider"></view>
 					<view class="balance-item">
-						<text class="balance-item-val">¥2,350.00</text>
-						<text class="balance-item-label">已提现</text>
+						<text class="balance-item-val">¥{{ summary.withdrawAmount }}</text>
+						<text class="balance-item-label">已提现金额</text>
 					</view>
 				</view>
 				<view class="withdraw-btn" hover-class="btn-hover" @tap="goWithdraw">
-					<text>立即提现</text>
+					<text>查看详情</text>
 				</view>
 			</view>
 
@@ -52,75 +52,54 @@
 				</view>
 				<view class="income-grid">
 					<view class="income-item">
-						<text class="income-val">¥1,280.00</text>
-						<text class="income-label">今日收入</text>
-						<text class="income-trend up">▲ 12.5%</text>
+						<text class="income-val">¥{{ summary.totalAmount }}</text>
+						<text class="income-label">总金额</text>
 					</view>
 					<view class="income-item">
-						<text class="income-val">¥8,960.00</text>
-						<text class="income-label">本周收入</text>
-						<text class="income-trend up">▲ 15.8%</text>
+						<text class="income-val">¥{{ summary.platformCommission }}</text>
+						<text class="income-label">平台佣金</text>
 					</view>
 					<view class="income-item">
-						<text class="income-val">¥46,690.70</text>
-						<text class="income-label">本月收入</text>
-						<text class="income-trend up">▲ 22.4%</text>
+						<text class="income-val">¥{{ summary.settleAmount }}</text>
+						<text class="income-label">结算到账</text>
 					</view>
 					<view class="income-item">
-						<text class="income-val">¥186,520.00</text>
-						<text class="income-label">累计收入</text>
-						<text class="income-trend up">▲ 18.6%</text>
+						<text class="income-val">{{ summary.totalOrders }}</text>
+						<text class="income-label">总订单数</text>
 					</view>
 				</view>
 			</view>
 
-			<!-- 提现记录 -->
+			<!-- 结算列表 -->
 			<view class="info-section">
 				<view class="section-title">
 					<view class="title-line line-green"></view>
-					<text class="title-text">提现记录</text>
+					<text class="title-text">结算明细</text>
 					<view class="bar-more" @tap="goRecord">
 						<text class="bar-more-text">全部</text>
-						<text class="bar-more-icon">❯</text>
+						<text class="bar-more-icon">›</text>
 					</view>
 				</view>
-				<view class="record-list">
-					<view class="record-item" v-for="(item, idx) in withdrawRecords" :key="idx">
+				<view class="record-list" v-if="settlementList.length > 0">
+					<view
+						class="record-item"
+						v-for="(item, idx) in settlementList"
+						:key="item.settlementId"
+						@tap="goDetail(item.settlementId)"
+					>
 						<view class="record-left">
-							<text class="record-title">{{ item.title }}</text>
-							<text class="record-time">{{ item.time }}</text>
+							<text class="record-title">{{ item.settleDate || '--' }} 结算单</text>
+							<text class="record-time">订单数: {{ item.totalOrders || 0 }} · 充电量: {{ fmtEnergy(item.totalEnergy) }}</text>
+							<text class="record-time" v-if="item.settleTime">{{ item.settleTime }}</text>
 						</view>
 						<view class="record-right">
-							<text class="record-amount">-¥{{ item.amount }}</text>
-							<text class="record-status" :class="'status-' + item.statusType">{{ item.status }}</text>
+							<text class="record-amount">¥{{ fmtAmt(item.settleAmount) }}</text>
+							<text class="record-status" :class="'status-' + (item.status === '1' ? 'done' : 'pending')">{{ item.status === '1' ? '已结算' : '待结算' }}</text>
 						</view>
 					</view>
 				</view>
-			</view>
-
-			<!-- 结算规则 -->
-			<view class="info-section">
-				<view class="section-title">
-					<view class="title-line line-blue"></view>
-					<text class="title-text">结算规则</text>
-				</view>
-				<view class="rule-card">
-					<view class="rule-row">
-						<text class="rule-label">结算周期</text>
-						<text class="rule-value">T+1 自动结算</text>
-					</view>
-					<view class="rule-row">
-						<text class="rule-label">手续费率</text>
-						<text class="rule-value">0.6%</text>
-					</view>
-					<view class="rule-row">
-						<text class="rule-label">最低提现</text>
-						<text class="rule-value">¥100.00</text>
-					</view>
-					<view class="rule-row">
-						<text class="rule-label">到账时间</text>
-						<text class="rule-value">1-3个工作日</text>
-					</view>
+				<view v-else class="empty-hint">
+					<text>暂无结算数据</text>
 				</view>
 			</view>
 
@@ -130,50 +109,90 @@
 </template>
 
 <script>
+import { getSettlementList, exportSettlement } from '@/api/charger/settlement'
+
 export default {
 	data() {
+		var rows = []
+		var colors = ['#f59e0b', '#f97316', '#fb923c', '#fbbf24', '#fcd34d', '#fde68a']
+		for (var r = 0; r < 7; r++) {
+			var dots = []
+			var count = 4 + Math.floor(Math.random() * 3)
+			for (var c = 0; c < count; c++) {
+				var color = colors[Math.floor(Math.random() * colors.length)]
+				var size = 60 + Math.floor(Math.random() * 70)
+				var dur = 2.5 + Math.random() * 2.5
+				var delay = Math.random() * 2.5
+				var alpha = 0.08 + Math.random() * 0.18
+				dots.push({
+					style: 'width:' + size + 'rpx;height:' + size + 'rpx;background:radial-gradient(circle,' + color + ',' + color + '00);opacity:' + alpha.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's;'
+				})
+			}
+			rows.push({ dots: dots })
+		}
 		return {
 			isReady: false,
-			glowRows: [],
-			withdrawRecords: [
-				{ title: '提现至银行卡(6222****1234)', time: '2026-06-01 14:30', amount: '2,000.00', status: '已到账', statusType: 'done' },
-				{ title: '提现至银行卡(6222****1234)', time: '2026-05-25 10:15', amount: '3,500.00', status: '已到账', statusType: 'done' },
-				{ title: '提现至银行卡(6222****1234)', time: '2026-05-18 16:45', amount: '1,500.00', status: '处理中', statusType: 'pending' }
-			]
+			glowRows: rows,
+			settlementList: [],
+			summary: {
+				totalAmount: '0.00',
+				settleAmount: '0.00',
+				withdrawAmount: '0.00',
+				platformCommission: '0.00',
+				totalOrders: 0
+			}
 		}
 	},
 	created() {
-		this.buildGlowRows()
+		this.loadSettlements()
 		var self = this
 		setTimeout(function() { self.isReady = true }, 200)
 	},
 	methods: {
-		buildGlowRows() {
-			var rows = []
-			var colors = ['#f59e0b', '#f97316', '#fb923c', '#fbbf24']
-			for (var r = 0; r < 5; r++) {
-				var dots = []
-				var count = 3 + Math.floor(Math.random() * 4)
-				for (var c = 0; c < count; c++) {
-					var color = colors[Math.floor(Math.random() * colors.length)]
-					dots.push({ style: 'width:' + (3 + Math.floor(Math.random() * 6)) + 'px;height:' + (3 + Math.floor(Math.random() * 6)) + 'px;background:' + color + ';animation-duration:' + (2 + Math.random() * 3) + 's;animation-delay:' + Math.random() * 2 + 's;' })
+		goBack() { uni.navigateBack({ delta: 1 }) },
+		loadSettlements() {
+			var self = this
+			getSettlementList({ pageSize: 100 }).then(function(res) {
+				if (res.code === 200 && res.rows) {
+					self.settlementList = res.rows || []
+					self.calcSummary()
 				}
-				rows.push({ dots: dots })
-			}
-			this.glowRows = rows
+			}).catch(function() {})
 		},
-		goBack() { uni.navigateBack() },
-		goRecord() { uni.showToast({ title: '提现记录', icon: 'none', duration: 1500 }) },
+		calcSummary() {
+			var list = this.settlementList
+			var totalAmt = 0, settleAmt = 0, withdrawAmt = 0, commission = 0, totalOrd = 0
+			for (var i = 0; i < list.length; i++) {
+				totalAmt += Number(list[i].totalAmount) || 0
+				settleAmt += Number(list[i].settleAmount) || 0
+				withdrawAmt += Number(list[i].withdrawAmount) || 0
+				commission += Number(list[i].platformCommission) || 0
+				totalOrd += Number(list[i].totalOrders) || 0
+			}
+			this.summary = {
+				totalAmount: totalAmt.toFixed(2),
+				settleAmount: settleAmt.toFixed(2),
+				withdrawAmount: withdrawAmt.toFixed(2),
+				platformCommission: commission.toFixed(2),
+				totalOrders: totalOrd
+			}
+		},
+		goDetail(settlementId) {
+			uni.navigateTo({ url: '/pages/mine/charge-pile/charge-review-detail?settlementId=' + settlementId })
+		},
+		goRecord() {
+			uni.navigateTo({ url: '/pages/mine/charge-pile/charge-review-list' })
+		},
 		goWithdraw() {
-			uni.showModal({
-				title: '提现确认',
-				content: '确认提现至绑定的银行卡？',
-				success: function(res) {
-					if (res.confirm) {
-						uni.showToast({ title: '提现申请已提交', icon: 'success' })
-					}
-				}
-			})
+			this.goRecord()
+		},
+		fmtAmt(val) {
+			if (val === undefined || val === null) return '0.00'
+			return Number(val).toFixed(2)
+		},
+		fmtEnergy(val) {
+			if (!val) return '0'
+			return Number(val).toFixed(1) + 'kWh'
 		}
 	}
 }
@@ -183,21 +202,21 @@ export default {
 .page { min-height: 100vh; background: linear-gradient(180deg, #fff7ed 0%, #fffbeb 30%, #fefce8 60%, #fff7ed 100%); opacity: 0; transition: opacity 0.5s ease; }
 .page-ready { opacity: 1; }
 .glow-matrix { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-.glow-row { display: flex; justify-content: space-around; padding: 20rpx 30rpx; }
-.glow-spot { border-radius: 50%; filter: blur(6px); opacity: 0; animation: glowPulse ease-in-out infinite alternate; }
-@keyframes glowPulse { 0% { opacity: 0; transform: scale(0.6); } 50% { opacity: 0.5; } 100% { opacity: 0; transform: scale(1.4); } }
-.overlay-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, rgba(255,247,237,0.3) 0%, rgba(255,251,235,0.43) 38%, rgba(254,252,232,0.55) 66%, rgba(255,247,237,0.63) 100%); z-index: 1; pointer-events: none; }
-.main-scroll { position: relative; z-index: 2; }
+.glow-row { display: flex; justify-content: space-around; padding: 24rpx 20rpx; }
+.glow-spot { border-radius: 50%; flex-shrink: 0; animation: glowPulse ease-in-out infinite alternate; }
+@keyframes glowPulse { 0% { opacity: 0.15; transform: scale(0.85); } 50% { opacity: 0.6; } 100% { opacity: 0.15; transform: scale(1.25); } }
+.overlay-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, rgba(255,247,237,0.92) 0%, rgba(255,251,235,0.95) 35%, rgba(254,252,232,0.96) 65%, rgba(255,251,235,0.97) 100%); pointer-events: none; z-index: 1; }
+.main-scroll { position: relative; z-index: 2; height: 100vh; }
 
-.header { position: relative; padding: 30rpx 28rpx 24rpx; display: flex; align-items: center; }
-.header-bg { position: absolute; top: -60rpx; left: -40rpx; right: -40rpx; bottom: 0; background: radial-gradient(ellipse at 20% 30%, rgba(251,146,60,0.12) 0%, transparent 60%), radial-gradient(ellipse at 80% 50%, rgba(250,204,21,0.1) 0%, transparent 55%); border-radius: 0 0 60rpx 60rpx; }
-.back-btn { width: 60rpx; height: 60rpx; border-radius: 30rpx; background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 1; box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06); }
-.back-icon { font-size: 28rpx; color: #92400e; }
-.btn-hover { opacity: 0.7; transform: scale(0.95); }
-.header-info { flex: 1; margin-left: 20rpx; z-index: 1; }
-.header-title { font-size: 36rpx; font-weight: 700; color: #451a03; display: block; }
-.header-sub { font-size: 24rpx; color: #a16207; margin-top: 4rpx; display: block; }
-.header-right { z-index: 1; }
+.header { position: relative; padding: 28rpx 28rpx 24rpx; display: flex; align-items: center; overflow: visible; }
+.header-bg { position: absolute; top: -120rpx; left: -40rpx; right: -40rpx; bottom: -40rpx; background: linear-gradient(135deg, #f59e0b 0%, #f97316 35%, #fb923c 65%, #dba74 100%); border-radius: 0 0 60rpx 60rpx; }
+.back-btn { width: 64rpx; height: 64rpx; border-radius: 50%; background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 2; box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06); }
+.btn-hover { transform: scale(0.9); opacity: 0.7; }
+.back-icon { font-size: 32rpx; color: #f97306; font-weight: bold; }
+.header-info { flex: 1; margin-left: 20rpx; z-index: 2; display: flex; flex-direction: column; }
+.header-title { font-size: 38rpx; font-weight: 800; color: #451a03; letter-spacing: 1rpx; }
+.header-sub { font-size: 24rpx; color: #a16207; margin-top: 6rpx; font-weight: 500; }
+.header-right { z-index: 2; }
 .record-icon { font-size: 32rpx; padding: 12rpx; }
 
 /* 余额卡片 */
@@ -224,28 +243,21 @@ export default {
 .bar-more-icon { font-size: 20rpx; color: #a16207; margin-left: 4rpx; }
 .income-grid { display: flex; flex-wrap: wrap; gap: 16rpx; }
 .income-item { width: calc(50% - 8rpx); background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); border-radius: 16rpx; padding: 24rpx; box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.04); }
-.income-val { font-size: 32rpx; font-weight: 700; color: #f59e0b; display: block; }
+.income-val { font-size: 32rpx; font-weight: 700; color: #f59e0b; display: block; word-break: break-all; }
 .income-label { font-size: 22rpx; color: #78716c; margin-top: 4rpx; display: block; }
-.income-trend { font-size: 20rpx; margin-top: 6rpx; display: block; }
-.income-trend.up { color: #22c55e; }
 
-/* 提现记录 */
+/* 结算明细 */
 .record-list { background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); border-radius: 20rpx; overflow: hidden; box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.04); }
 .record-item { display: flex; justify-content: space-between; align-items: center; padding: 24rpx; border-bottom: 1rpx solid #f5f5f4; }
 .record-item:last-child { border-bottom: none; }
-.record-left { flex: 1; }
-.record-title { font-size: 26rpx; color: #1c1917; display: block; }
+.record-left { flex: 1; min-width: 0; }
+.record-title { font-size: 26rpx; color: #1c1917; display: block; font-weight: 600; }
 .record-time { font-size: 22rpx; color: #a8a29e; margin-top: 4rpx; display: block; }
-.record-right { text-align: right; }
-.record-amount { font-size: 28rpx; font-weight: 700; color: #dc2626; display: block; }
+.record-right { text-align: right; flex-shrink: 0; margin-left: 12rpx; }
+.record-amount { font-size: 28rpx; font-weight: 700; color: #d97706; display: block; }
 .record-status { font-size: 22rpx; padding: 4rpx 12rpx; border-radius: 12rpx; margin-top: 4rpx; display: inline-block; }
 .status-done { background: #dcfce7; color: #16a34a; }
 .status-pending { background: #fef3c7; color: #b45309; }
 
-/* 结算规则 */
-.rule-card { background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); border-radius: 20rpx; overflow: hidden; box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.04); }
-.rule-row { display: flex; justify-content: space-between; align-items: center; padding: 20rpx 24rpx; border-bottom: 1rpx solid #f5f5f4; }
-.rule-row:last-child { border-bottom: none; }
-.rule-label { font-size: 26rpx; color: #78716c; }
-.rule-value { font-size: 26rpx; color: #1c1917; font-weight: 500; }
+.empty-hint { background: rgba(255,255,255,0.85); border-radius: 20rpx; padding: 60rpx 0; text-align: center; font-size: 26rpx; color: #a8a29e; }
 </style>

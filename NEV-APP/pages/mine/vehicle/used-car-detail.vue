@@ -173,7 +173,10 @@
 </template>
 
 <script>
-var USE_MOCK = true
+var USE_MOCK = false
+
+import request from '@/utils/request'
+import { getUsedCarDetail } from '@/api/vehicle/vehicle'
 
 function mockGetUsedCarDetail(usedId) {
   var mockDataMap = {
@@ -347,14 +350,11 @@ export default {
         var res = mockGetUsedCarDetail(self.usedId)
         setTimeout(function() { self.handleRes(res) }, 300)
       } else {
-        uni.request({
-          url: '/merchant/vehicle/used/' + self.usedId,
-          method: 'GET',
-          success: function(res) { self.handleRes(res.data) },
-          fail: function(err) {
-            self.loading = false
-            uni.showToast({ title: '获取数据失败', icon: 'none' })
-          }
+        getUsedCarDetail(self.usedId).then(function(res) {
+          self.handleRes(res)
+        }).catch(function(err) {
+          self.loading = false
+          uni.showToast({ title: '获取数据失败', icon: 'none' })
         })
       }
     },
@@ -363,7 +363,55 @@ export default {
       var self = this
       self.loading = false
       if (res.code === 200 && res.data) {
-        self.car = res.data
+        var v = res.data
+        self.car = {
+          usedId: v.usedId || v.vehicleId,
+          vehicleId: v.vehicleId,
+          name: v.modelName || v.title || '-',
+          price: v.guidePrice || 0,
+          originalPrice: v.originalPrice || 0,
+          mileage: v.mileage || 0,
+          licenseYear: v.licenseYear || '',
+          licenseMonth: v.licenseMonth || '',
+          licenseCity: v.licenseCity || '',
+          transferCount: v.transferCount || 0,
+          batterySoh: v.batterySoh || 0,
+          batteryCycles: v.batteryCycles || 0,
+          batteryDiagnosis: v.batteryDiagnosis || 'poor',
+          valuationPrice: v.valuationPrice || 0,
+          valuationInfo: v.valuationInfo || '-',
+          color: v.color || '-',
+          stock: v.stock || 0,
+          status: String(v.status || '0'),
+          description: v.description || '',
+          tags: v.tags ? String(v.tags).split(',').filter(Boolean) : [],
+          viewCount: v.viewCount || 0
+        }
+      } else if (res.code === 1 && res.data) {
+        var v = res.data
+        self.car = {
+          usedId: v.usedId || v.vehicleId,
+          vehicleId: v.vehicleId,
+          name: v.modelName || v.title || '-',
+          price: v.guidePrice || 0,
+          originalPrice: v.originalPrice || 0,
+          mileage: v.mileage || 0,
+          licenseYear: v.licenseYear || '',
+          licenseMonth: v.licenseMonth || '',
+          licenseCity: v.licenseCity || '',
+          transferCount: v.transferCount || 0,
+          batterySoh: v.batterySoh || 0,
+          batteryCycles: v.batteryCycles || 0,
+          batteryDiagnosis: v.batteryDiagnosis || 'poor',
+          valuationPrice: v.valuationPrice || 0,
+          valuationInfo: v.valuationInfo || '-',
+          color: v.color || '-',
+          stock: v.stock || 0,
+          status: String(v.status || '0'),
+          description: v.description || '',
+          tags: v.tags ? String(v.tags).split(',').filter(Boolean) : [],
+          viewCount: v.viewCount || 0
+        }
       }
     },
 

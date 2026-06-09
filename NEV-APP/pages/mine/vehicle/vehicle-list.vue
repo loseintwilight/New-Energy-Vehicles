@@ -105,6 +105,13 @@
           hover-class="card-hover"
           @tap="goDetail(item)"
         >
+          <!-- 顶部：右上角删除按钮 -->
+          <view class="card-del-row">
+            <view class="card-del-btn" @tap.stop="doDelete(item)" hover-class="card-del-hover">
+              <text class="card-del-text">删除</text>
+            </view>
+          </view>
+
           <!-- 左侧彩色状态条 -->
           <view class="color-bar" :class="'cb-' + item.status"></view>
           <!-- 卡片主体：左右布局 -->
@@ -190,6 +197,8 @@
 </template>
 
 <script>
+import { listVehicle, delVehicle } from '@/api/vehicle/vehicle'
+
 export default {
   data: function() {
     return {
@@ -201,39 +210,12 @@ export default {
       sortField: '',       // '' | 'price' | 'range'
       sortAsc: true,
       page: 1,
-      pageSize: 4,
+      pageSize: 10,
       loadingMore: false,
       noMoreData: false,
 
-      /* Mock车辆数据（新车 + 二手车混合，字段对齐stad_vehicle + stad_vehicle_used） */
-      mockVehicles: [
-        /* --- 新车 --- */
-        { vehicleId: 1, name: '比亚迪海豹 EV 700km 四驱旗舰版',
-          price: 228000, range: 700, battery: 82.5, fastCharge: '28分钟', stock: 5, status: '1', vehicleType: 'new' },
-        { vehicleId: 2, name: '特斯拉 Model Y 后驱版',
-          price: 263900, range: 545, battery: 78.4, fastCharge: '25分钟', stock: 3, status: '1', vehicleType: 'new' },
-        { vehicleId: 3, name: '蔚来 ES6 75kWh 运动版',
-          price: 338000, range: 490, battery: 75.0, fastCharge: '30分钟', stock: 2, status: '1', vehicleType: 'new' },
-        { vehicleId: 4, name: '理想 L7 Pro 增程版',
-          price: 319800, range: 1315, battery: 42.8, fastCharge: '35分钟', stock: 4, status: '1', vehicleType: 'new' },
-        { vehicleId: 5, name: '比亚迪汉 DM-i 冠军版',
-          price: 189800, range: 1210, battery: 37.5, fastCharge: '40分钟', stock: 6, status: '1', vehicleType: 'new' },
-        { vehicleId: 6, name: '问界 M5 纯电版',
-          price: 259800, range: 620, battery: 80.0, fastCharge: '27分钟', stock: 0, status: '3', vehicleType: 'new' },
-        /* --- 二手车（含used-car专属字段）--- */
-        { vehicleId: 101, name: '比亚迪海豹 EV 700km 四驱旗舰版(二手)',
-          price: 168000, originalPrice: 228000, mileage: 2.8, licenseYear: 2024, licenseMonth: 6,
-          batterySoh: 96.5, transferCount: 0, stock: 1, status: '1', vehicleType: 'used', usedId: 1 },
-        { vehicleId: 102, name: '特斯拉 Model Y 后驱版(二手)',
-          price: 195000, originalPrice: 263900, mileage: 4.2, licenseYear: 2023, licenseMonth: 11,
-          batterySoh: 92.0, transferCount: 1, stock: 1, status: '1', vehicleType: 'used', usedId: 2 },
-        { vehicleId: 103, name: '蔚来 ES6 75kWh 运动版(二手)',
-          price: 248000, originalPrice: 338000, mileage: 5.6, licenseYear: 2023, licenseMonth: 5,
-          batterySoh: 88.2, transferCount: 0, stock: 1, status: '1', vehicleType: 'used', usedId: 3 },
-        { vehicleId: 104, name: '理想 L7 Pro 增程版(二手)',
-          price: 235000, originalPrice: 319800, mileage: 7.8, licenseYear: 2022, licenseMonth: 9,
-          batterySoh: 82.5, transferCount: 2, stock: 0, status: '2', vehicleType: 'used', usedId: 4 }
-      ],
+      /* 车辆数据（从API加载） */
+      vehicles: [],
 
       /* 状态筛选（与stad_vehicle.status对齐：0=待审核 1=在售 2=已卖 3=下架） */
       statusList: [
@@ -263,13 +245,13 @@ export default {
     /* 筛选 + 排序后的完整列表 */
     filteredList: function() {
       var that = this
-      var list = that.mockVehicles.slice()
+      var list = that.vehicles.slice()
 
-      /* 关键词搜索（仅搜索name字段，DB中无独立brand/model字段） */
+      /* 关键词搜索 */
       if (that.searchKey && that.searchKey.trim() !== '') {
         var key = that.searchKey.trim().toLowerCase()
         list = list.filter(function(v) {
-          return v.name.toLowerCase().indexOf(key) !== -1
+          return (v.name || '').toLowerCase().indexOf(key) !== -1
         })
       }
 
@@ -304,10 +286,9 @@ export default {
 
   created: function() {
     this.buildGlowRows()
+    this.loadVehicles()
     var that = this
-    setTimeout(function() {
-      that.isReady = true
-    }, 200)
+    setTimeout(function() { that.isReady = true }, 200)
   },
 
   methods: {
@@ -333,6 +314,40 @@ export default {
       this.glowRows = rows
     },
 
+    loadVehicles: function() {
+      var self = this
+      var params = { pageNum: 1, pageSize: 100 }
+      if (self.currentStatus) params.status = self.currentStatus
+      if (self.vehicleTypeFilter) params.vehicleType = self.vehicleTypeFilter
+      listVehicle(params).then(function(res) {
+        if (res.code === 200) {
+          var rows = res.rows || []
+          self.vehicles = rows.map(function(v) {
+            return {
+              vehicleId: v.vehicleId,
+              name: v.modelName || v.title || '-',
+              price: v.guidePrice || 0,
+              range: v.rangeKm || '-',
+              battery: v.batteryCapacity || '-',
+              fastCharge: v.chargeTimeFast || '-',
+              stock: v.stock || 0,
+              status: v.status || '0',
+              vehicleType: v.vehicleType || 'new',
+              mileage: v.mileage || '-',
+              licenseYear: v.licenseYear || '-',
+              licenseMonth: v.licenseMonth || '-',
+              batterySoh: v.batterySoh || '-',
+              usedId: v.usedId,
+              description: v.description || ''
+            }
+          })
+          self.noMoreData = self.vehicles.length <= self.pageSize
+        }
+      }).catch(function() {
+        console.log('获取车辆列表失败')
+      })
+    },
+
     /* ---------- 搜索与筛选 ---------- */
     clearSearch: function() {
       this.searchKey = ''
@@ -349,14 +364,14 @@ export default {
       this.noMoreData = false
     },
 
-    /* 车辆类型切换（本地筛选，不跳转） */
     switchType: function(value) {
       this.vehicleTypeFilter = value
       this.page = 1
       this.noMoreData = false
+      this.loadVehicles()
     },
 
-    /* 状态值→中文（与stad_vehicle.status对齐） */
+    /* 状态值→中文 */
     getStatusLabel: function(status) {
       var map = { '0': '待审核', '1': '在售', '2': '已卖', '3': '下架' }
       return map[status] || '未知'
@@ -413,11 +428,26 @@ export default {
     },
 
     goDetail: function(item) {
-      if (item.vehicleType === 'used' && item.usedId) {
-        uni.navigateTo({ url: '/pages/mine/vehicle/used-car-detail?usedId=' + item.usedId })
-      } else {
-        uni.navigateTo({ url: '/pages/mine/vehicle/vehicle-detail?vehicleId=' + encodeURIComponent(item.vehicleId) })
-      }
+      uni.navigateTo({ url: '/pages/mine/vehicle/vehicle-detail?vehicleId=' + encodeURIComponent(item.vehicleId) })
+    },
+
+    doDelete: function(item) {
+      var self = this
+      uni.showModal({
+        title: '删除确认',
+        content: '确定要删除「' + item.name + '」吗？删除后数据无法恢复！',
+        confirmColor: '#dc2626',
+        success: function(res) {
+          if (res.confirm) {
+            delVehicle(item.vehicleId).then(function() {
+              uni.showToast({ title: '已删除', icon: 'success' })
+              self.loadVehicles()
+            }).catch(function() {
+              uni.showToast({ title: '删除失败', icon: 'none' })
+            })
+          }
+        }
+      })
     }
   }
 }
@@ -821,7 +851,29 @@ export default {
   overflow: hidden;
   transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
+}
+
+/* 顶部删除按钮行 */
+.card-del-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12rpx 20rpx 4rpx 20rpx;
+}
+.card-del-btn {
+  padding: 4rpx 18rpx;
+  border-radius: 8rpx;
+  border: 1rpx solid #fecaca;
+  background: #fef2f2;
+}
+.card-del-text {
+  font-size: 22rpx;
+  color: #dc2626;
+  font-weight: 600;
+}
+.card-del-hover {
+  background: #fee2e2;
+  transform: scale(0.95);
 }
 
 /* ========== 状态彩色条（基于stad_vehicle.status）========== */
@@ -865,7 +917,7 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: row;
-  padding: 22rpx 22rpx 22rpx 28rpx;
+  padding: 16rpx 22rpx 22rpx 28rpx;
   position: relative;
   z-index: 2;
 }
@@ -954,14 +1006,14 @@ export default {
   border: 1rpx solid rgba(245, 158, 11, 0.2);
 }
 .sb-1 {
-  background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(74,222,128,0.06));
-  color: #16a34a;
-  border: 1rpx solid rgba(34, 197, 94, 0.2);
+  background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(99,102,241,0.06));
+  color: #3b82f6;
+  border: 1rpx solid rgba(59, 130, 246, 0.2);
 }
 .sb-2 {
-  background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(96,165,250,0.06));
-  color: #2563eb;
-  border: 1rpx solid rgba(59, 130, 246, 0.2);
+  background: linear-gradient(135deg, rgba(22,163,74,0.12), rgba(34,197,94,0.06));
+  color: #16a34a;
+  border: 1rpx solid rgba(22, 163, 74, 0.2);
 }
 .sb-3 {
   background: linear-gradient(135deg, rgba(156,163,175,0.12), rgba(209,213,219,0.06));

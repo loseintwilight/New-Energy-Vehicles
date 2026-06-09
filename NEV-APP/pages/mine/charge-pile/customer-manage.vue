@@ -1,4 +1,4 @@
-﻿<template>
+<template>
 	<view class="page" :class="{ 'page-ready': isReady }">
 		<view class="glow-matrix">
 			<view class="glow-row" v-for="(row, ri) in glowRows" :key="ri">
@@ -101,7 +101,7 @@ export default {
 			this.glowRows = rows
 		},
 		goBack() { uni.navigateBack() },
-		addCustomer() { uni.showToast({ title: '添加客户', icon: 'none', duration: 1500 }) },
+		addCustomer() { uni.navigateTo({ url: '/pages/mine/charge-pile/customer-edit' }) },
 		goDetail(id) { uni.showToast({ title: '客户详情 ID:' + id, icon: 'none', duration: 1500 }) }
 	}
 }
@@ -118,10 +118,11 @@ export default {
 .main-scroll { position: relative; z-index: 2; }
 
 .header { position: relative; padding: 30rpx 28rpx 24rpx; display: flex; align-items: center; }
-.header-bg { position: absolute; top: -60rpx; left: -40rpx; right: -40rpx; bottom: 0; background: radial-gradient(ellipse at 20% 30%, rgba(251,146,60,0.12) 0%, transparent 60%), radial-gradient(ellipse at 80% 50%, rgba(250,204,21,0.1) 0%, transparent 55%); border-radius: 0 0 60rpx 60rpx; }
+.header-bg { position: absolute; top: -60rpx; left: -40rpx; right: -40rpx; bottom: 0; background: radial-gradient(ellipse at 20% 30%, rgba(251,146,60,0.12) 0%, transparent 60%), radial-gradient(ellipse at 80% 50%, rgba(250,204,21,0.1) 0%, transparent 55%); border-radius: 0 0 60rpx 60rpx; pointer-events: none; }
 .back-btn { width: 60rpx; height: 60rpx; border-radius: 30rpx; background: rgba(255,255,255,0.75); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 1; box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06); }
 .back-icon { font-size: 28rpx; color: #92400e; }
 .header-info { flex: 1; margin-left: 20rpx; z-index: 1; }
+.header-right { z-index: 1; position: relative; }
 .header-title { font-size: 36rpx; font-weight: 700; color: #451a03; display: block; }
 .header-sub { font-size: 24rpx; color: #a16207; margin-top: 4rpx; display: block; }
 .header-right { z-index: 1; }

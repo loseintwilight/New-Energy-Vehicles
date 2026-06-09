@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mine.mapper.StadCarbonLedgerMapper">
+
+    <resultMap type="com.ruoyi.mine.domain.MineStadCarbonLedger" id="StadCarbonLedgerResult">
+        <result property="ledgerId"     column="ledger_id"      />
+        <result property="userId"       column="user_id"        />
+        <result property="nickName"     column="nick_name"      />
+        <result property="recordType"   column="record_type"    />
+        <result property="ruleId"       column="rule_id"        />
+        <result property="points"       column="points"         />
+        <result property="balanceAfter" column="balance_after"  />
+        <result property="sourceType"   column="source_type"    />
+        <result property="sourceId"     column="source_id"      />
+        <result property="remark"       column="remark"         />
+        <result property="createTime"   column="create_time"    />
+    </resultMap>
+
+    <sql id="selectCarbonLedgerVo">
+        select l.ledger_id, l.user_id, u.nick_name, l.record_type, l.rule_id, l.points, l.balance_after, l.source_type, l.source_id, l.remark, l.create_time
+        from stad_carbon_ledger l
+        left join sys_user u on l.user_id = u.user_id
+    </sql>
+
+    <select id="selectStadCarbonLedgerById" parameterType="Long" resultMap="StadCarbonLedgerResult">
+        <include refid="selectCarbonLedgerVo"/> where l.ledger_id = #{ledgerId}
+    </select>
+
+    <select id="selectStadCarbonLedgerByUserId" parameterType="Long" resultMap="StadCarbonLedgerResult">
+        <include refid="selectCarbonLedgerVo"/> where l.user_id = #{userId} order by l.ledger_id desc
+    </select>
+
+    <select id="selectStadCarbonLedgerList" parameterType="com.ruoyi.mine.domain.MineStadCarbonLedger" resultMap="StadCarbonLedgerResult">
+        <include refid="selectCarbonLedgerVo"/>
+        <where>
+            <if test="userId != null">AND l.user_id = #{userId}</if>
+            <if test="recordType != null">AND l.record_type = #{recordType}</if>
+            <if test="sourceType != null">AND l.source_type = #{sourceType}</if>
+        </where>
+        order by l.ledger_id desc
+    </select>
+
+    <insert id="insertStadCarbonLedger" parameterType="com.ruoyi.mine.domain.MineStadCarbonLedger" useGeneratedKeys="true" keyProperty="ledgerId">
+        insert into stad_carbon_ledger
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="recordType != null">record_type,</if>
+            <if test="ruleId != null">rule_id,</if>
+            <if test="points != null">points,</if>
+            <if test="balanceAfter != null">balance_after,</if>
+            <if test="sourceType != null">source_type,</if>
+            <if test="sourceId != null">source_id,</if>
+            <if test="remark != null">remark,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="recordType != null">#{recordType},</if>
+            <if test="ruleId != null">#{ruleId},</if>
+            <if test="points != null">#{points},</if>
+            <if test="balanceAfter != null">#{balanceAfter},</if>
+            <if test="sourceType != null">#{sourceType},</if>
+            <if test="sourceId != null">#{sourceId},</if>
+            <if test="remark != null">#{remark},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateStadCarbonLedger" parameterType="com.ruoyi.mine.domain.MineStadCarbonLedger">
+        update stad_carbon_ledger
+        <set>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="recordType != null">record_type = #{recordType},</if>
+            <if test="ruleId != null">rule_id = #{ruleId},</if>
+            <if test="points != null">points = #{points},</if>
+            <if test="balanceAfter != null">balance_after = #{balanceAfter},</if>
+            <if test="sourceType != null">source_type = #{sourceType},</if>
+            <if test="sourceId != null">source_id = #{sourceId},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        where ledger_id = #{ledgerId}
+    </update>
+
+    <delete id="deleteStadCarbonLedgerById" parameterType="Long">
+        delete from stad_carbon_ledger where ledger_id = #{ledgerId}
+    </delete>
+
+    <delete id="deleteStadCarbonLedgerByIds" parameterType="Long">
+        delete from stad_carbon_ledger where ledger_id in
+        <foreach item="ledgerId" collection="array" open="(" separator="," close=")">#{ledgerId}</foreach>
+    </delete>
+
+</mapper>

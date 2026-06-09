@@ -26,41 +26,38 @@
 
 		<!-- 订单列表 -->
 		<view class="order-list">
-			<view class="order-card" v-for="(order, index) in orderList" :key="order.order_id" @click="handleDetail(order)">
+			<view class="order-card" v-for="(order, index) in orderList" :key="order.orderId" @click="handleDetail(order)">
 				<view class="order-head">
-					<text class="order-no">#{{ order.order_no }}</text>
-					<view class="order-status" :class="'os-' + order.order_status">{{ statusText(order.order_status) }}</view>
+					<text class="order-no">#{{ order.orderNo }}</text>
+					<view class="order-status" :class="'os-' + order.orderStatus">{{ statusText(order.orderStatus) }}</view>
 				</view>
-				<view class="order-service">{{ order.service_item }}</view>
+				<view class="order-service">{{ order.serviceItem }}</view>
 				<view class="order-info">
 					<view class="info-row">
 						<text class="info-label">门店</text>
-						<text class="info-val">{{ order.shop_name }}</text>
+						<text class="info-val">{{ order.shopName }}</text>
 					</view>
 					<view class="info-row">
 						<text class="info-label">金额</text>
-						<text class="info-val info-price">¥{{ order.total_amount }}</text>
+						<text class="info-val info-price">¥{{ order.totalAmount }}</text>
 					</view>
-					<view class="info-row" v-if="order.pay_status === '1'">
+					<view class="info-row" v-if="order.payStatus === '1'">
 						<text class="info-label">实付</text>
-						<text class="info-val info-price">¥{{ order.paid_amount }}</text>
+						<text class="info-val info-price">¥{{ order.paidAmount }}</text>
 					</view>
 					<view class="info-row">
 						<text class="info-label">预约</text>
-						<text class="info-val">{{ order.expect_date }} {{ order.expect_time_slot === 'am' ? '上午' : '下午' }}</text>
+						<text class="info-val">{{ order.expectDate }} {{ order.expectTimeSlot === 'am' ? '上午' : '下午' }}</text>
 					</view>
 					<view class="info-row">
 						<text class="info-label">支付</text>
-						<text class="info-val" :class="order.pay_status === '1' ? 'pay-yes' : 'pay-no'">{{ order.pay_status === '1' ? '已支付' : '未支付' }}</text>
+						<text class="info-val" :class="order.payStatus === '1' ? 'pay-yes' : 'pay-no'">{{ order.payStatus === '1' ? '已支付' : '未支付' }}</text>
 					</view>
 				</view>
-				<view class="order-rating" v-if="order.rating">
-					
-					<text v-for="st in getStars(order.rating,'star')" :key="st.key" :class="st.cls">★</text>
-					<text class="rating-text" v-if="order.comment_content">「{{ order.comment_content }}」</text>
-				</view>
+
 				<view class="order-foot">
-					<text class="order-time">{{ order.create_time }}</text>
+					<text class="order-time">{{ order.createTime }}</text>
+					<text class="order-cancel" v-if="order.orderStatus === '0'" @click.stop="handleCancel(order)">取消预约</text>
 				</view>
 			</view>
 		</view>
@@ -75,6 +72,7 @@
 </template>
 
 <script>
+	import { listOrder, getOrderStats, cancelOrder } from '@/api/maintenance/order'
 	export default {
 		data() {
 			return {
@@ -88,91 +86,74 @@
 		onPullDownRefresh() { this.loadList() },
 		methods: {
 			loadList() {
-				this.loading = true
-				setTimeout(() => {
-					const all = this.mockData()
-					this.stats = {
-						total: all.length,
-						pending: all.filter(o => o.order_status === '0').length,
-						confirmed: all.filter(o => o.order_status === '1').length,
-						completed: all.filter(o => o.order_status === '3').length,
-						cancelled: all.filter(o => o.order_status === '4').length
-					}
-					this.orderList = this.filterStatus ? all.filter(o => o.order_status === this.filterStatus) : all
-					this.loading = false
-					uni.stopPullDownRefresh()
-				}, 300)
+			    this.loading = true
+			    getOrderStats().then(res => { this.stats = res.data }).catch(() => {
+			        // 本地统计
+			        const local = uni.getStorageSync('local_maintenance_orders') || []
+			        this.stats = {
+			            total: local.length,
+			            pending: local.filter(o => o.orderStatus === '0').length,
+			            confirmed: local.filter(o => o.orderStatus === '1').length,
+			            completed: local.filter(o => o.orderStatus === '3').length,
+			            cancelled: local.filter(o => o.orderStatus === '4').length
+			        }
+			    })
+			    listOrder({ pageNum:1, pageSize:50, orderStatus: this.filterStatus }).then(res => {
+			        this.orderList = res.data.list || []
+			        this.loading = false
+			        uni.stopPullDownRefresh()
+			    }).catch(() => {
+			        // 从本地加载
+			        let local = uni.getStorageSync('local_maintenance_orders') || []
+			        if (this.filterStatus) {
+			            local = local.filter(o => o.orderStatus === this.filterStatus)
+			        }
+			        this.orderList = local
+			        this.loading = false
+			        uni.stopPullDownRefresh()
+			    })
 			},
 			handleDetail(order) {
-				this.$modal.msg('订单详情页开发中')
+				this.$tab.navigateTo('/pages/mine/service/orderList/detail?orderId=' + order.orderId + '&local=' + (order.orderNo && order.orderNo.startsWith('LOCAL') ? '1' : '0'))
+			},
+			handleCancel(order) {
+				uni.showModal({
+					title: '取消预约',
+					content: '确定要取消订单 #' + order.orderNo + ' 吗？',
+					success: (res) => {
+						if (res.confirm) {
+							uni.showLoading({ title: '取消中...' })
+							const doCancel = () => {
+								// 后端
+								cancelOrder({ order_id: order.orderId, cancel_reason: '用户主动取消' }).then(() => {
+									uni.hideLoading()
+									uni.showToast({ title: '取消成功', icon: 'success' })
+									this.loadList()
+								}).catch(() => {
+									// 本地取消
+									const local = uni.getStorageSync('local_maintenance_orders') || []
+									const idx = local.findIndex(o => o.orderId === order.orderId)
+									if (idx > -1) {
+										local[idx].orderStatus = '4'
+										local[idx].cancelReason = '用户主动取消'
+										uni.setStorageSync('local_maintenance_orders', local)
+									}
+									uni.hideLoading()
+									uni.showToast({ title: '取消成功', icon: 'success' })
+									this.loadList()
+								})
+							}
+							doCancel()
+						}
+					}
+				})
 			},
 			statusText(s) {
 				const map = { '0': '待确认', '1': '已确认', '2': '服务中', '3': '已完成', '4': '已取消' }
 				return map[s] || '未知'
-			},
-			mockData() {
-				return [
-					{
-						order_id: 1, order_no: 'MC20260528001', shop_name: '旗舰维保中心',
-						service_item: '常规保养 + 电池检测', total_amount: '680.00', paid_amount: '680.00',
-						expect_date: '2026-05-28', expect_time_slot: 'am',
-						order_status: '3', pay_status: '1',
-						rating: 5, comment_content: '服务非常好，专业细致',
-						create_time: '2026-05-27 14:30'
-					},
-					{
-						order_id: 2, order_no: 'MC20260529002', shop_name: '旗舰维保中心',
-						service_item: '空调维修', total_amount: '350.00', paid_amount: '0',
-						expect_date: '2026-05-30', expect_time_slot: 'pm',
-						order_status: '1', pay_status: '0',
-						rating: 0, comment_content: '',
-						create_time: '2026-05-29 09:15'
-					},
-					{
-						order_id: 3, order_no: 'MC20260528003', shop_name: '新城服务站',
-						service_item: '充电桩安装', total_amount: '2800.00', paid_amount: '2800.00',
-						expect_date: '2026-05-28', expect_time_slot: 'am',
-						order_status: '3', pay_status: '1',
-						rating: 4, comment_content: '安装师傅很专业',
-						create_time: '2026-05-26 16:00'
-					},
-					{
-						order_id: 4, order_no: 'MC20260525004', shop_name: '新城服务站',
-						service_item: '故障诊断', total_amount: '200.00', paid_amount: '0',
-						expect_date: '2026-05-25', expect_time_slot: 'am',
-						order_status: '4', pay_status: '0',
-						rating: 0, comment_content: '',
-						cancel_reason: '用户取消',
-						create_time: '2026-05-24 11:20'
-					},
-					{
-						order_id: 5, order_no: 'MC20260529005', shop_name: '高新维保点',
-						service_item: '电池检测', total_amount: '150.00', paid_amount: '150.00',
-						expect_date: '2026-05-29', expect_time_slot: 'am',
-						order_status: '2', pay_status: '1',
-						rating: 0, comment_content: '',
-						create_time: '2026-05-29 08:00'
-					},
-					{
-						order_id: 6, order_no: 'MC20260527006', shop_name: '旗舰维保中心',
-						service_item: '轮胎更换 + 四轮定位', total_amount: '880.00', paid_amount: '880.00',
-						expect_date: '2026-05-27', expect_time_slot: 'am',
-						order_status: '3', pay_status: '1',
-						rating: 5, comment_content: '换了四条轮胎，师傅很细心',
-						create_time: '2026-05-26 10:00'
-					}
-				]
-				},
-				getStars(rating, baseClass) {
-					const filled = Math.floor(rating)
-					const items = []
-					for (let i = 0; i < 5; i++) {
-						items.push({ key: 'k' + i, cls: baseClass + (i < filled ? ' fill' : '') })
-					}
-					return items
-				}
 			}
 		}
+	}
 </script>
 
 <style lang="scss" scoped>
@@ -301,33 +282,31 @@ page { background-color: $bg; }
 .pay-yes { color: $green-dark; }
 .pay-no { color: #f59e0b; }
 
-// 评价
-.order-rating {
-	display: flex;
-	align-items: center;
-	gap: 2px;
-	margin-bottom: 8px;
-	.star { font-size: 12px; color: #e2e8f0; &.fill { color: #f59e0b; } }
-}
-
-.rating-text {
-	font-size: 12px;
-	color: $mute;
-	margin-left: 4px;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	flex: 1;
-}
-
 .order-foot {
 	border-top: 1px solid #f1f5f9;
 	padding-top: 8px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
 }
 
 .order-time {
 	font-size: 11px;
 	color: $mute;
+}
+
+.order-cancel {
+	font-size: 12px;
+	color: #ef4444;
+	font-weight: 500;
+	padding: 4rpx 12rpx;
+	border: 1px solid #fca5a5;
+	border-radius: 20rpx;
+	line-height: 1.6;
+
+	&:active {
+		background: #fef2f2;
+	}
 }
 
 // ====== 空状态 ======

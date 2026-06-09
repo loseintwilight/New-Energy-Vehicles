@@ -36,6 +36,10 @@
             <input class="form-input" v-model="form.name" placeholder="请输入车型完整名称" placeholder-class="ph" />
           </view>
           <view class="form-row">
+            <text class="form-label"><text class="req">*</text>品牌</text>
+            <input class="form-input" v-model="form.brand" placeholder="如：比亚迪、特斯拉、蔚来" placeholder-class="ph" />
+          </view>
+          <view class="form-row">
             <text class="form-label">年款</text>
             <input class="form-input" v-model="form.year" placeholder="如：2026款" placeholder-class="ph" />
           </view>
@@ -152,7 +156,7 @@
 </template>
 
 <script>
-var USE_MOCK = true
+import { getVehicle, addVehicle, updateVehicle } from '@/api/vehicle/vehicle'
 
 var colorOptions = [
   { name: '北极白', value: '#F5F5F5' },
@@ -162,31 +166,6 @@ var colorOptions = [
   { name: '星空黑', value: '#1F2937' },
   { name: '翡翠绿', value: '#059669' }
 ]
-
-function mockGetVehicleDetail(vehicleId) {
-  return {
-    code: 200,
-    data: {
-      vehicleId: vehicleId,
-      brand: '比亚迪',
-      model: '海豹',
-      year: '2026款',
-      type: 'ev',
-      price: '228000',
-      originalPrice: '249800',
-      range: '700',
-      batteryCapacity: '82.5',
-      fastChargeTime: '28分钟',
-      length: '4800',
-      width: '1875',
-      height: '1460',
-      wheelbase: '2920',
-      motorPower: '230',
-      colors: ['北极白', '海洋蓝'],
-      description: '<p>比亚迪海豹是基于e平台3.0打造的纯电中型轿车。</p>'
-    }
-  }
-}
 
 export default {
   data: function() {
@@ -203,9 +182,10 @@ export default {
         { label: '下架', value: '3' }
       ],
       colorOptions: colorOptions,
-      /* 表单字段（严格对齐stad_vehicle + stad_vehicle_spec表） */
+      /* 表单字段（对齐stad_vehicle + stad_vehicle_spec表） */
       form: {
         name: '',            // stad_vehicle.model_name
+        brand: '',           // 品牌名称 → 提交到 description 字段
         year: '',             // stad_vehicle_spec.model_year
         status: '1',          // stad_vehicle.status (默认在售)
         price: '',            // stad_vehicle.guide_price
@@ -213,7 +193,7 @@ export default {
         range: '',            // stad_vehicle_spec.range_km
         batteryCapacity: '',  // stad_vehicle_spec.battery_capacity
         fastChargeTime: '',   // stad_vehicle_spec.charge_time_fast
-        colors: [],           // stad_vehicle.color (单值，前端暂用数组)
+        colors: [],           // stad_vehicle.color
         description: ''       // stad_vehicle.description
       }
     }
@@ -266,36 +246,29 @@ export default {
 
     loadVehicleData: function() {
       var self = this
-      if (USE_MOCK) {
-        var res = mockGetVehicleDetail(self.vehicleId)
-        setTimeout(function() { self.fillFormData(res.data) }, 300)
-      } else {
-        uni.request({
-          url: '/merchant/vehicle/' + self.vehicleId,
-          method: 'GET',
-          success: function(res) {
-            if (res.data && res.data.code === 200) {
-              self.fillFormData(res.data.data)
-            }
-          },
-          fail: function() {
-            uni.showToast({ title: '获取数据失败', icon: 'none' })
-          }
-        })
-      }
+      getVehicle(self.vehicleId).then(function(res) {
+        if (res.code === 1 && res.data) {
+          self.fillFormData(res.data)
+        } else {
+          uni.showToast({ title: res.msg || '获取数据失败', icon: 'none' })
+        }
+      }).catch(function() {
+        uni.showToast({ title: '获取数据失败', icon: 'none' })
+      })
     },
 
     fillFormData: function(data) {
       if (!data) return
-      this.form.name = data.name || data.model_name || ''
-      this.form.year = data.year || data.model_year || ''
+      var spec = data.vehicleSpec || {}
+      this.form.name = data.modelName || data.title || ''
+      this.form.year = spec.modelYear || ''
       this.form.status = String(data.status || '1')
-      this.form.price = data.price !== undefined ? String(data.price) : (data.guide_price !== undefined ? String(data.guide_price) : '')
+      this.form.price = data.guidePrice !== undefined ? String(data.guidePrice) : ''
       this.form.originalPrice = data.originalPrice !== undefined ? String(data.originalPrice) : ''
-      this.form.range = data.range !== undefined ? String(data.range) : (data.range_km !== undefined ? String(data.range_km) : '')
-      this.form.batteryCapacity = data.batteryCapacity !== undefined ? String(data.batteryCapacity) : (data.battery_capacity !== undefined ? String(data.battery_capacity) : '')
-      this.form.fastChargeTime = data.fastChargeTime || data.charge_time_fast || ''
-      this.form.colors = data.colors || (data.color ? [data.color] : [])
+      this.form.range = spec.rangeKm !== undefined ? String(spec.rangeKm) : ''
+      this.form.batteryCapacity = spec.batteryCapacity !== undefined ? String(spec.batteryCapacity) : ''
+      this.form.fastChargeTime = spec.chargeTimeFast || ''
+      this.form.colors = data.color ? [data.color] : []
       this.form.description = data.description || ''
     },
 
@@ -349,54 +322,45 @@ export default {
       if (self.submitting) return
       self.submitting = true
 
-      /* 提交数据严格对齐DB字段名 */
+      /* 组装提交数据 */
       var postData = {
-        model_name: self.form.name,
-        year: self.form.year,
+        vehicleType: 'new',
+        modelName: self.form.name,
+        description: self.form.brand,  // 品牌写入 description 字段
         status: self.form.status,
-        guide_price: parseFloat(self.form.price),
-        original_price: self.form.originalPrice ? parseFloat(self.form.originalPrice) : null,
-        range_km: self.form.range ? parseInt(self.form.range) : null,
-        battery_capacity: self.form.batteryCapacity ? parseFloat(self.form.batteryCapacity) : null,
-        charge_time_fast: self.form.fastChargeTime,
+        guidePrice: parseFloat(self.form.price),
+        originalPrice: self.form.originalPrice ? parseFloat(self.form.originalPrice) : null,
         color: self.form.colors.length > 0 ? self.form.colors[0] : '',
-        description: self.form.description
+        description: self.form.description,
+        vehicleSpec: {
+          rangeKm: self.form.range ? parseInt(self.form.range) : null,
+          batteryCapacity: self.form.batteryCapacity ? parseFloat(self.form.batteryCapacity) : null,
+          chargeTimeFast: self.form.fastChargeTime || null,
+          modelYear: self.form.year || null
+        }
       }
 
-      if (USE_MOCK) {
-        setTimeout(function() {
-          self.submitting = false
-          uni.showToast({
-            title: self.isEdit ? '修改成功' : '添加成功',
-            icon: 'success',
-            duration: 1500,
-            complete: function() {
-              setTimeout(function() { uni.navigateBack({ delta: 1 }) }, 1500)
-            }
-          })
-        }, 600)
+      var apiCall
+      if (self.isEdit) {
+        postData.vehicleId = self.vehicleId
+        if (postData.vehicleSpec) postData.vehicleSpec.vehicleId = self.vehicleId
+        apiCall = updateVehicle(postData)
       } else {
-        var method = self.isEdit ? 'PUT' : 'POST'
-        var url = '/merchant/vehicle' + (self.isEdit ? '/' + self.vehicleId : '')
-        uni.request({
-          url: url,
-          method: method,
-          data: postData,
-          success: function(res) {
-            self.submitting = false
-            if (res.data && res.data.code === 200) {
-              uni.showToast({ title: self.isEdit ? '修改成功' : '添加成功', icon: 'success' })
-              setTimeout(function() { uni.navigateBack({ delta: 1 }) }, 1200)
-            } else {
-              uni.showToast({ title: (res.data && res.data.msg) || '操作失败', icon: 'none' })
-            }
-          },
-          fail: function() {
-            self.submitting = false
-            uni.showToast({ title: '网络异常，请重试', icon: 'none' })
-          }
-        })
+        apiCall = addVehicle(postData)
       }
+
+      apiCall.then(function(res) {
+        self.submitting = false
+        if (res.code === 1) {
+          uni.showToast({ title: self.isEdit ? '修改成功' : '添加成功', icon: 'success' })
+          setTimeout(function() { uni.navigateBack({ delta: 1 }) }, 1200)
+        } else {
+          uni.showToast({ title: res.msg || '操作失败', icon: 'none' })
+        }
+      }).catch(function() {
+        self.submitting = false
+        uni.showToast({ title: '网络异常，请重试', icon: 'none' })
+      })
     }
   }
 }

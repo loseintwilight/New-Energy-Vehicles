@@ -140,6 +140,8 @@
 </template>
 
 <script>
+import { getVehicle } from '@/api/vehicle/vehicle'
+
 export default {
   data() {
     return {
@@ -150,35 +152,47 @@ export default {
   },
   onLoad(options) {
     var self = this
-    this.stock = {
-      id: options.id || 1,
-      name: '比亚迪 海豹',
-      spec: '2025款 冠军版',
-      brand: '比亚迪',
-      color: '亚特兰蒂斯灰',
-      price: '18.58万',
-      warehouse: '济南高新区仓库 A区',
-      currentStock: 15,
-      reserved: 3,
-      available: 12,
-      inTransit: 5,
-      safeStock: 5,
-      status: 'enough',
-      statusText: '充足',
-      updateTime: '2025-06-01 09:30',
-      remark: '热销车型，建议保持库存不低于10台。预计下周到货5台。',
-      logs: [
-        { type: 'in', title: '厂家到货入库', time: '2025-06-01 08:00', count: 5 },
-        { type: 'out', title: '客户提车出库', time: '2025-05-31 16:30', count: 1 },
-        { type: 'out', title: '客户提车出库', time: '2025-05-30 14:20', count: 1 },
-        { type: 'out', title: '展厅调拨出库', time: '2025-05-29 10:00', count: 2 },
-        { type: 'in', title: '厂家到货入库', time: '2025-05-28 09:00', count: 8 }
-      ]
+    var vid = options.id || options.vehicleId
+    if (vid) {
+      self.loadStockDetail(vid)
     }
     this.buildGlowRows()
     setTimeout(function() { self.isReady = true }, 200)
   },
   methods: {
+    loadStockDetail: function(vehicleId) {
+      var self = this
+      getVehicle(vehicleId).then(function(res) {
+        if (res.code === 1 && res.data) {
+          var v = res.data
+          var spec = v.vehicleSpec || {}
+          var stockVal = v.stock || 0
+          var status = stockVal >= 5 ? 'enough' : (stockVal >= 1 ? 'low' : 'out')
+          var statusText = stockVal >= 5 ? '充足' : (stockVal >= 1 ? '紧张' : '缺货')
+          self.stock = {
+            id: v.vehicleId,
+            name: v.modelName || v.title || '-',
+            spec: spec.modelYear ? spec.modelYear + '款' : '',
+            brand: v.description || '-',
+            color: v.color || '-',
+            price: v.guidePrice ? Number(v.guidePrice).toLocaleString() + '万' : '-',
+            currentStock: stockVal,
+            reserved: 0,
+            available: stockVal,
+            inTransit: 0,
+            safeStock: 3,
+            status: status,
+            statusText: statusText,
+            updateTime: v.updateTime || v.createTime || '-',
+            remark: '',
+            logs: []
+          }
+        }
+      }).catch(function() {
+        console.log('获取库存详情失败')
+      })
+    },
+
     buildGlowRows() {
       var rows = []
       var colors = ['#06b6d4', '#0891b2', '#22d3ee', '#67e8f9']
@@ -194,7 +208,13 @@ export default {
       this.glowRows = rows
     },
     goBack() { uni.navigateBack() },
-    goEdit() { uni.showToast({ title: '编辑库存', icon: 'none', duration: 1500 }) }
+    goEdit() {
+      if (this.stock.id) {
+        uni.navigateTo({ url: '/pages/mine/vehicle/vehicle-detail?vehicleId=' + this.stock.id })
+      } else {
+        uni.showToast({ title: '数据未加载', icon: 'none', duration: 1500 })
+      }
+    }
   }
 }
 </script>

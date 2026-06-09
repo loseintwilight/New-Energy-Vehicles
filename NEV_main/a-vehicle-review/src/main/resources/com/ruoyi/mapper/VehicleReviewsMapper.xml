@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mapper.VehicleReviewsMapper">
+
+    <resultMap type="com.ruoyi.domain.VehicleReviews" id="VehicleReviewResult">
+        <result property="reviewId"     column="review_id"/>
+        <result property="vehicleId"    column="vehicle_id"/>
+        <result property="userId"       column="user_id"/>
+        <result property="orderId"      column="order_id"/>
+        <result property="rating"       column="rating"/>
+        <result property="content"      column="content"/>
+        <result property="imageUrl"     column="image_url"/>
+        <result property="isAnonymous"  column="is_anonymous"/>
+        <result property="status"       column="status"/>
+        <result property="createTime"   column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="nickName"     column="nick_name"/>
+        <result property="vehicleName"  column="vehicle_name"/>
+    </resultMap>
+
+    <select id="selectReviewList" resultMap="VehicleReviewResult">
+        select r.review_id, r.vehicle_id, r.user_id, r.order_id, r.rating, r.content,
+               r.image_url, r.is_anonymous, r.status, r.create_time,
+               u.nick_name, v.model_name as vehicle_name
+        from stad_vehicle_review r
+        left join sys_user u on r.user_id = u.user_id
+        left join stad_vehicle v on r.vehicle_id = v.vehicle_id
+        <where>
+            <if test="rating != null">
+                AND r.rating = #{rating}
+            </if>
+            <if test="vehicleId != null">
+                AND r.vehicle_id = #{vehicleId}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (r.content like concat('%',#{keyword},'%')
+                     OR v.model_name like concat('%',#{keyword},'%'))
+            </if>
+            AND r.status = '0'
+        </where>
+        order by r.create_time desc
+    </select>
+
+    <select id="selectReviewById" resultMap="VehicleReviewResult">
+        select r.review_id, r.vehicle_id, r.user_id, r.order_id, r.rating, r.content,
+               r.image_url, r.is_anonymous, r.status, r.create_time,
+               u.nick_name, v.model_name as vehicle_name
+        from stad_vehicle_review r
+        left join sys_user u on r.user_id = u.user_id
+        left join stad_vehicle v on r.vehicle_id = v.vehicle_id
+        where r.review_id = #{reviewId}
+    </select>
+
+</mapper>

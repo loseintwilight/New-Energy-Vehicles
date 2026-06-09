@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mine.mapper.StadUserCouponMapper">
+
+    <resultMap type="com.ruoyi.mine.domain.MineStadUserCoupon" id="StadUserCouponResult">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="couponId" column="coupon_id"/>
+        <result property="status" column="status"/>
+        <result property="useTime" column="use_time"/>
+        <result property="orderId" column="order_id"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <select id="selectStadUserCouponList" parameterType="com.ruoyi.mine.domain.MineStadUserCoupon" resultMap="StadUserCouponResult">
+        select id, user_id, coupon_id, status, use_time, order_id, create_time
+        from stad_user_coupon
+        <where>
+            <if test="userId != null">and user_id = #{userId}</if>
+            <if test="couponId != null">and coupon_id = #{couponId}</if>
+            <if test="status != null">and status = #{status}</if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <select id="selectStadUserCouponById" parameterType="Long" resultMap="StadUserCouponResult">
+        select id, user_id, coupon_id, status, use_time, order_id, create_time
+        from stad_user_coupon
+        where id = #{id}
+    </select>
+
+    <insert id="insertStadUserCoupon" parameterType="com.ruoyi.mine.domain.MineStadUserCoupon">
+        insert into stad_user_coupon (user_id, coupon_id, status, use_time, order_id, create_time)
+        values (#{userId}, #{couponId}, #{status}, #{useTime}, #{orderId}, #{createTime})
+    </insert>
+
+    <update id="updateStadUserCoupon" parameterType="com.ruoyi.mine.domain.MineStadUserCoupon">
+        update stad_user_coupon
+        set status = #{status},
+            use_time = #{useTime},
+            order_id = #{orderId}
+        where id = #{id}
+    </update>
+
+    <select id="countByUserIdAndCouponId" parameterType="Map" resultType="Integer">
+        select count(*) from stad_user_coupon
+        where user_id = #{userId} and coupon_id = #{couponId}
+    </select>
+
+</mapper>

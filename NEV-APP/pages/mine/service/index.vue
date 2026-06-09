@@ -7,18 +7,17 @@
 			<view class="profile-content">
 				<view class="profile-top">
 					<view class="profile-user">
-						<image class="profile-avatar" src="/static/images/service/service_header1.png" mode="aspectFill"></image>
-						<view class="profile-info">
-							<text class="profile-name">{{ userName }}</text>
-							<text class="profile-role">商家维保</text>
+						<image v-if="avatar" :src="avatar" class="profile-avatar" mode="aspectFill" @click="handleToAvatar"></image>
+						<view v-else class="profile-avatar profile-avatar-empty" @click="handleToAvatar">
+							<uni-icons type="user" size="36" color="#fff"></uni-icons>
+						</view>
+						<view class="profile-info" @click="handleToInfo">
+							<text class="profile-name">{{ name }}</text>
+							<text class="profile-phone">{{ phone }}</text>
 						</view>
 					</view>
-<view class="profile-actions">
+					<view class="profile-actions">
 						<view class="switch-btn" @click="handleSwitchUser">切换用户版</view>
-						<!-- <view class="profile-notify" @click="handleNotify">
-							<view class="iconfont icon-community notify-icon"></view>
-							<view class="notify-dot"></view>
-						</view> -->
 					</view>
 				</view>
 				<view class="profile-stats">
@@ -76,13 +75,8 @@
 					<text class="entry-name">订单管理</text>
 					<text class="entry-badge">查看订单</text>
 				</view>
-				<!-- <view class="entry-card" @click="handleSettings">
-					<view class="entry-icon entry-icon-set">
-						<view class="iconfont icon-setting"></view>
-					</view>
-					<text class="entry-name">数据统计</text>
-					<text class="entry-badge">业绩看板</text>
-				</view> -->
+			
+				
 				<view class="entry-card" @click="handleSettings">
 					<view class="entry-icon entry-icon-set">
 						<view class="iconfont icon-setting"></view>
@@ -130,35 +124,60 @@
 </template>
 
 <script>
+	import { getDashboardStats } from '@/api/maintenance/dashboard'
 	export default {
 		data() {
 			return {
 				windowHeight: 0,
-				userName: '小雨滴777',
-				stats: {
-					shopCount: 4,
-					orderCount: 6,
-					reviewCount: 3,
-					avgRating: '4.3'
-				},
+				name: this.$store.state.user.name || '未登录',
+				phone: this.$store.state.user.phonenumber || '',
+				avatar: this.$store.state.user.avatar || '',
+				stats: {},
 				reviews: [
-					{ avatar: '/static/images/service/service_header1.png', username: '张先生', rating: 5, commentContent: '服务非常专业，师傅技术很好，价格也很合理。', shopName: '旗舰维保中心', createTime: '05-28' },
-					{ avatar: '/static/images/service/service_header2.png', username: '李女士', rating: 4, commentContent: '环境不错，服务态度好，下次还来。', shopName: '旗舰维保中心', createTime: '05-27' },
-					{ avatar: '/static/images/service/service_header3.png', username: '王先生', rating: 5, commentContent: '保养很细致，检查项目都很全面，推荐！', shopName: '新城服务站', createTime: '05-26' }
+					{
+						username: 'ry若依',
+						avatar: '/static/images/index/touxiang.png',
+						rating: 5,
+						createTime: '2026-05-28',
+						commentContent: '服务非常专业，电池检测报告详细，技师耐心解答了充电保养问题，好评！',
+						shopName: '济南鑫维保-经十西路店'
+					},
+					{
+						username: '李车主',
+						avatar: '',
+						rating: 4,
+						createTime: '2026-05-22',
+						commentContent: '更换了轮胎和空调滤芯，价格合理，服务态度不错，下次还会来。',
+						shopName: '济南鑫维保-工业北路店'
+					}
 				]
 			}
 		},
 		onLoad() {
 			this.windowHeight = uni.getSystemInfoSync().windowHeight
+			this.loadData()
 		},
-methods: {
+		onShow() {
+			this.name = this.$store.state.user.name || '未登录'
+			this.phone = this.$store.state.user.phonenumber || ''
+			this.avatar = this.$store.state.user.avatar || ''
+		},
+		methods: {
 			handleNotify() { this.$modal.msg('暂无新通知') },
 			handleSwitchUser() { this.$tab.switchTab('/pages/mine/index') },
+			handleToAvatar() { this.$tab.navigateTo('/pages/mine/avatar/index') },
+			handleToInfo() { this.$tab.navigateTo('/pages/mine/info/index') },
 			handleComment() { this.$tab.navigateTo('/pages/mine/service/shopComment/index') },
 			handleShopList() { this.$tab.navigateTo('/pages/mine/service/shopList/index') },
 			handleCreateShop() { this.$tab.navigateTo('/pages/mine/service/shopEdit/index') },
 			handleOrders() { this.$tab.navigateTo('/pages/mine/service/orderList/index') },
-			handleSettings() { this.$tab.navigateTo('/pages/mine/service/dataSettings/index') }
+			handleSettings() { this.$tab.navigateTo('/pages/mine/service/dataSettings/index') },
+			loadData() { 
+				getDashboardStats().then(res => { this.stats = res.data || [] })
+			},
+			getFirstChar(name) {
+				return name ? name.charAt(0) : '匿'
+			}
 		}
 	}
 </script>
@@ -177,7 +196,9 @@ $mute: #94a3b8;
 $gold: #f59e0b;
 
 
-.container { padding-bottom: 30px; }
+.container { 
+	padding-top: 85px;
+	padding-bottom: 30px; }
 
 .page-container{
 	background-color: #cfe5df;
@@ -190,36 +211,16 @@ $gold: #f59e0b;
 	overflow: hidden;
 	border-radius: 24px;
 	min-height: 200px;
+	
 }
 
 .profile-bg {
 	position: absolute;
 	inset: 0;
 	background: linear-gradient(135deg, #a1c9be 0%, #8fc0b1 40%, #7db7a4 100%);
+
 }
 
-// 装饰圆
-// .deco-circle {
-// 	position: absolute;
-// 	border-radius: 50%;
-// 	opacity: 0.12;
-// 	pointer-events: none;
-// }
-// .c1 {
-// 	width: 160px; height: 160px;
-// 	background: #fff;
-// 	top: -60px; right: -40px;
-// }
-// .c2 {
-// 	width: 100px; height: 100px;
-// 	background: #fff;
-// 	bottom: -30px; left: -20px;
-// }
-// .c3 {
-// 	width: 60px; height: 60px;
-// 	background: #fff;
-// 	bottom: 20px; right: 30px;
-// }
 
 .profile-content {
 	position: relative;
@@ -228,6 +229,7 @@ $gold: #f59e0b;
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
+	
 }
 
 // 用户信息行
@@ -267,6 +269,19 @@ $gold: #f59e0b;
 .profile-role {
 	font-size: 12px;
 	color: rgba(255, 255, 255, 0.75);
+}
+
+.profile-phone {
+	font-size: 12px;
+	color: rgba(255, 255, 255, 0.7);
+}
+
+.profile-avatar-empty {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(255, 255, 255, 0.2);
+	border: 2px solid rgba(255, 255, 255, 0.4);
 }
 
 // 右上角操作区
@@ -399,10 +414,10 @@ $gold: #f59e0b;
 }
 
 // ============ 快捷入口 ============
+// ============ 快捷入口 ============
 .entry-grid {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 12px;
+	display: flex;
+	flex-wrap: wrap;
 }
 
 .entry-card {
@@ -415,12 +430,17 @@ $gold: #f59e0b;
 	gap: 8px;
 	box-shadow: 0 2px 16px rgba(5, 150, 105, 0.08);
 	transition: transform 0.2s;
+	width: 48%;
+	margin-bottom: 10px;
 
 	&:active {
 		transform: scale(0.96);
 	}
 }
 
+.entry-card:nth-child(odd) {
+	margin-right: 4%;
+}
 .entry-icon {
 	width: 52px;
 	height: 52px;

@@ -174,6 +174,8 @@
 </template>
 
 <script>
+import { listUsedCar } from '@/api/vehicle/vehicle'
+
 export default {
   data: function() {
     return {
@@ -188,16 +190,10 @@ export default {
       pageSize: 4,
       loadingMore: false,
       noMoreData: false,
+      loading: false,
 
-      /* Mock二手车数据（基于stad_vehicle表 + stad_vehicle_used关联表，字段严格对齐DB） */
-      mockUsedCars: [
-        { usedId: 1, vehicleId: 101, name: '比亚迪海豹 EV 700km 四驱旗舰版', price: 168000, originalPrice: 228000, mileage: 2.8, licenseYear: 2024, licenseMonth: 6, licenseCity: '济南', transferCount: 0, batterySoh: 96.5, batteryCycles: 128, batteryDiagnosis: 'excellent', valuationPrice: 172000, color: '极光蓝', stock: 1, status: '1' },
-        { usedId: 2, vehicleId: 102, name: '特斯拉 Model Y 后驱版', price: 195000, originalPrice: 263900, mileage: 4.2, licenseYear: 2023, licenseMonth: 11, licenseCity: '青岛', transferCount: 1, batterySoh: 92.0, batteryCycles: 215, batteryDiagnosis: 'excellent', valuationPrice: 198500, color: '珍珠白', stock: 1, status: '1' },
-        { usedId: 3, vehicleId: 103, name: '蔚来 ES6 75kWh 运动版', price: 248000, originalPrice: 338000, mileage: 5.6, licenseYear: 2023, licenseMonth: 5, licenseCity: '烟台', transferCount: 0, batterySoh: 88.2, batteryCycles: 320, batteryDiagnosis: 'good', valuationPrice: 252000, color: '星灰', stock: 1, status: '1' },
-        { usedId: 4, vehicleId: 104, name: '理想 L7 Pro 增程版', price: 235000, originalPrice: 319800, mileage: 7.8, licenseYear: 2022, licenseMonth: 9, licenseCity: '潍坊', transferCount: 2, batterySoh: 82.5, batteryCycles: 450, batteryDiagnosis: 'good', valuationPrice: 228000, color: '银色', stock: 1, status: '2' },
-        { usedId: 5, vehicleId: 105, name: '比亚迪汉 DM-i 冠军版', price: 138000, originalPrice: 189800, mileage: 9.2, licenseYear: 2022, licenseMonth: 3, licenseCity: '临沂', transferCount: 1, batterySoh: 76.8, batteryCycles: 520, batteryDiagnosis: 'fair', valuationPrice: 135000, color: '赤帝红', stock: 1, status: '1' },
-        { usedId: 6, vehicleId: 106, name: '问界 M5 纯电版', price: 158000, originalPrice: 259800, mileage: 12.5, licenseYear: 2021, licenseMonth: 8, licenseCity: '淄博', transferCount: 3, batterySoh: 68.3, batteryCycles: 680, batteryDiagnosis: 'poor', valuationPrice: 142000, color: '霜釉银', stock: 0, status: '3' }
-      ],
+      /* 二手车数据（从后端接口获取） */
+      carList: [],
 
       /* 电池评级筛选（与stad_vehicle_used.battery_diagnosis对齐） */
       batteryFilterList: [
@@ -228,7 +224,7 @@ export default {
     /* 筛选 + 排序后的完整列表 */
     filteredList: function() {
       var that = this
-      var list = that.mockUsedCars.slice()
+      var list = that.carList.slice()
 
       /* 关键词搜索 */
       if (that.searchKey && that.searchKey.trim() !== '') {
@@ -279,6 +275,7 @@ export default {
     setTimeout(function() {
       that.isReady = true
     }, 200)
+    that.loadList()
   },
 
   methods: {
@@ -302,6 +299,61 @@ export default {
         rows.push({ dots: dots })
       }
       this.glowRows = rows
+    },
+
+    loadList: function() {
+      var self = this
+      self.loading = true
+      listUsedCar({ pageNum: 1, pageSize: 100 }).then(function(res) {
+        self.loading = false
+        if (res.code === 200 && res.rows && Array.isArray(res.rows)) {
+          self.carList = res.rows.map(function(v) {
+            return {
+              usedId: v.usedId || v.vehicleId,
+              vehicleId: v.vehicleId,
+              name: v.modelName || v.title || '-',
+              price: v.guidePrice || 0,
+              originalPrice: v.originalPrice || 0,
+              mileage: v.mileage || 0,
+              licenseYear: v.licenseYear || '',
+              licenseMonth: v.licenseMonth || '',
+              licenseCity: v.licenseCity || '',
+              transferCount: v.transferCount || 0,
+              batterySoh: v.batterySoh || 0,
+              batteryCycles: v.batteryCycles || 0,
+              batteryDiagnosis: v.batteryDiagnosis || '',
+              valuationPrice: v.valuationPrice || 0,
+              color: v.color || '-',
+              stock: v.stock || 0,
+              status: String(v.status || '0')
+            }
+          })
+        } else if (res.code === 1 && res.data && Array.isArray(res.data)) {
+          self.carList = res.data.map(function(v) {
+            return {
+              usedId: v.usedId || v.vehicleId,
+              vehicleId: v.vehicleId,
+              name: v.modelName || v.title || '-',
+              price: v.guidePrice || 0,
+              originalPrice: v.originalPrice || 0,
+              mileage: v.mileage || 0,
+              licenseYear: v.licenseYear || '',
+              licenseMonth: v.licenseMonth || '',
+              licenseCity: v.licenseCity || '',
+              transferCount: v.transferCount || 0,
+              batterySoh: v.batterySoh || 0,
+              batteryCycles: v.batteryCycles || 0,
+              batteryDiagnosis: v.batteryDiagnosis || '',
+              valuationPrice: v.valuationPrice || 0,
+              color: v.color || '-',
+              stock: v.stock || 0,
+              status: String(v.status || '0')
+            }
+          })
+        }
+      }).catch(function() {
+        self.loading = false
+      })
     },
 
     /* ---------- 搜索与筛选 ---------- */

@@ -354,6 +354,64 @@
         </block>
       </view>
     </uni-popup>
+
+    <!-- ========== 导航地图弹窗 ========== -->
+    <view class="navi-map-overlay" :class="{ 'navi-map-active': showNaviMap }">
+      <view class="navi-map-header">
+        <view class="navi-back-btn" @click="closeNaviMap">
+          <u-icon name="arrow-left" size="36" color="#333"></u-icon>
+        </view>
+        <text class="navi-map-title">{{ stationName }}</text>
+        <view style="width:80rpx;"></view>
+      </view>
+
+      <map
+        id="naviMap"
+        class="navi-map-body"
+        :latitude="naviMapCenter.lat"
+        :longitude="naviMapCenter.lng"
+        :markers="naviMarkers"
+        :polyline="naviPolylines"
+        :scale="14"
+        show-location
+        @error="onNaviMapError"
+      ></map>
+
+      <!-- 路线选择器（仿高德APP） -->
+      <view class="navi-routes" v-if="naviRoutes.length > 0">
+        <scroll-view class="navi-routes-scroll" scroll-x show-scrollbar="false">
+          <view
+            v-for="(r, ri) in naviRoutes"
+            :key="ri"
+            class="navi-route-card"
+            :class="{ 'navi-route-active': ri === naviSelectedIdx }"
+            @click="selectRoute(ri)"
+          >
+            <view class="nrc-header">
+              <text class="nrc-label" :class="'nrc-label-' + (r.tag || 'normal')">{{ r.label }}</text>
+              <text class="nrc-time">{{ formatDuration(r.duration) }}</text>
+            </view>
+            <view class="nrc-detail">
+              <text class="nrc-dist">{{ (r.distance / 1000).toFixed(1) }}公里</text>
+              <text class="nrc-dot">·</text>
+              <text class="nrc-tolls" v-if="r.tolls > 0">{{ r.tolls.toFixed(0) }}元</text>
+              <text class="nrc-tolls" v-else>免费</text>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <view class="navi-map-actions">
+        <view class="navi-action-btn" @click="openExternalMap">
+          <u-icon name="map" size="32" color="#07c160"></u-icon>
+          <text>使用外部地图</text>
+        </view>
+        <view class="navi-action-btn primary" @click="closeNaviMap">
+          <u-icon name="checkmark" size="32" color="#fff"></u-icon>
+          <text>我知道了</text>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -393,6 +451,15 @@ export default {
       batteryCapacity: 60,
       lat: 36.548,
       lng: 116.801,
+      // 导航地图相关
+      showNaviMap: false,
+      naviRoutes: [],
+      naviSelectedIdx: 0,
+      naviMarkers: [],
+      naviPolylines: [],
+      naviMapCenter: { lat: 36.548, lng: 116.801 },
+      naviUserLat: null,
+      naviUserLng: null,
       reviewList: [
         {
           avatar: '', nickname: '新能源车主', score: 5,
@@ -429,7 +496,8 @@ export default {
     this.stationName = decodeURIComponent(options.name || '充电站')
     if (options.lat) this.lat = Number(options.lat)
     if (options.lng) this.lng = Number(options.lng)
-    console.log('[DEBUG onLoad] 传入参数:', options, '→ this.lat:', this.lat, 'this.lng:', this.lng)
+    if (options.distance) this.distanceVal = options.distance
+    console.log('[DEBUG onLoad] 传入参数:', options, '→ this.lat:', this.lat, 'this.lng:', this.lng, 'distance:', this.distanceVal)
     if (options.pileFilter) {
       this.pileFilter = options.pileFilter
       this.showLimited = false
@@ -727,8 +795,162 @@ export default {
 
     goNavi() {
       console.log('[DEBUG goNavi] this.lat:', this.lat, 'this.lng:', this.lng,
-        '| stationName:', this.stationName,
-        '| stationAddress:', this.stationAddress)
+        '| stationName:', this.stationName)
+      if (!this.lat || !this.lng) {
+        uni.showToast({ title: '暂无位置信息', icon: 'none' })
+        return
+      }
+
+      uni.showLoading({ title: '规划路线中...', mask: true })
+
+      // 先获取用户当前位置
+      uni.getLocation({
+        type: 'gcj02',
+        isHighAccuracy: true,
+        timeout: 5000,
+        success: (loc) => {
+          const fromLat = loc.latitude
+          const fromLng = loc.longitude
+          this.naviUserLat = fromLat
+          this.naviUserLng = fromLng
+
+          // 调用高德驾车路径规划（多条路线）
+          amap.getDrivingRoutes({
+            fromLat,
+            fromLng,
+            toLat: parseFloat(this.lat),
+            toLng: parseFloat(this.lng)
+          }).then(routes => {
+            uni.hideLoading()
+            this.naviRoutes = routes
+            this.naviSelectedIdx = 0
+
+            // 先显示空地图
+            this.showNaviMap = true
+
+            // 绘制第0条路线
+            this.$nextTick(() => {
+              setTimeout(() => this.drawNaviRoute(0), 200)
+            })
+          }).catch(err => {
+            uni.hideLoading()
+            console.error('[goNavi] 路线规划失败:', err)
+            // 降级：打开外部地图
+            this.openExternalMap()
+          })
+        },
+        fail: (err) => {
+          uni.hideLoading()
+          console.error('[goNavi] 获取位置失败:', err)
+          this.openExternalMap()
+        }
+      })
+    },
+
+    /** 选择路线 */
+    selectRoute(idx) {
+      if (idx === this.naviSelectedIdx) return
+      this.naviSelectedIdx = idx
+      this.drawNaviRoute(idx)
+    },
+
+    /** 在地图上绘制指定路线 */
+    drawNaviRoute(idx) {
+      const route = this.naviRoutes[idx]
+      if (!route) return
+
+      const fromLat = this.naviUserLat
+      const fromLng = this.naviUserLng
+
+      // 计算地图中心
+      this.naviMapCenter = {
+        lat: (fromLat + parseFloat(this.lat)) / 2,
+        lng: (fromLng + parseFloat(this.lng)) / 2
+      }
+
+      // 起点标记（汽车图标）
+      this.naviMarkers = [
+        {
+          id: 1,
+          latitude: fromLat,
+          longitude: fromLng,
+          width: 32,
+          height: 40,
+          iconPath: '/static/images/charge/car-marker.svg',
+          anchor: { x: 0.5, y: 1 },
+          callout: {
+            content: '我的位置',
+            display: 'ALWAYS',
+            fontSize: 11,
+            bgColor: '#fff',
+            color: '#333',
+            padding: '6rpx 12rpx'
+          }
+        },
+        {
+          id: 2,
+          latitude: parseFloat(this.lat),
+          longitude: parseFloat(this.lng),
+          width: 30,
+          height: 36,
+          iconPath: '/static/images/charge/location-pin-blue.svg',
+          anchor: { x: 0.5, y: 1 },
+          callout: {
+            content: this.stationName || '充电站',
+            display: 'ALWAYS',
+            fontSize: 11,
+            bgColor: '#07c160',
+            color: '#fff',
+            padding: '6rpx 12rpx'
+          }
+        }
+      ]
+
+      // 路线折线（选中路线蓝色实线，其他灰色虚线）
+      this.naviPolylines = [{
+        points: route.points,
+        color: '#3c96f3',
+        width: 6,
+        arrowLine: true,
+        dottedLine: false
+      }]
+
+      // 调整视野
+      setTimeout(() => {
+        const mapCtx = uni.createMapContext('naviMap', this)
+        if (mapCtx) {
+          try {
+            mapCtx.includePoints({
+              points: [
+                { latitude: fromLat, longitude: fromLng },
+                { latitude: parseFloat(this.lat), longitude: parseFloat(this.lng) }
+              ],
+              padding: [180, 80, 180, 80]
+            })
+          } catch (e) {
+            console.error('[naviMap] includePoints error:', e)
+          }
+        }
+      }, 300)
+    },
+
+    /** 关闭导航地图 */
+    closeNaviMap() {
+      this.showNaviMap = false
+      this.naviRoutes = []
+      this.naviSelectedIdx = 0
+      this.naviMarkers = []
+      this.naviPolylines = []
+    },
+
+    /** 地图渲染出错回调 */
+    onNaviMapError(e) {
+      console.error('[naviMap] map error:', e.detail || e)
+      uni.showToast({ title: '地图加载失败', icon: 'none' })
+    },
+
+    /** 打开外部地图导航（降级方案） */
+    openExternalMap() {
       if (!this.lat || !this.lng) {
         uni.showToast({ title: '暂无位置信息', icon: 'none' })
         return
@@ -739,6 +961,16 @@ export default {
         name: this.stationName,
         address: this.stationAddress
       })
+    },
+
+    /** 格式化时长（秒 → 中文） */
+    formatDuration(seconds) {
+      if (!seconds) return '--'
+      const mins = Math.round(seconds / 60)
+      if (mins < 60) return mins + '分钟'
+      const h = Math.floor(mins / 60)
+      const m = mins % 60
+      return h + '小时' + (m > 0 ? m + '分钟' : '')
     },
 
     callStation() {
@@ -1829,5 +2061,195 @@ export default {
 @keyframes connRoadMove {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
+}
+
+/* ========== 导航地图弹窗 ========== */
+.navi-map-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+  background: #fff;
+  display: none;
+  flex-direction: column;
+}
+
+.navi-map-overlay.navi-map-active {
+  display: flex;
+}
+
+.navi-map-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12rpx 20rpx;
+  background: #fff;
+  border-bottom: 1rpx solid #f0f0f0;
+  position: relative;
+  z-index: 10;
+}
+
+.navi-back-btn {
+  width: 80rpx;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navi-map-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+  text-align: center;
+}
+
+.navi-map-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16rpx 30rpx;
+  background: #f5f7fa;
+  gap: 20rpx;
+}
+
+.navi-info-item {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.navi-info-divider {
+  color: #ddd;
+  font-size: 24rpx;
+}
+
+.navi-map-body {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}
+
+.navi-map-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 20rpx 30rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  background: #fff;
+  border-top: 1rpx solid #f0f0f0;
+  gap: 20rpx;
+}
+
+.navi-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  height: 88rpx;
+  border-radius: 44rpx;
+  border: 2rpx solid #07c160;
+  background: #fff;
+  color: #07c160;
+  font-size: 28rpx;
+  font-weight: 500;
+}
+
+.navi-action-btn.primary {
+  background: #07c160;
+  color: #fff;
+  border: none;
+}
+
+/* ========== 路线选择器（仿高德APP） ========== */
+.navi-routes {
+  background: #fff;
+  padding: 16rpx 0;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.navi-routes-scroll {
+  white-space: nowrap;
+  padding: 0 20rpx;
+}
+
+.navi-route-card {
+  display: inline-flex;
+  flex-direction: column;
+  background: #f5f7fa;
+  border-radius: 16rpx;
+  padding: 14rpx 22rpx;
+  margin-right: 16rpx;
+  min-width: 200rpx;
+  cursor: pointer;
+  position: relative;
+  border: 3rpx solid transparent;
+  transition: all 0.2s;
+}
+
+.navi-route-card:last-child {
+  margin-right: 0;
+}
+
+.navi-route-active {
+  background: #e8f7ff;
+  border-color: #3c96f3;
+}
+
+.nrc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  margin-bottom: 6rpx;
+}
+
+.nrc-label {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #333;
+  padding: 2rpx 10rpx;
+  border-radius: 6rpx;
+  background: #e0e0e0;
+}
+
+.nrc-label-primary {
+  background: #3c96f3;
+  color: #fff;
+}
+
+.nrc-time {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.navi-route-active .nrc-time {
+  color: #3c96f3;
+}
+
+.nrc-detail {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.nrc-dist,
+.nrc-tolls {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.nrc-dot {
+  font-size: 22rpx;
+  color: #ccc;
+}
+
+.navi-route-active .nrc-dist,
+.navi-route-active .nrc-tolls {
+  color: #666;
 }
 </style>

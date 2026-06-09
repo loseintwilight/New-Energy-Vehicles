@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.charging.mapper.ChargingStationMapper">
+
+    <!-- 查询商户的充电站列表（含今日营收、订单、充电量统计） -->
+    <select id="selectMerchantStationList" resultType="com.ruoyi.charging.vo.MerchantStationVO">
+        SELECT
+            s.station_id AS stationId,
+            s.station_name AS stationName,
+            s.station_code AS stationCode,
+            s.address,
+            s.station_status AS stationStatus,
+            COALESCE(SUM(CASE WHEN o.order_status = '1' AND o.create_time >= CURDATE() THEN o.total_amount ELSE 0 END), 0) AS todayIncome,
+            COUNT(CASE WHEN o.create_time >= CURDATE() THEN 1 ELSE NULL END) AS todayOrders,
+            COALESCE(SUM(CASE WHEN o.order_status = '1' AND o.create_time >= CURDATE() THEN o.total_energy ELSE 0 END), 0) AS todayEnergy,
+            s.total_piles AS totalPiles,
+            s.available_piles AS availablePiles
+        FROM stad_charging_station s
+        LEFT JOIN stad_charging_order o ON s.station_id = o.station_id
+        WHERE s.merchant_id = #{merchantId}
+        GROUP BY s.station_id, s.station_name, s.station_code, s.address, s.station_status, s.total_piles, s.available_piles
+        ORDER BY s.station_id DESC
+    </select>
+
+</mapper>

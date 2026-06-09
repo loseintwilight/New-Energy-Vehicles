@@ -74,6 +74,14 @@ export function getPileList(stationId) {
   })
 }
 
+/** 2.2 重置所有异常占用充电桩（管理用） */
+export function resetAllPiles() {
+  return request({
+    url: '/app/charge/pile/reset-all',
+    method: 'POST'
+  })
+}
+
 // ===== 订单接口 =====
 
 /** 3.1 获取订单列表 */

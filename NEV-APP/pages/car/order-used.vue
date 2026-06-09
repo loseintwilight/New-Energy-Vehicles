@@ -149,7 +149,7 @@
 </template>
 
 <script>
-import { getUsedCarDetail, createCarOrder } from '@/api/car/car'
+import { getUsedCarDetail, createCarOrder, sendOrderToAdmin } from '@/api/car/car'
 
 export default {
   data() {
@@ -256,7 +256,8 @@ export default {
         success: (res) => {
           if (res.confirm) {
             uni.showLoading({ title: '提交中' })
-            createCarOrder(data).then(() => {
+            createCarOrder(Object.assign({}, data, { modelName: this.car.modelName })).then(() => {
+              sendOrderToAdmin(Object.assign({}, data, { modelName: this.car.modelName }))
               uni.hideLoading()
               uni.showToast({ title: '订购成功', icon: 'success' })
               setTimeout(() => uni.navigateBack(), 1500)

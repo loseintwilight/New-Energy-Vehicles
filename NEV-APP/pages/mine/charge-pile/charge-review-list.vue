@@ -22,54 +22,54 @@
           <text class="back-icon">‹</text>
         </view>
         <view class="header-info">
-          <text class="header-title">充电评价管理</text>
-          <text class="header-sub">共 {{ filteredReviews.length }} 条评价</text>
+          <text class="header-title">充电结算</text>
+          <text class="header-sub">共 {{ filteredSettlements.length }} 条记录</text>
         </view>
       </view>
 
       <!-- 统计概览条 -->
       <view class="stats-bar">
         <view class="stat-item">
-          <text class="stat-val">{{ totalReviews }}</text>
-          <text class="stat-label">总评价数</text>
+          <text class="stat-val">{{ totalCount }}</text>
+          <text class="stat-label">总订单</text>
         </view>
         <view class="stat-divider"></view>
         <view class="stat-item">
-          <text class="stat-val stat-score">{{ avgScore }}</text>
-          <text class="stat-label">平均评分</text>
+          <text class="stat-val stat-amount">¥{{ totalSettleAmount }}</text>
+          <text class="stat-label">总金额</text>
         </view>
         <view class="stat-divider"></view>
         <view class="stat-item">
           <text class="stat-val stat-pending">{{ pendingCount }}</text>
-          <text class="stat-label">待回复</text>
+          <text class="stat-label">待结算</text>
         </view>
       </view>
 
-      <!-- 筛选标签栏 - 评分 -->
+      <!-- 筛选标签栏 - 结算状态 -->
       <view class="filter-section">
         <scroll-view scroll-x class="filter-scroll-x" :show-scrollbar="false">
           <view class="filter-row">
             <view
               class="filter-chip"
-              v-for="(item, idx) in ratingTabs"
+              v-for="(item, idx) in statusTabs"
               :key="idx"
-              :class="{ active: activeRating === idx }"
-              @tap="switchRating(idx)"
+              :class="{ active: activeStatus === idx }"
+              @tap="switchStatus(idx)"
             >
               <text>{{ item.label }}</text>
             </view>
           </view>
         </scroll-view>
 
-        <!-- 筛选标签栏 - 回复状态 -->
+        <!-- 筛选标签栏 - 提现状态 -->
         <scroll-view scroll-x class="filter-scroll-x" :show-scrollbar="false">
           <view class="filter-row">
             <view
               class="filter-chip"
-              v-for="(item, idx) in replyTabs"
-              :key="idx + 100"
-              :class="{ active: activeReply === idx }"
-              @tap="switchReply(idx)"
+              v-for="(item, idx) in withdrawTabs"
+              :key="'withdraw-' + idx"
+              :class="{ active: activeWithdraw === idx }"
+              @tap="switchWithdraw(idx)"
             >
               <text>{{ item.label }}</text>
             </view>
@@ -77,57 +77,72 @@
         </scroll-view>
       </view>
 
-      <!-- 评价卡片列表 -->
-      <view class="review-list-wrap">
+      <!-- 结算卡片列表 -->
+      <view class="settlement-list-wrap">
         <!-- 空状态 -->
-        <view class="empty-state" v-if="filteredReviews.length === 0">
-          <text class="empty-icon">⭐</text>
-          <text class="empty-title">暂无评价数据</text>
-          <text class="empty-desc">用户充电完成后会在此显示评价</text>
+        <view class="empty-state" v-if="filteredSettlements.length === 0">
+          <text class="empty-icon">💰</text>
+          <text class="empty-title">暂无结算数据</text>
+          <text class="empty-desc">充电订单完成后会在此显示结算信息</text>
         </view>
 
-        <!-- 评价卡片 -->
+        <!-- 结算卡片 -->
         <view
-          class="review-card"
-          v-for="(item, idx) in filteredReviews"
-          :key="item.reviewId"
+          class="settlement-card"
+          v-for="(item, idx) in filteredSettlements"
+          :key="item.settlementId"
           :style="{ animationDelay: (idx * 0.08) + 's' }"
           hover-class="card-hover"
           :hover-stay-time="120"
           @tap="goDetail(item)"
         >
           <!-- 左侧彩色条 -->
-          <view class="rc-bar" :class="'bar-rating-' + getRatingLevel(item.rating)"></view>
+          <view class="sc-bar" :class="'bar-status-' + getSettlementLevel(item.status)"></view>
           <!-- 卡片主体 -->
-          <view class="rc-body">
-            <!-- 顶部：用户 + 评分 + 时间 -->
-            <view class="rc-top">
-              <view class="rc-user">
-                <view class="user-avatar" :style="{ background: item.avatarBg }">
-                  <text class="avatar-text">{{ item.userName.charAt(0) }}</text>
+          <view class="sc-body">
+            <!-- 顶部：结算单号 + 状态 + 时间 -->
+            <view class="sc-top">
+              <view class="sc-left">
+                <view class="settle-no-row">
+                  <text class="no-icon">#</text>
+                  <text class="no-text">{{ shortSettleNo(item.settlementId) }}</text>
                 </view>
-                <view class="user-info">
-                  <text class="user-name">{{ item.userName }}</text>
-                  <text class="user-station">{{ item.stationName }} · {{ item.pileCode }}</text>
-                </view>
+                <text class="sc-date">{{ fmtDate(item.settleDate || item.createTime) }}</text>
               </view>
-              <view class="rc-right">
-                <view class="star-row">
-                  <text class="star-icon" v-for="s in 5" :key="s" :class="{ filled: s <= item.rating }">★</text>
+              <view class="sc-right">
+                <view class="status-tag" :class="'stag-' + item.status">
+                  <text>{{ getSettlementStatusLabel(item.status) }}</text>
                 </view>
-                <text class="rc-time">{{ item.createTime }}</text>
+                <text class="sc-withdraw" v-if="item.withdrawStatus !== undefined && item.withdrawStatus !== null">
+                  {{ getWithdrawStatusLabel(item.withdrawStatus) }}
+                </text>
               </view>
             </view>
 
-            <!-- 评价内容 -->
-            <view class="rc-content">
-              <text class="rc-text">{{ item.content }}</text>
+            <!-- 中间：数据概览 -->
+            <view class="sc-summary">
+              <view class="summary-item">
+                <text class="summary-label">订单数</text>
+                <text class="summary-val">{{ item.totalOrders || 0 }} 笔</text>
+              </view>
+              <view class="summary-item">
+                <text class="summary-label">电量</text>
+                <text class="summary-val">{{ item.totalEnergy || 0 }} kWh</text>
+              </view>
+              <view class="summary-item">
+                <text class="summary-label">总额</text>
+                <text class="summary-val highlight">¥{{ fmtAmount(item.totalAmount) }}</text>
+              </view>
             </view>
 
-            <!-- 底部：回复状态 + 箭头 -->
-            <view class="rc-bottom">
-              <view class="reply-tag" :class="'rt-' + item.replyStatus">
-                <text class="reply-text">{{ item.replyStatus === 1 ? '已回复' : '待回复' }}</text>
+            <!-- 底部：佣金 + 结算金额 + 提现信息 -->
+            <view class="sc-bottom">
+              <view class="bottom-info">
+                <text class="info-text">平台佣金：¥{{ fmtAmount(item.platformCommission) }}</text>
+                <text class="info-text info-settle">结算金额：<text class="settle-amount">¥{{ fmtAmount(item.settleAmount) }}</text></text>
+              </view>
+              <view class="withdraw-info" v-if="item.withdrawAmount && item.withdrawAmount > 0">
+                <text class="withdraw-text">已提现 ¥{{ fmtAmount(item.withdrawAmount) }}</text>
               </view>
               <view class="bottom-arrow">
                 <text class="arrow-icon">›</text>
@@ -143,88 +158,77 @@
 </template>
 
 <script>
+import { getSettlementList } from '@/api/charger/settlement'
+
 export default {
   data: function() {
     return {
       isReady: false,
       glowRows: [],
-      activeRating: 0,
-      activeReply: 0,
+      activeStatus: 0,
+      activeWithdraw: 0,
 
-      /* Mock数据：充电评价（来自stad_charging_settlement） */
-      mockReviews: [
-        { reviewId: 1, userName: '张先生', phone: '138****6789', stationName: '济南奥体中心充电站', pileCode: 'DC-001', rating: 5, content: '充电速度很快，桩位好找，环境干净整洁，下次还来！', createTime: '2026-06-03 14:30', replyStatus: 1, replyContent: '感谢您的认可，欢迎下次光临！', avatarBg: 'linear-gradient(135deg, #fef3c7, #fde68a)' },
-        { reviewId: 2, userName: '李女士', phone: '139****8901', stationName: '济南万达广场充电站', pileCode: 'DC-003', rating: 4, content: '整体不错，就是周末人有点多需要排队，希望能增加快充桩数量。', createTime: '2026-06-03 11:20', replyStatus: 1, replyContent: '收到建议，我们正在规划扩容，谢谢反馈！', avatarBg: 'linear-gradient(135deg, #dbeafe, #bfdbfe)' },
-        { reviewId: 3, userName: '王先生', phone: '136****2345', stationName: '青岛万象城充电站', pileCode: 'AC-002', rating: 2, content: '充电桩故障，插上枪没反应，等了20分钟才换到别的桩，体验很差。', createTime: '2026-06-02 18:45', replyStatus: 0, replyContent: '', avatarBg: 'linear-gradient(135deg, #fee2e2, #fecaca)' },
-        { reviewId: 4, userName: '赵女士', phone: '137****4567', stationName: '淄博万象汇充电站', pileCode: 'DC-002', rating: 5, content: '第一次来这个站，设施很新，停车方便，价格也合理，五星好评！', createTime: '2026-06-02 16:10', replyStatus: 0, replyContent: '', avatarBg: 'linear-gradient(135deg, #dcfce7, #bbf7d0)' },
-        { reviewId: 5, userName: '孙先生', phone: '135****7890', stationName: '济南奥体中心充电站', pileCode: 'DC-004', rating: 3, content: '中规中矩吧，没什么特别的，就是普通充电站。', createTime: '2026-06-01 22:05', replyStatus: 1, replyContent: '我们会持续提升服务品质，感谢您的使用。', avatarBg: 'linear-gradient(135deg, #f3e8ff, #e9d5ff)' },
-        { reviewId: 6, userName: '周女士', phone: '158****1122', stationName: '烟台芝罘万达充电站', pileCode: 'DC-001', rating: 4, content: '位置很好找，就在商场地下停车场B2层，充电顺便逛逛街很方便。', createTime: '2026-06-01 09:30', replyStatus: 0, replyContent: '', avatarBg: 'linear-gradient(135deg, #ccfbf1, #99f6e4)' },
-        { reviewId: 7, userName: '吴先生', phone: '186****3344', stationName: '济南万达广场充电站', pileCode: 'AC-001', rating: 1, content: 'App经常连不上桩，客服电话打不通，非常糟糕的体验！', createTime: '2026-05-31 15:20', replyStatus: 0, replyContent: '', avatarBg: 'linear-gradient(255, 235, 235, 253, 230)' },
-        { reviewId: 8, userName: '郑女士', phone: '177****5566', stationName: '青岛万象城充电站', pileCode: 'DC-001', rating: 5, content: '夜间充电有优惠活动，凌晨过来充的，几乎没人，体验超棒！', createTime: '2026-05-31 02:18', replyStatus: 1, replyContent: '夜间优惠持续进行中，欢迎常来~', avatarBg: 'linear-gradient(135deg, #ffe4e6, #fecdd3)' }
-      ],
+      /* 结算数据（从接口加载） */
+      settlementList: [],
 
-      /* 筛选项 */
-      ratingTabs: [
-        { label: '全部', value: 0 },
-        { label: '⭐⭐⭐⭐⭐ 好评', value: 5 },
-        { label: '⭐⭐⭐⭐ 中评', value: 4 },
-        { label: '⭐⭐⭐ 一般', value: 3 },
-        { label: '⭐⭐ 差评', value: 2 }
+      /* 筛选项 - 结算状态 */
+      statusTabs: [
+        { label: '全部', value: '' },
+        { label: '待结算', value: '0' },
+        { label: '已结算', value: '1' },
+        { label: '已取消', value: '2' }
       ],
-      replyTabs: [
-        { label: '全部状态', value: 0 },
-        { label: '待回复', value: 1 },
-        { label: '已回复', value: 2 }
+      /* 筛选项 - 提现状态 */
+      withdrawTabs: [
+        { label: '全部提现', value: '' },
+        { label: '待提现', value: '0' },
+        { label: '提现中', value: '1' },
+        { label: '已完成', value: '2' }
       ]
     }
   },
 
   computed: {
     /* 筛选后的列表 */
-    filteredReviews: function() {
-      var list = this.mockReviews
+    filteredSettlements: function() {
+      var list = this.settlementList
       var self = this
 
-      /* 按评分筛选 */
-      if (this.activeRating > 0) {
-        var targetRating = this.ratingTabs[this.activeRating].value
-        if (targetRating === 5) {
-          list = list.filter(function(r) { return r.rating === 5 })
-        } else if (targetRating === 4) {
-          list = list.filter(function(r) { return r.rating === 4 })
-        } else if (targetRating === 3) {
-          list = list.filter(function(r) { return r.rating === 3 })
-        } else if (targetRating === 2) {
-          list = list.filter(function(r) { return r.rating <= 2 })
-        }
+      /* 按结算状态筛选 */
+      if (this.activeStatus > 0) {
+        var statusVal = this.statusTabs[this.activeStatus].value
+        list = list.filter(function(s) { return String(s.status) === statusVal })
       }
 
-      /* 按回复状态筛选 */
-      if (this.activeReply === 1) {
-        list = list.filter(function(r) { return r.replyStatus === 0 })
-      } else if (this.activeReply === 2) {
-        list = list.filter(function(r) { return r.replyStatus === 1 })
+      /* 按提现状态筛选 */
+      if (this.activeWithdraw > 0) {
+        var withdrawVal = this.withdrawTabs[this.activeWithdraw].value
+        list = list.filter(function(s) { return String(s.withdrawStatus) === withdrawVal })
       }
 
       return list
     },
 
     /* 统计 */
-    totalReviews: function() {
-      return this.mockReviews.length
-    },
-    avgScore: function() {
-      if (this.mockReviews.length === 0) return '0.0'
-      var sum = 0
-      for (var i = 0; i < this.mockReviews.length; i++) {
-        sum += this.mockReviews[i].rating
+    totalCount: function() {
+      var count = 0
+      for (var i = 0; i < this.settlementList.length; i++) {
+        count += (this.settlementList[i].totalOrders || 0)
       }
-      return (sum / this.mockReviews.length).toFixed(1)
+      return count
+    },
+    totalSettleAmount: function() {
+      if (this.settlementList.length === 0) return '0.00'
+      var sum = 0
+      for (var i = 0; i < this.settlementList.length; i++) {
+        sum += (this.settlementList[i].totalAmount || 0)
+      }
+      return sum.toFixed(2)
     },
     pendingCount: function() {
       var c = 0
-      for (var i = 0; i < this.mockReviews.length; i++) {
-        if (this.mockReviews[i].replyStatus === 0) c++
+      for (var i = 0; i < this.settlementList.length; i++) {
+        if (String(this.settlementList[i].status) === '0') c++
       }
       return c
     }
@@ -232,11 +236,26 @@ export default {
 
   created: function() {
     this.buildGlowRows()
+    this.loadSettlements()
     var self = this
     setTimeout(function() { self.isReady = true }, 200)
   },
 
   methods: {
+    /* ---------- 数据加载 ---------- */
+    loadSettlements: function() {
+      var self = this
+      getSettlementList({ pageSize: 100 }).then(function(res) {
+        if (res.code === 200) {
+          self.settlementList = res.rows || []
+        } else {
+          uni.showToast({ title: res.msg || '加载失败', icon: 'none' })
+        }
+      }).catch(function() {
+        uni.showToast({ title: '网络异常', icon: 'none' })
+      })
+    },
+
     buildGlowRows: function() {
       var rows = []
       var colors = ['#f59e0b', '#f97316', '#fb923c', '#fbbf24', '#fcd34d', '#fde68a']
@@ -257,24 +276,61 @@ export default {
       uni.navigateBack({ delta: 1 })
     },
 
-    switchRating: function(idx) {
-      this.activeRating = idx
+    switchStatus: function(idx) {
+      this.activeStatus = idx
     },
 
-    switchReply: function(idx) {
-      this.activeReply = idx
+    switchWithdraw: function(idx) {
+      this.activeWithdraw = idx
     },
 
     goDetail: function(item) {
       uni.navigateTo({
-        url: '/pages/mine/charge-pile/charge-review-detail?reviewId=' + item.reviewId
+        url: '/pages/mine/charge-pile/charge-review-detail?settlementId=' + item.settlementId
       })
     },
 
-    getRatingLevel: function(rating) {
-      if (rating >= 4) return 'good'
-      if (rating === 3) return 'mid'
-      return 'bad'
+    getSettlementLevel: function(status) {
+      status = String(status)
+      if (status === '1') return 'done'
+      if (status === '0') return 'pending'
+      return 'cancel'
+    },
+
+    getSettlementStatusLabel: function(status) {
+      var map = { '0': '待结算', '1': '已结算', '2': '已取消' }
+      return map[String(status)] || '未知'
+    },
+
+    getWithdrawStatusLabel: function(status) {
+      var map = { '0': '待提现', '1': '提现中', '2': '已完成' }
+      return map[String(status)] || ''
+    },
+
+    shortSettleNo: function(id) {
+      if (!id) return ''
+      var str = String(id)
+      if (str.length > 12) {
+        return str.substring(0, 9) + '...'
+      }
+      return str
+    },
+
+    fmtDate: function(dateStr) {
+      if (!dateStr) return '-'
+      var d = new Date(dateStr.replace(/-/g, '/'))
+      if (isNaN(d.getTime())) return dateStr
+      var y = d.getFullYear()
+      var m = d.getMonth() + 1
+      var day = d.getDate()
+      var mStr = m < 10 ? '0' + m : '' + m
+      var dStr = day < 10 ? '0' + day : '' + day
+      return y + '-' + mStr + '-' + dStr
+    },
+
+    fmtAmount: function(amount) {
+      if (amount === null || amount === undefined) return '0.00'
+      return Number(amount).toFixed(2)
     }
   }
 }
@@ -384,7 +440,7 @@ export default {
 .stat-val { font-size: 34rpx; font-weight: 700; color: #1f2937; }
 .stat-label { font-size: 22rpx; color: #9ca3af; margin-top: 4rpx; }
 .stat-divider { width: 1rpx; height: 44rpx; background: linear-gradient(180deg, transparent, #e5e7eb, transparent); }
-.stat-score { color: #f59e0b !important; }
+.stat-amount { color: #f59e0b !important; }
 .stat-pending { color: #ef4444 !important; }
 
 /* ========== 筛选栏 ========== */
@@ -411,8 +467,8 @@ export default {
   box-shadow: 0 4rpx 14rpx rgba(245, 158, 11, 0.3);
 }
 
-/* ========== 评价列表 ========== */
-.review-list-wrap { padding: 0 24rpx; }
+/* ========== 结算列表 ========== */
+.settlement-list-wrap { padding: 0 24rpx; }
 
 /* 空状态 */
 .empty-state {
@@ -426,8 +482,8 @@ export default {
 .empty-title { font-size: 30rpx; color: #374151; font-weight: 600; margin-bottom: 10rpx; }
 .empty-desc { font-size: 24rpx; color: #9ca3af; text-align: center; }
 
-/* 评价卡片 */
-.review-card {
+/* 结算卡片 */
+.settlement-card {
   display: flex;
   flex-direction: row;
   background: rgba(255, 255, 255, 0.85);
@@ -447,58 +503,69 @@ export default {
 }
 
 /* 左侧颜色条 */
-.rc-bar {
+.sc-bar {
   width: 5rpx;
   flex-shrink: 0;
   transition: all 0.3s ease;
 }
-.bar-rating-good { background: linear-gradient(180deg, #f59e0b, #fb923c); box-shadow: 0 0 12rpx rgba(245,158,11,0.25); }
-.bar-rating-mid { background: linear-gradient(180deg, #fbbf24, #fcd34d); box-shadow: 0 0 12rpx rgba(251,191,36,0.25); }
-.bar-rating-bad { background: linear-gradient(180deg, #f97316, #ea580c); box-shadow: 0 0 12rpx rgba(249,115,22,0.3); }
-.card-hover .bar-rating-good { width: 7rpx; box-shadow: 0 0 24rpx rgba(245,158,11,0.45), 0 0 48rpx rgba(245,158,11,0.15); }
-.card-hover .bar-rating-mid { width: 7rpx; box-shadow: 0 0 24rpx rgba(251,191,36,0.45), 0 0 48rpx rgba(251,191,36,0.15); }
-.card-hover .bar-rating-bad { width: 7rpx; box-shadow: 0 0 24rpx rgba(249,115,22,0.5), 0 0 48rpx rgba(249,115,22,0.18); }
+.bar-status-done { background: linear-gradient(180deg, #22c55e, #16a34a); box-shadow: 0 0 12rpx rgba(34,197,94,0.25); }
+.bar-status-pending { background: linear-gradient(180deg, #f59e0b, #fb923c); box-shadow: 0 0 12rpx rgba(245,158,11,0.25); }
+.bar-status-cancel { background: linear-gradient(180deg, #9ca3af, #d1d5db); box-shadow: 0 0 12rpx rgba(156,163,175,0.25); }
+.card-hover .bar-status-done { width: 7rpx; box-shadow: 0 0 24rpx rgba(34,197,94,0.45), 0 0 48rpx rgba(34,197,94,0.15); }
+.card-hover .bar-status-pending { width: 7rpx; box-shadow: 0 0 24rpx rgba(245,158,11,0.45), 0 0 48rpx rgba(245,158,11,0.15); }
+.card-hover .bar-status-cancel { width: 7rpx; box-shadow: 0 0 24rpx rgba(156,163,175,0.45), 0 0 48rpx rgba(156,163,175,0.15); }
 
 /* 卡片主体 */
-.rc-body {
+.sc-body {
   flex: 1;
   display: flex;
   flex-direction: column;
   padding: 20rpx 18rpx 18rpx;
-  gap: 12rpx;
+  gap: 10rpx;
 }
 
 /* 顶部 */
-.rc-top {
+.sc-top {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
   justify-content: space-between;
 }
-.rc-user { display: flex; flex-direction: row; align-items: center; gap: 14rpx; flex: 1; min-width: 0; }
-.user-avatar {
-  width: 64rpx; height: 64rpx;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
+.sc-left { display: flex; flex-direction: column; gap: 6rpx; flex: 1; min-width: 0; }
+.settle-no-row { display: flex; align-items: center; gap: 6rpx; }
+.no-icon { font-size: 22rpx; color: #f97316; font-weight: 900; }
+.no-text { font-size: 24rpx; font-weight: 800; color: #292524; font-family: monospace; letter-spacing: 0.5rpx; }
+.sc-date { font-size: 22rpx; color: #9ca3af; }
+
+.sc-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6rpx; flex-shrink: 0; margin-left: 12rpx; }
+.status-tag {
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+  font-weight: 700;
 }
-.avatar-text { font-size: 26rpx; color: #ffffff; font-weight: 700; }
-.user-info { display: flex; flex-direction: column; gap: 4rpx; min-width: 0; }
-.user-name { font-size: 28rpx; color: #1f2937; font-weight: 600; }
-.user-station { font-size: 22rpx; color: #9ca3af; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stag-0 { background: linear-gradient(135deg, rgba(217,119,6,0.12), rgba(245,158,11,0.06)); color: #d97706; border: 1rpx solid rgba(217,119,6,0.2); }
+.stag-1 { background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(74,222,128,0.06)); color: #16a34a; border: 1rpx solid rgba(34,197,94,0.2); }
+.stag-2 { background: linear-gradient(135deg, rgba(107,114,128,0.1), rgba(156,163,175,0.05)); color: #6b7280; border: 1rpx solid rgba(107,114,128,0.15); }
+.sc-withdraw { font-size: 20rpx; color: #78716c; font-weight: 500; }
 
-.rc-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6rpx; flex-shrink: 0; margin-left: 12rpx; }
-.star-row { display: flex; flex-direction: row; gap: 2rpx; }
-.star-icon { font-size: 24rpx; color: #e5e7eb; }
-.star-icon.filled { color: #f59e0b; }
-.rc-time { font-size: 20rpx; color: #9ca3af; }
-
-/* 评价内容 */
-.rc-content { padding: 0 4rpx; }
-.rc-text { font-size: 26rpx; color: #4b5563; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+/* 数据概览 */
+.sc-summary {
+  display: flex;
+  flex-direction: row;
+  gap: 20rpx;
+  padding: 10rpx 8rpx;
+  background: rgba(245, 158, 11, 0.04);
+  border-radius: 12rpx;
+  border: 1rpx solid rgba(245, 158, 11, 0.08);
+}
+.summary-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4rpx; }
+.summary-label { font-size: 20rpx; color: #9ca3af; font-weight: 500; }
+.summary-val { font-size: 24rpx; color: #374151; font-weight: 700; }
+.summary-val.highlight { color: #f59e0b; }
 
 /* 底部 */
-.rc-bottom {
+.sc-bottom {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -506,14 +573,12 @@ export default {
   padding-top: 8rpx;
   border-top: 1rpx solid rgba(0, 0, 0, 0.04);
 }
-.reply-tag {
-  padding: 4rpx 16rpx;
-  border-radius: 8rpx;
-  font-size: 20rpx;
-  font-weight: 600;
-}
-.rt-0 { background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(239,68,68,0.05)); color: #dc2626; }
-.rt-1 { background: linear-gradient(135deg, rgba(34,197,94,0.1), rgba(34,197,94,0.05)); color: #16a34a; }
+.bottom-info { display: flex; flex-direction: column; gap: 4rpx; flex: 1; min-width: 0; }
+.info-text { font-size: 21rpx; color: #78716c; font-weight: 500; }
+.info-settle { color: #d97706; font-weight: 600; }
+.settle-amount { font-weight: 800; color: #d97706; }
+.withdraw-info { flex-shrink: 0; margin-right: 12rpx; }
+.withdraw-text { font-size: 20rpx; color: #16a34a; font-weight: 600; background: rgba(34,197,94,0.08); padding: 4rpx 12rpx; border-radius: 8rpx; }
 .bottom-arrow { padding: 6rpx 4rpx; }
 .arrow-icon { font-size: 32rpx; color: #d1d5db; font-weight: 300; }
 </style>

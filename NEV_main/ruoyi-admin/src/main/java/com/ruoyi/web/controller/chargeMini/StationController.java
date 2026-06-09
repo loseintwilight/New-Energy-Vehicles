@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.chargeMini;
 
+import com.ruoyi.charging.service.IChargingStationService;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.service.StationService;
@@ -7,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 小程序端 - 充电站接口
+ * 充电站接口（小程序 + 商户端）
  */
 @RestController
 @RequestMapping("/app/charge/station")
@@ -15,6 +16,9 @@ public class StationController {
 
     @Autowired
     private StationService stationService;
+
+    @Autowired
+    private IChargingStationService chargingStationService;
 
     /**
      * 1.1 获取充电站列表（分页，带距离排序）
@@ -54,6 +58,14 @@ public class StationController {
     @GetMapping("/suggest")
     public AjaxResult suggest(@RequestParam String keyword) {
         return stationService.getSuggestions(keyword);
+    }
+
+    /**
+     * 商户端 - 获取当前商户的充电站列表（含今日统计数据，用于工作台首页）
+     */
+    @GetMapping("/merchant/list")
+    public AjaxResult merchantList() {
+        return chargingStationService.getMerchantStationList();
     }
 
     /**

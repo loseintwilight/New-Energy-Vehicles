@@ -131,12 +131,15 @@
 </template>
 
 <script>
+import { getRateDetail, updateRate } from '@/api/charger/rate.js'
+
 export default {
   data() {
     return {
       isReady: false,
       glowRows: [],
       isEdit: false,
+      editRateId: '',
       typeOptions: ['通用', '超充', '慢充', '快充'],
       form: {
         name: '',
@@ -157,20 +160,8 @@ export default {
   onLoad(options) {
     if (options.rateId) {
       this.isEdit = true
-      this.form = {
-        name: '标准充电费率',
-        type: '通用',
-        enabled: true,
-        peakPrice: '1.80',
-        peakTime: '10:00-12:00,14:00-17:00',
-        highPrice: '1.50',
-        highTime: '08:00-10:00,12:00-14:00,17:00-19:00',
-        flatPrice: '1.10',
-        flatTime: '07:00-08:00,19:00-21:00',
-        lowPrice: '0.70',
-        lowTime: '21:00-07:00',
-        description: '适用于普通快充桩的标准阶梯电价方案'
-      }
+      this.editRateId = options.rateId
+      this.loadRateData(options.rateId)
     }
   },
   created() {
@@ -179,6 +170,32 @@ export default {
     setTimeout(function() { self.isReady = true }, 200)
   },
   methods: {
+    loadRateData: function(rateId) {
+      var self = this
+      getRateDetail(rateId).then(function(res) {
+        if (res.code === 200 && res.data) {
+          var d = res.data
+          self.form = {
+            name: d.rateName || '',
+            type: d.pileType || '',
+            enabled: d.isActive === 1,
+            peakPrice: String(d.peakPrice || ''),
+            peakTime: d.peakTime || '',
+            highPrice: String(d.highPrice || ''),
+            highTime: d.highTime || '',
+            flatPrice: String(d.flatPrice || ''),
+            flatTime: d.flatTime || '',
+            lowPrice: String(d.lowPrice || ''),
+            lowTime: d.lowTime || '',
+            description: d.description || ''
+          }
+        } else {
+          uni.showToast({ title: res.msg || '加载失败', icon: 'none' })
+        }
+      }).catch(function() {
+        uni.showToast({ title: '网络异常', icon: 'none' })
+      })
+    },
     buildGlowRows() {
       var rows = []
       var colors = ['#f59e0b', '#f97316', '#fb923c', '#fbbf24']

@@ -14,29 +14,40 @@
     <view class="overlay-mask"></view>
 
     <!-- 主滚动区 -->
+    <!-- 全屏加载提示 -->
+    <view class="loading-mask" v-if="isLoading">
+      <view class="loading-box">
+        <view class="loading-spinner"></view>
+        <text class="loading-text">数据加载中...</text>
+      </view>
+    </view>
+
     <scroll-view scroll-y class="main-scroll" :show-scrollbar="false">
       <!-- 顶栏 -->
       <view class="header">
         <view class="header-bg"></view>
         <view class="header-circle"></view>
-        <view class="back-btn" hover-class="btn-hover" @tap="goBack">
-          <text class="back-icon">‹</text>
-        </view>
         <view class="header-info">
           <text class="header-title">充电桩工作台</text>
           <text class="header-date">{{ todayDate }}</text>
-        </view>
-        <view class="header-merchant" v-if="merchantName">
-          <view class="merchant-avatar-pile">
-            <text class="merchant-avatar-text">{{ merchantName.substring(0, 1) }}</text>
-          </view>
-          <text class="merchant-name-text">{{ merchantName }}</text>
         </view>
         <view class="header-right" @tap="showMoreModal = true">
           <view class="more-badge">
             <text class="more-icon">☰</text>
           </view>
         </view>
+      </view>
+
+      <!-- 用户信息（在充电桩工作台标题下方） -->
+      <view class="user-info-row">
+        <image v-if="userAvatar" :src="userAvatar" class="user-avatar" mode="aspectFill" @click="goToAvatar"></image>
+        <view v-else class="user-avatar user-avatar-placeholder" @click="goToAvatar">
+          <uni-icons type="person" size="22" color="#d97706"></uni-icons>
+        </view>
+        <view class="user-meta" @click="goToInfo">
+          <text class="user-name">{{ userName }}</text>
+        </view>
+        <view class="switch-btn" @click="handleSwitchUser">切换用户端</view>
       </view>
 
       <!-- 4栏统计卡 -->
@@ -131,7 +142,7 @@
         <view class="station-list">
           <view
             class="station-card"
-            v-for="(st, idx) in stationList"
+            v-for="(st, idx) in stationList.slice(0, 3)"
             :key="idx"
             :class="'st-' + (idx % 4)"
             hover-class="station-hover"
@@ -140,15 +151,15 @@
             <view class="st-left-bar"></view>
             <view class="st-body">
               <view class="st-header">
-                <text class="st-name">{{ st.name }}</text>
-                <view :class="['status-tag', 'tag-' + st.status]">
+                <text class="st-name">{{ st.stationName }}</text>
+                <view :class="['status-tag', 'tag-' + st.stationStatus]">
                   <view class="status-dot"></view>
-                  <text>{{ getStatusText(st.status) }}</text>
+                  <text>{{ getStatusText(st.stationStatus) }}</text>
                 </view>
               </view>
               <view class="st-stats">
                 <view class="st-stat-item">
-                  <text class="st-stat-val">¥{{ st.todayIncome || 0 }}</text>
+                  <text class="st-stat-val">¥{{ fmtMoney(st.todayIncome) }}</text>
                   <text class="st-stat-lbl">今日营收</text>
                 </view>
                 <view class="st-stat-divider"></view>
@@ -158,7 +169,7 @@
                 </view>
                 <view class="st-stat-divider"></view>
                 <view class="st-stat-item">
-                  <text class="st-stat-val">{{ st.todayEnergy || 0 }}kWh</text>
+                  <text class="st-stat-val">{{ fmtEnergy(st.todayEnergy) }}kWh</text>
                   <text class="st-stat-lbl">充电量</text>
                 </view>
               </view>
@@ -176,6 +187,11 @@
               </view>
             </view>
           </view>
+          <!-- 站点空状态 -->
+          <view class="empty-tip" v-if="dataLoaded && stationList.length === 0">
+            <text class="empty-icon">📡</text>
+            <text class="empty-text">暂无站点数据，请先在"站点管理"中添加站点</text>
+          </view>
         </view>
       </view>
 
@@ -192,7 +208,7 @@
         <view class="order-list">
           <view
             class="order-card"
-            v-for="(od, idx) in recentOrders"
+            v-for="(od, idx) in recentOrders.slice(0, 3)"
             :key="idx"
             hover-class="order-hover"
             @tap="goOrderDetail(od.orderId)"
@@ -204,9 +220,9 @@
                   <text class="order-no-icon">#</text>
                   <text class="order-no-text">{{ shortNo(od.orderNo) }}</text>
                 </view>
-                <view :class="['order-status', 'os-' + od.status]">
-                  <view class="os-pulse" v-if="od.status === '0'"></view>
-                  <text>{{ getOrderStatus(od.status) }}</text>
+                <view :class="['order-status', 'os-' + od.orderStatus]">
+                  <view class="os-pulse" v-if="od.orderStatus === '0'"></view>
+                  <text>{{ getOrderStatus(od.orderStatus) }}</text>
                 </view>
               </view>
               <view class="order-mid">
@@ -220,11 +236,16 @@
               </view>
             </view>
           </view>
+          <!-- 订单空状态 -->
+          <view class="empty-tip" v-if="dataLoaded && recentOrders.length === 0">
+            <text class="empty-icon">📋</text>
+            <text class="empty-text">暂无订单数据</text>
+          </view>
         </view>
       </view>
 
       <!-- 最新评价 -->
-      <view class="section-block">
+      <view class="section-block" v-if="recentReviews.length > 0">
         <view class="title-bar">
           <view class="bar-line bar-line-blue"></view>
           <text class="bar-title">最新评价</text>
@@ -288,44 +309,45 @@
 </template>
 
 <script>
+import { getMerchantStationList } from '@/api/charger/station'
+import { getOrderList } from '@/api/charger/order'
+
 export default {
   data: function() {
     return {
+      userName: this.$store.state.user.name || '充电桩管理员',
+      userPhone: this.$store.state.user.phonenumber || '',
+      userAvatar: this.$store.state.user.avatar || '',
       isReady: false,
+      isLoading: true,
+      dataLoaded: false,
       todayDate: '',
-      merchantName: '',
       glowRows: [],
       showMoreModal: false,
       /* 4栏统计卡数据（与下方stationList汇总值保持一致） */
-      /* 汇总：营收=4356.80, 订单=150, 电量=504.8, 总桩=29, 空闲=22 */
       statsData: [
-        { icon: '¥', value: '4,356.80', label: '今日营收(元)' },
-        { icon: '⚡', value: '504.8', label: '今日电量(kWh)' },
-        { icon: '📋', value: '150', label: '今日订单(笔)' },
-        { icon: '◎', value: '22/29', label: '空闲/总桩' }
+        { icon: '¥', value: '0.00', label: '今日营收(元)' },
+        { icon: '⚡', value: '0', label: '今日电量(kWh)' },
+        { icon: '📋', value: '0', label: '今日订单(笔)' },
+        { icon: '◎', value: '0/0', label: '空闲/总桩' }
       ],
       /* 4大功能卡片（2×2布局） */
       quickMain: [
         { icon: '◎', name: '站点管理', desc: '5个站点 · 运营监控', colorIdx: 0, url: '/pages/mine/charge-pile/station-list' },
         { icon: '📊', name: '数据概览', desc: '本月报告 · 趋势分析', colorIdx: 1, url: '/pages/mine/charge-pile/data-overview' },
         { icon: '📋', name: '订单中心', desc: '150笔订单 · 实时跟踪', colorIdx: 2, url: '/pages/mine/charge-pile/order-list' },
-        { icon: '🔧', name: '费率管理', desc: '3套方案 · 灵活配置', colorIdx: 3, url: '/pages/mine/charge-pile/rate-list' }
+        { icon: '🔧', name: '结算中心', desc: '收益结算与提现', colorIdx: 3, url: '/pages/mine/charge-pile/settlement-center' }
       ],
       /* 站点运行状态 */
       stationList: [],
       /* 最近订单 */
       recentOrders: [],
-      /* 最新评价（充电体验反馈，生产环境应从评价接口获取） */
-      recentReviews: [
-        { avatar: '张', name: '张先生', stars: 5, text: '充电速度很快，环境也很干净，下次还来！', time: '10分钟前' },
-        { avatar: '李', name: '李女士', stars: 4, text: '位置好找，价格合理，就是高峰期要排队。', time: '25分钟前' },
-        { avatar: '王', name: '王先生', stars: 5, text: '超充桩给力，半小时就充满了，好评！', time: '1小时前' }
-      ],
+      /* 最新评价 */
+      recentReviews: [],
       /* 更多管理菜单（弹窗内展示） */
       moreMenuList: [
         { icon: '🔌', name: '充电桩管理', desc: '查看管理充电桩设备', path: '/pages/mine/charge-pile/pile-list' },
         { icon: '💰', name: '费率管理', desc: '设置充电费率方案', path: '/pages/mine/charge-pile/rate-list' },
-        { icon: '⭐', name: '评价管理', desc: '用户评价 · 回复处理', path: '/pages/mine/charge-pile/charge-review-list' },
         { icon: '💳', name: '结算中心', desc: '收益结算与提现', path: '/pages/mine/charge-pile/settlement-center' },
         { icon: '👥', name: '客户管理', desc: '用户列表 · 反馈处理', path: '/pages/mine/charge-pile/customer-manage' },
         { icon: '◆', name: '商户资料', desc: '企业信息 · 资质认证', path: '/pages/mine/charge-pile/merchant-info' },
@@ -336,12 +358,16 @@ export default {
   created: function() {
     this.buildGlowRows()
     this.initDate()
-    this.loadMerchantInfo()
     this.loadDashboardData()
     var that = this
     setTimeout(function() {
       that.isReady = true
     }, 200)
+  },
+  onShow: function() {
+    this.userName = this.$store.state.user.name || '充电桩管理员'
+    this.userPhone = this.$store.state.user.phonenumber || ''
+    this.userAvatar = this.$store.state.user.avatar || ''
   },
   computed: {
     /* 将4大功能拆成2行×2列 */
@@ -390,44 +416,77 @@ export default {
       this.todayDate = y + '.' + m + '.' + day + ' ' + weeks[d.getDay()]
     },
 
-    loadMerchantInfo: function() {
-      try {
-        var userInfo = uni.getStorageSync('userInfo') || {}
-        this.merchantName = userInfo.merchantName || '充电桩商家'
-      } catch (e) {
-        this.merchantName = '充电桩商家'
-      }
-    },
-
     /* ---------- 数据加载 ---------- */
     loadDashboardData: function() {
+      this.isLoading = true
       this.loadStations()
       this.loadOrders()
     },
 
     loadStations: function() {
-      var USE_MOCK = true
-      if (USE_MOCK) {
-        /* 与 station-list.vue 的 mockStations 数据保持一致（5个站点，字段名对齐） */
-        this.stationList = [
-          { stationId: 1, name: '济南奥体中心充电站', status: '1', totalPiles: 8, availablePiles: 6, todayIncome: 1280.50, todayOrders: 42, todayEnergy: 156.2 },
-          { stationId: 2, name: '济南万达广场充电站', status: '1', totalPiles: 6, availablePiles: 4, todayIncome: 856.00, todayOrders: 31, todayEnergy: 98.5 },
-          { stationId: 4, name: '青岛万象城充电站', status: '1', totalPiles: 6, availablePiles: 5, todayIncome: 1120.00, todayOrders: 38, todayEnergy: 132.0 },
-          { stationId: 7, name: '淄博万象汇充电站', status: '2', totalPiles: 4, availablePiles: 3, todayIncome: 420.00, todayOrders: 15, todayEnergy: 45.8 },
-          { stationId: 10, name: '烟台芝罘万达充电站', status: '1', totalPiles: 5, availablePiles: 4, todayIncome: 680.30, todayOrders: 24, todayEnergy: 72.3 }
-        ]
-      }
+      var self = this
+      getMerchantStationList().then(function(res) {
+        self.isLoading = false
+        if (res.code === 200) {
+          var list = res.data.rows || []
+          self.stationList = list
+          /* 更新顶部统计数据 */
+          self.updateStatsData(list, self.recentOrders)
+          self.dataLoaded = true
+        }
+      }).catch(function() {
+        self.isLoading = false
+        self.dataLoaded = true
+        uni.showToast({ title: '加载站点数据失败', icon: 'none' })
+      })
     },
 
     loadOrders: function() {
-      var USE_MOCK = true
-      if (USE_MOCK) {
-        this.recentOrders = [
-          { orderId: 1001, orderNo: 'CH20260603001', pileCode: 'DC-001', startTime: '2026-06-03 10:30:00', energy: 42.5, amount: 80.00, status: '1' },
-          { orderId: 1002, orderNo: 'CH20260603002', pileCode: 'AC-003', startTime: '2026-06-03 09:15:00', energy: 28.6, amount: 37.18, status: '1' },
-          { orderId: 1003, orderNo: 'CH20260603003', pileCode: 'DC-002', startTime: '2026-06-03 11:00:00', energy: 0, amount: 0, status: '0' }
-        ]
+      var self = this
+      getOrderList({ pageSize: 20 }).then(function(res) {
+        if (res.code === 200) {
+          var list = res.data.rows || []
+          // 映射字段名以匹配模板（orderStatus / pileCode）
+          self.recentOrders = list.map(function(item) {
+            return {
+              orderId: item.orderId,
+              orderNo: item.orderNo,
+              orderStatus: item.status,
+              pileCode: item.pileNo,
+              startTime: item.startTime,
+              energy: item.energy,
+              amount: item.amount
+            }
+          })
+          /* 更新顶部统计数据 */
+          self.updateStatsData(self.stationList, self.recentOrders)
+        }
+      }).catch(function() {
+        // 订单列表为空不报错（商户可能没有个人充电订单）
+      })
+    },
+
+    updateStatsData: function(stations, orders) {
+      var totalIncome = 0
+      var totalEnergy = 0
+      var totalOrders = 0
+      var totalPiles = 0
+      var availablePiles = 0
+
+      for (var i = 0; i < stations.length; i++) {
+        totalIncome += (stations[i].todayIncome || 0)
+        totalEnergy += (stations[i].todayEnergy || 0)
+        totalOrders += (stations[i].todayOrders || 0)
+        totalPiles += (stations[i].totalPiles || 0)
+        availablePiles += (stations[i].availablePiles || 0)
       }
+
+      this.statsData = [
+        { icon: '¥', value: totalIncome.toFixed(2), label: '今日营收(元)' },
+        { icon: '⚡', value: totalEnergy.toFixed(1), label: '今日电量(kWh)' },
+        { icon: '📋', value: totalOrders.toString(), label: '今日订单(笔)' },
+        { icon: '◎', value: availablePiles + '/' + totalPiles, label: '空闲/总桩' }
+      ]
     },
 
     /* ---------- 工具方法 ---------- */
@@ -467,6 +526,16 @@ export default {
       return Number(amount).toFixed(2)
     },
 
+    fmtMoney: function(val) {
+      if (val === null || val === undefined) return '0.00'
+      return Number(val).toFixed(2)
+    },
+
+    fmtEnergy: function(val) {
+      if (val === null || val === undefined) return '0.0'
+      return Number(val).toFixed(1)
+    },
+
     /* ---------- 页面跳转 ---------- */
     goBack: function() {
       uni.navigateBack({ delta: 1 })
@@ -503,6 +572,18 @@ export default {
         return
       }
       uni.navigateTo({ url: item.path })
+    },
+
+    goToAvatar: function() {
+      uni.navigateTo({ url: '/pages/mine/avatar/index' })
+    },
+
+    goToInfo: function() {
+      uni.navigateTo({ url: '/pages/mine/info/index' })
+    },
+
+    handleSwitchUser: function() {
+      this.$tab.switchTab('/pages/mine/index')
     }
   }
 }
@@ -596,6 +677,54 @@ export default {
   height: 100vh;
 }
 
+/* ========== 用户信息行（暖色风格） ========== */
+.user-info-row {
+  position: relative;
+  z-index: 3;
+  padding: 28rpx 28rpx 8rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+.user-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  border: 3rpx solid rgba(251, 146, 60, 0.4);
+}
+.user-avatar-placeholder {
+  background: linear-gradient(135deg, #fde68a, #fbbf24);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+.user-name {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #431407;
+}
+.user-phone {
+  font-size: 22rpx;
+  color: #92400e;
+}
+.user-info-row .switch-btn {
+  margin-left: auto;
+  font-size: 22rpx;
+  color: #ffffff;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  padding: 8rpx 20rpx;
+  border-radius: 10rpx;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 4rpx 12rpx rgba(217, 119, 6, 0.35);
+  flex-shrink: 0;
+}
+
 /* ========== 顶栏 ========== */
 .header {
   position: relative;
@@ -622,29 +751,6 @@ export default {
   border-radius: 50%;
   background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
   pointer-events: none;
-}
-.back-btn {
-  width: 64rpx;
-  height: 64rpx;
-  border-radius: 32rpx;
-  background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-  box-shadow: 0 4rpx 14rpx rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
-}
-.btn-hover {
-  transform: scale(0.9);
-  background: rgba(255, 255, 255, 0.45);
-}
-.back-icon {
-  font-size: 36rpx;
-  color: #ffffff;
-  font-weight: 300;
 }
 .header-info {
   flex: 1;
@@ -683,39 +789,6 @@ export default {
   font-size: 32rpx;
   color: #ffffff;
   font-weight: 700;
-}
-
-/* 商家信息 */
-.header-merchant {
-  display: flex;
-  align-items: center;
-  z-index: 2;
-  margin-left: 16rpx;
-  gap: 12rpx;
-}
-.merchant-avatar-pile {
-  width: 52rpx;
-  height: 52rpx;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.18);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2rpx solid rgba(0, 0, 0, 0.3);
-}
-.merchant-avatar-text {
-  font-size: 24rpx;
-  font-weight: 800;
-  color: #1c1917;
-}
-.merchant-name-text {
-  font-size: 26rpx;
-  font-weight: 700;
-  color: #1c1917;
-  max-width: 200rpx;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* ========== 4栏统计卡 ========== */
@@ -1525,5 +1598,59 @@ export default {
   color: #ccc;
   font-weight: 600;
   margin-left: 8rpx;
+}
+
+/* ========== 加载状态 ========== */
+.loading-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 247, 237, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.loading-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20rpx;
+}
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 6rpx solid #fde68a;
+  border-top-color: #f59e0b;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.loading-text {
+  font-size: 26rpx;
+  color: #d97706;
+  font-weight: 600;
+}
+
+/* ========== 空状态 ========== */
+.empty-tip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx 20rpx;
+  gap: 14rpx;
+}
+.empty-icon {
+  font-size: 52rpx;
+}
+.empty-text {
+  font-size: 24rpx;
+  color: #a8a29e;
+  text-align: center;
 }
 </style>

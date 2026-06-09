@@ -260,6 +260,11 @@
       "navigationBarTitleText": "订单管理"
     }
   }, {
+    "path": "pages/mine/service/orderList/detail",
+    "style": {
+      "navigationBarTitleText": "订单详情"
+    }
+  }, {
     "path": "pages/mine/service/dataSettings/index",
     "style": {
       "navigationBarTitleText": "数据统计"

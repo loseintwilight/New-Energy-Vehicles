@@ -103,11 +103,6 @@
               <text>{{ item.expanded ? '收起' : '展开' }}</text>
             </view>
           </view>
-          <!-- 商家回复 -->
-          <view class="reply-box" v-if="item.reply">
-            <text class="reply-label">商家回复：</text>
-            <text class="reply-content">{{ item.reply }}</text>
-          </view>
         </view>
       </view>
 
@@ -122,84 +117,33 @@
 </template>
 
 <script>
+import { listReview } from '@/api/vehicle/vehicle'
+
 export default {
   data: function() {
     return {
       isReady: false,
       glowRows: [],
       activeTab: 0,
-      avgScore: '4.8',
-      totalCount: 5,
-      goodRate: '96%',
+      avgScore: '0',
+      totalCount: 0,
+      goodRate: '0%',
       filterTabs: [
         { label: '全部', value: 'all' },
         { label: '5星', value: 5 },
         { label: '4星', value: 4 },
         { label: '3星及以下', value: 3 }
       ],
-      mockReviews: [
-        {
-          reviewId: 1,
-          userName: '张**',
-          avatarLetter: '张',
-          rating: 5,
-          vehicleName: '比亚迪海豹 EV 700km 四驱旗舰版',
-          content: '车子非常满意！续航真实，内饰做工精细，销售服务态度很好。提车当天就跑了200公里高速，电耗很满意。推荐购买！',
-          reply: '感谢您的信任与支持！祝您用车愉快~',
-          date: '2026-05-31',
-          expanded: false
-        },
-        {
-          reviewId: 2,
-          userName: '李**',
-          avatarLetter: '李',
-          rating: 5,
-          vehicleName: '特斯拉 Model Y 后驱版',
-          content: 'Model Y的空间很大，家用完全够用。自动驾驶辅助功能在高速上很好用。充电也方便，家里装了家充桩。',
-          reply: '',
-          date: '2026-05-30',
-          expanded: false
-        },
-        {
-          reviewId: 3,
-          userName: '王**',
-          avatarLetter: '王',
-          rating: 4,
-          vehicleName: '蔚来 ES6 75kWh 运动版',
-          content: '整体不错，换电服务确实方便。就是价格稍微有点高，不过考虑到服务和品质还是值得的。NOMI语音助手孩子很喜欢。',
-          reply: '感谢您的认可！关于价格我们会持续优化优惠活动，欢迎关注。',
-          date: '2026-05-29',
-          expanded: false
-        },
-        {
-          reviewId: 4,
-          userName: '赵**',
-          avatarLetter: '赵',
-          rating: 5,
-          vehicleName: '理想 L7 Pro 增程版',
-          content: '作为家庭用车非常合适，六座布局老人小孩都舒服。增程解决了里程焦虑，市区用电长途用油，完美组合。冰箱彩电大沙发一个不少！',
-          reply: '',
-          date: '2026-05-28',
-          expanded: false
-        },
-        {
-          reviewId: 5,
-          userName: '刘**',
-          avatarLetter: '刘',
-          rating: 3,
-          vehicleName: '比亚迪汉 DM-i 冠军版',
-          content: '油耗表现不错，纯电模式够日常通勤。但是车机系统偶尔卡顿，希望后续OTA能优化。总体还是满意的。',
-          reply: '收到您的反馈，我们会将车机问题反馈给技术团队处理。',
-          date: '2026-05-27',
-          expanded: false
-        }
-      ]
+      reviews: [],
+      pageNum: 1,
+      pageSize: 20,
+      hasMore: false
     }
   },
   computed: {
     filteredReviews: function() {
       var that = this
-      var list = that.mockReviews.slice()
+      var list = that.reviews.slice()
       if (that.activeTab === 0) return list
       if (that.activeTab === 1) return list.filter(function(r) { return r.rating === 5 })
       if (that.activeTab === 2) return list.filter(function(r) { return r.rating === 4 })
@@ -209,10 +153,9 @@ export default {
   },
   created: function() {
     this.buildGlowRows()
+    this.loadReviews()
     var that = this
-    setTimeout(function() {
-      that.isReady = true
-    }, 200)
+    setTimeout(function() { that.isReady = true }, 200)
   },
   methods: {
     buildGlowRows: function() {
@@ -235,23 +178,65 @@ export default {
       }
       this.glowRows = rows
     },
+
+    loadReviews: function() {
+      var self = this
+      var params = { pageNum: self.pageNum, pageSize: self.pageSize }
+      if (self.activeTab > 0) {
+        params.rating = self.filterTabs[self.activeTab].value === 3 ? null : self.filterTabs[self.activeTab].value
+      }
+      listReview(params).then(function(res) {
+        if (res.code === 1 && res.data) {
+          var list = res.data.list || []
+          self.totalCount = res.data.total || list.length
+          // 计算综合评分和好评率
+          var totalRating = 0
+          var goodCount = 0
+          list.forEach(function(r) {
+            totalRating += r.rating || 0
+            if (r.rating >= 4) goodCount++
+          })
+          self.avgScore = list.length > 0 ? (totalRating / list.length).toFixed(1) : '0'
+          self.goodRate = self.totalCount > 0 ? Math.round(goodCount / self.totalCount * 100) + '%' : '0%'
+          // 映射数据
+          self.reviews = list.map(function(r) {
+            return {
+              reviewId: r.reviewId,
+              userName: r.nickName || '匿名用户',
+              avatarLetter: (r.nickName || '匿').substring(0, 1),
+              rating: r.rating || 0,
+              vehicleName: r.vehicleName || '-',
+              content: r.content || '',
+              date: r.createTime || '',
+              expanded: false
+            }
+          })
+          self.hasMore = res.data.hasNextPage || false
+        }
+      }).catch(function() {
+        console.log('获取评价列表失败')
+      })
+    },
+
     goBack: function() {
       uni.navigateBack({ delta: 1 })
     },
     switchTab: function(idx) {
       this.activeTab = idx
+      this.pageNum = 1
+      this.loadReviews()
     },
     goDetail: function(reviewId) {
       uni.navigateTo({ url: '/pages/mine/vehicle/review-detail?reviewId=' + reviewId })
     },
     toggleExpand: function(idx) {
-      this.mockReviews[idx].expanded = !this.mockReviews[idx].expanded
-    },
-    isLongContent: function(content) {
-      return content.length > 50
+      this.reviews[idx].expanded = !this.reviews[idx].expanded
     },
     loadMore: function() {
-      console.log('加载更多')
+      if (this.hasMore) {
+        this.pageNum++
+        this.loadReviews()
+      }
     }
   }
 }
@@ -666,27 +651,6 @@ export default {
   font-size: 24rpx;
   color: #d97706;
   font-weight: 600;
-}
-
-/* 商家回复 */
-.reply-box {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.06), rgba(74, 222, 128, 0.03));
-  border-radius: 14rpx;
-  padding: 16rpx 18rpx;
-  border-left: 4rpx solid #22c55e;
-  box-shadow: inset 0 1rpx 2rpx rgba(34, 197, 94, 0.06);
-}
-.reply-label {
-  font-size: 22rpx;
-  color: #16a34a;
-  font-weight: 700;
-}
-.reply-content {
-  font-size: 24rpx;
-  color: #57534e;
-  line-height: 1.6;
-  margin-top: 4rpx;
-  display: block;
 }
 
 /* ========== 加载更多 ========== */

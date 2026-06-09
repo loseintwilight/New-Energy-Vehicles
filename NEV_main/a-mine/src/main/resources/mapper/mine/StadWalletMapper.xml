@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mine.mapper.StadWalletMapper">
+
+    <resultMap type="com.ruoyi.mine.domain.MineStadWallet" id="StadWalletResult">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="balance" column="balance"/>
+        <result property="totalRecharge" column="total_recharge"/>
+        <result property="totalWithdraw" column="total_withdraw"/>
+        <result property="freezeAmount" column="freeze_amount"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <select id="selectStadWalletByUserId" parameterType="Long" resultMap="StadWalletResult">
+        select id, user_id, balance, total_recharge, total_withdraw, freeze_amount, create_time, update_time
+        from stad_wallet
+        where user_id = #{userId}
+    </select>
+
+    <insert id="insertStadWallet" parameterType="com.ruoyi.mine.domain.MineStadWallet">
+        insert into stad_wallet (user_id, balance, total_recharge, total_withdraw, freeze_amount, create_time, update_time)
+        values (#{userId}, #{balance}, #{totalRecharge}, #{totalWithdraw}, #{freezeAmount}, #{createTime}, #{updateTime})
+    </insert>
+
+    <update id="updateStadWallet" parameterType="com.ruoyi.mine.domain.MineStadWallet">
+        update stad_wallet
+        set balance = #{balance},
+            total_recharge = #{totalRecharge},
+            total_withdraw = #{totalWithdraw},
+            freeze_amount = #{freezeAmount},
+            update_time = #{updateTime}
+        where id = #{id}
+    </update>
+
+</mapper>

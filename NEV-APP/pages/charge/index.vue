@@ -721,6 +721,7 @@ export default {
         id: item.stationId || i + 1000,
         latitude: item.lat,
         longitude: item.lng,
+        title: item.name, // 鼠标悬浮时显示充电站名称（H5）
         width: 30,
         height: 36,
         callout: {
@@ -731,6 +732,15 @@ export default {
           padding: 2,
           bgColor: '#ffffff',
           color: '#ff6b00',
+          textAlign: 'center'
+        },
+        label: {
+          content: item.name || '充电站',
+          color: '#333',
+          fontSize: 11,
+          borderRadius: 4,
+          bgColor: '#ffffffcc',
+          padding: 2,
           textAlign: 'center'
         }
       }))
@@ -1057,7 +1067,7 @@ export default {
 
     goDetail(station) {
       uni.navigateTo({
-        url: `/pages/charge/detail?stationId=${station.stationId}&name=${encodeURIComponent(station.name)}&lat=${station.lat}&lng=${station.lng}`
+        url: `/pages/charge/detail?stationId=${station.stationId}&name=${encodeURIComponent(station.name)}&lat=${station.lat}&lng=${station.lng}&distance=${station.distance}`
       })
     },
 

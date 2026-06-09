@@ -24,6 +24,18 @@
 				</view>
 			</view>
 
+			<!-- 用户信息（在车辆管理台标题下方） -->
+			<view class="user-info-row">
+				<image v-if="userAvatar" :src="userAvatar" class="user-avatar" mode="aspectFill" @click="goToAvatar"></image>
+				<view v-else class="user-avatar user-avatar-placeholder" @click="goToAvatar">
+					<uni-icons type="person" size="22" color="#d97706"></uni-icons>
+				</view>
+				<view class="user-meta" @click="goToInfo">
+					<text class="user-name">{{ userName }}</text>
+					<text class="user-phone">{{ userPhone }}</text>
+				</view>
+			</view>
+
 			<view class="stats-section">
 				<view class="stats-row">
 					<view class="stat-card" v-for="(item, idx) in statsData" :key="idx" :class="'stat-' + idx" hover-class="stat-hover" @tap="onStatTap(idx)">
@@ -107,6 +119,9 @@ export default {
 	name: 'BusinessView',
 	data() {
 		return {
+			userName: this.$store.state.user.name || '商家管理员',
+			userPhone: this.$store.state.user.phonenumber || '',
+			userAvatar: this.$store.state.user.avatar || '',
 			isReady: false,
 			todayDate: '',
 			glowRows: [],
@@ -145,6 +160,11 @@ export default {
 		var self = this
 		setTimeout(function() { self.isReady = true }, 200)
 	},
+	onShow() {
+		this.userName = this.$store.state.user.name || '商家管理员'
+		this.userPhone = this.$store.state.user.phonenumber || ''
+		this.userAvatar = this.$store.state.user.avatar || ''
+	},
 	methods: {
 		buildGlowRows() {
 			var rows = []
@@ -181,7 +201,9 @@ export default {
 			if (item.url) uni.navigateTo({ url: item.url })
 		},
 		goOrderList() { uni.navigateTo({ url: '/pages/mine/vehicle/vehicle-order-list' }) },
-		goOrderDetail(id) { uni.navigateTo({ url: '/pages/mine/vehicle/vehicle-order-detail?orderId=' + id }) }
+		goOrderDetail(id) { uni.navigateTo({ url: '/pages/mine/vehicle/vehicle-order-detail?orderId=' + id }) },
+		goToAvatar() { uni.navigateTo({ url: '/pages/mine/avatar/index' }) },
+		goToInfo() { uni.navigateTo({ url: '/pages/mine/info/index' }) }
 	}
 }
 </script>
@@ -215,9 +237,48 @@ export default {
 }
 @keyframes glowPulse {
 	0% { opacity: 0; transform: scale(0.6); }
-	50% { opacity: 0.5; }
-	100% { opacity: 0; transform: scale(1.4); }
+	100% { opacity: 0.5; transform: scale(1.2); }
 }
+
+.main-scroll { position: relative; z-index: 2; }
+
+/* ========== 用户信息行（暖色风格） ========== */
+.user-info-row {
+	position: relative;
+	z-index: 3;
+	padding: 28rpx 28rpx 8rpx;
+	display: flex;
+	align-items: center;
+	gap: 16rpx;
+}
+.user-avatar {
+	width: 80rpx;
+	height: 80rpx;
+	border-radius: 50%;
+	border: 3rpx solid rgba(251, 146, 60, 0.4);
+}
+.user-avatar-placeholder {
+	background: linear-gradient(135deg, #fde68a, #fbbf24);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.user-meta {
+	display: flex;
+	flex-direction: column;
+	gap: 4rpx;
+}
+.user-name {
+	font-size: 30rpx;
+	font-weight: 700;
+	color: #431407;
+}
+.user-phone {
+	font-size: 22rpx;
+	color: #92400e;
+}
+
+/* ========== 顶栏 ========== */
 .overlay-mask {
 	position: fixed;
 	top: 0; left: 0; right: 0; bottom: 0;

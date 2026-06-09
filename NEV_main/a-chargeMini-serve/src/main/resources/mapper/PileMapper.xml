@@ -69,4 +69,11 @@
         WHERE pile_id = #{pileId}
     </update>
 
+    <!-- 重置所有异常占用桩为空闲（仅复位桩表，station表同步由Java层处理） -->
+    <update id="resetAllStuckPiles">
+        UPDATE stad_charging_pile
+        SET pile_status = '0', current_order_no = NULL
+        WHERE pile_status = '1'
+    </update>
+
 </mapper>

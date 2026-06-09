@@ -35,7 +35,7 @@ export function updateUserProfile(data) {
 export function uploadAvatar(data) {
   return upload({
     url: '/system/user/profile/avatar',
-    name: data.name,
+    name: 'avatarfile',
     filePath: data.filePath
   })
 }

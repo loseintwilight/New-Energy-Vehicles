@@ -115,7 +115,7 @@
 </template>
 
 <script>
-  import { updateUserProfile } from "@/api/system/user"
+  import { getUserProfile, updateUserProfile } from "@/api/system/user"
 
   export default {
     data() {
@@ -150,17 +150,33 @@
     },
     methods: {
       getUserInfo() {
-        // 模拟获取用户信息
-        this.form = {
-          userName: 'user001',
-          nickName: '新能源用户',
-          phonenumber: '13888888888',
-          email: 'user@example.com',
-          sex: '0',
-          birthday: '1990-01-01',
-          address: '北京市朝阳区'
-        }
-        this.currentGender = this.form.sex
+        // 从 API 获取真实用户数据
+        getUserProfile().then(response => {
+          const user = response.data || {}
+          this.form = {
+            userName: user.userName || '',
+            nickName: user.nickName || '',
+            phonenumber: user.phonenumber || '',
+            email: user.email || '',
+            sex: user.sex || '2',
+            birthday: user.birthday || '',
+            address: user.address || ''
+          }
+          this.currentGender = this.form.sex
+        }).catch(() => {
+          // 接口失败时从 Vuex 读取
+          const state = this.$store.state.user
+          this.form = {
+            userName: state.name || '',
+            nickName: state.name || '',
+            phonenumber: state.phonenumber || '',
+            email: '',
+            sex: '2',
+            birthday: '',
+            address: ''
+          }
+          this.currentGender = this.form.sex
+        })
       },
       confirmGender() {
         this.form.sex = this.currentGender
@@ -191,14 +207,27 @@
         }
 
         this.$modal.loading('保存中...')
-        // 模拟保存
-        setTimeout(() => {
+        updateUserProfile({
+          userName: this.form.userName,
+          nickName: this.form.nickName,
+          phonenumber: this.form.phonenumber,
+          email: this.form.email,
+          sex: this.form.sex,
+          birthday: this.form.birthday,
+          address: this.form.address
+        }).then(() => {
           this.$modal.closeLoading()
           this.$modal.msgSuccess('保存成功')
+          // 更新 Vuex 和本地存储，其他页面即时同步
+          this.$store.commit('SET_NAME', this.form.nickName || this.form.userName)
+          this.$store.commit('SET_PHONENUMBER', this.form.phonenumber)
           setTimeout(() => {
             this.$tab.navigateBack()
           }, 1500)
-        }, 1000)
+        }).catch(() => {
+          this.$modal.closeLoading()
+          this.$modal.msgError('保存失败，请重试')
+        })
       }
     }
   }

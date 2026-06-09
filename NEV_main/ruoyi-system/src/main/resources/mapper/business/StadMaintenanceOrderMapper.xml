@@ -26,6 +26,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="createTime"     column="create_time"     />
         <result property="shopName"       column="shop_name"       />
         <result property="nickName"       column="nick_name"       />
+        <result property="shopAddress"    column="shop_address"    />
+        <result property="contactName"    column="shop_contact_name" />
+        <result property="contactPhone"   column="shop_contact_phone" />
+        <result property="vehicleName"    column="vehicle_name"    />
     </resultMap>
 
     <sql id="selectOrderVo">
@@ -34,10 +38,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                o.expect_date, o.expect_time_slot, o.order_status, o.cancel_reason,
                o.finish_time, o.rating, o.comment_content, o.pay_status,
                o.payment_method, o.create_time,
-               s.shop_name, u.nick_name
+               s.shop_name, u.nick_name,
+               CONCAT(COALESCE(s.province,''), COALESCE(s.city,''), COALESCE(s.district,''), ' ', COALESCE(s.address,'')) as shop_address,
+               s.contact_name as shop_contact_name,
+               s.contact_phone as shop_contact_phone,
+               COALESCE(v.model_name, v.title) as vehicle_name
         from stad_maintenance_order o
         left join stad_maintenance_shop s on o.shop_id = s.shop_id
         left join sys_user u on o.user_id = u.user_id
+        left join stad_vehicle v on o.vehicle_id = v.vehicle_id
     </sql>
 
     <select id="selectStadMaintenanceOrderById" parameterType="Long" resultMap="StadMaintenanceOrderResult">

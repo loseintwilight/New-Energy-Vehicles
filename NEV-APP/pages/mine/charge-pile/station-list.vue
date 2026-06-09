@@ -48,22 +48,6 @@
         </view>
       </view>
 
-      <!-- 状态筛选标签栏 -->
-      <scroll-view scroll-x class="filter-bar" :show-scrollbar="false">
-        <view class="filter-inner">
-          <view
-            v-for="(item, index) in statusList"
-            :key="index"
-            class="filter-chip"
-            :class="{ active: currentStatus === item.value }"
-            @tap="switchStatus(item.value)"
-            hover-class="chip-hover"
-          >
-            <text class="chip-text">{{ item.label }}</text>
-          </view>
-        </view>
-      </scroll-view>
-
       <!-- 站点卡片列表 -->
       <view class="list-area">
         <!-- 空状态 -->
@@ -84,19 +68,19 @@
           @tap="goDetail(item.stationId)"
         >
           <!-- 左侧彩色状态条 -->
-          <view class="color-bar" :class="'cb-' + item.status"></view>
+          <view class="color-bar" :class="'cb-' + item.stationStatus"></view>
           <!-- 卡片主体 -->
           <view class="sc-body">
             <!-- 顶部：站名 + 状态标签 -->
             <view class="sc-top">
-              <text class="sc-name">{{ item.name }}</text>
-              <view class="status-badge" :class="'sb-' + item.status">
-                <view class="status-dot" v-if="item.status === '1'"></view>
-                <text class="sb-text">{{ getStatusLabel(item.status) }}</text>
+              <text class="sc-name">{{ item.stationName }}</text>
+              <view class="status-badge" :class="'sb-' + item.stationStatus">
+                <view class="status-dot" v-if="item.stationStatus === '1'"></view>
+                <text class="sb-text">{{ getStatusLabel(item.stationStatus) }}</text>
               </view>
             </view>
             <!-- 编码 -->
-            <text class="sc-code">编码：{{ item.code }}</text>
+            <text class="sc-code">编码：{{ item.stationCode }}</text>
             <!-- 地址 -->
             <view class="sc-addr">
               <text class="addr-mark">📍</text>
@@ -144,6 +128,8 @@
 </template>
 
 <script>
+import { getMerchantStationList, addStation, deleteStation } from '@/api/charger/station.js'
+
 export default {
   data: function() {
     return {
@@ -157,31 +143,21 @@ export default {
         { label: '维护中', value: '2' },
         { label: '已停用', value: '3' }
       ],
-      /* Mock站点数据（从数据库真实站名取） */
-      mockStations: [
-        { stationId: 1, name: '济南奥体中心充电站', code: 'JN-AT-001', address: '历下区奥体中路2000号',
-          status: '1', totalPiles: 8, availablePiles: 6, todayIncome: 1280.50, todayOrders: 42, city: '济南市' },
-        { stationId: 2, name: '济南万达广场充电站', code: 'JN-WD-002', address: '市中区经四路万达广场',
-          status: '1', totalPiles: 6, availablePiles: 4, todayIncome: 856.00, todayOrders: 31, city: '济南市' },
-        { stationId: 4, name: '青岛万象城充电站', code: 'QD-WXC-004', address: '市南区山东路6号万象城',
-          status: '1', totalPiles: 6, availablePiles: 5, todayIncome: 1120.00, todayOrders: 38, city: '青岛市' },
-        { stationId: 7, name: '淄博万象汇充电站', code: 'ZB-WXH-007', address: '张店区金晶大道66号',
-          status: '2', totalPiles: 4, availablePiles: 3, todayIncome: 420.00, todayOrders: 15, city: '淄博市' },
-        { stationId: 10, name: '烟台芝罘万达充电站', code: 'YT-ZFWD-010', address: '芝罘区西南河路518号',
-          status: '1', totalPiles: 5, availablePiles: 4, todayIncome: 680.30, todayOrders: 24, city: '烟台市' }
-      ]
+      /* 站点数据（从接口加载） */
+      stationList: [],
+      loading: false
     }
   },
   computed: {
     /* 筛选后的站点列表 */
     filteredList: function() {
       var that = this
-      var list = that.mockStations
+      var list = that.stationList
 
       /* 状态筛选 */
       if (that.currentStatus !== '') {
         list = list.filter(function(item) {
-          return item.status === that.currentStatus
+          return item.stationStatus === that.currentStatus
         })
       }
 
@@ -189,9 +165,9 @@ export default {
       if (that.searchKey && that.searchKey.trim() !== '') {
         var key = that.searchKey.trim().toLowerCase()
         list = list.filter(function(item) {
-          return item.name.toLowerCase().indexOf(key) !== -1 ||
-                 item.code.toLowerCase().indexOf(key) !== -1 ||
-                 item.address.toLowerCase().indexOf(key) !== -1
+          return (item.stationName || '').toLowerCase().indexOf(key) !== -1 ||
+                 (item.stationCode || '').toLowerCase().indexOf(key) !== -1 ||
+                 (item.address || '').toLowerCase().indexOf(key) !== -1
         })
       }
 
@@ -200,12 +176,30 @@ export default {
   },
   created: function() {
     this.buildGlowRows()
+    this.loadStations()
     var that = this
     setTimeout(function() {
       that.isReady = true
     }, 200)
   },
   methods: {
+    /* ---------- 数据加载 ---------- */
+    loadStations: function() {
+      var self = this
+      self.loading = true
+      getMerchantStationList().then(function(res) {
+        self.loading = false
+        if (res.code === 200) {
+          self.stationList = res.data.rows || []
+        } else {
+          uni.showToast({ title: res.msg || '加载失败', icon: 'none' })
+        }
+      }).catch(function(err) {
+        self.loading = false
+        uni.showToast({ title: '网络异常', icon: 'none' })
+      })
+    },
+
     /* ---------- 初始化：构建背景光晕矩阵 ---------- */
     buildGlowRows: function() {
       var rows = []
@@ -280,8 +274,16 @@ export default {
         confirmColor: '#ef4444',
         success: function(res) {
           if (res.confirm) {
-            self.mockStations = self.mockStations.filter(function(s) { return s.stationId !== stationId })
-            uni.showToast({ title: '已删除', icon: 'success' })
+            deleteStation(stationId).then(function(res) {
+              if (res.code === 200) {
+                self.stationList = self.stationList.filter(function(s) { return s.stationId !== stationId })
+                uni.showToast({ title: '已删除', icon: 'success' })
+              } else {
+                uni.showToast({ title: res.msg || '删除失败', icon: 'none' })
+              }
+            }).catch(function() {
+              uni.showToast({ title: '网络异常', icon: 'none' })
+            })
           }
         }
       })

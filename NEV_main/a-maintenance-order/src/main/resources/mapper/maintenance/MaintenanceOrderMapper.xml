@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ruoyi.mapper.MaintenanceOrderMapper">
+
+    <resultMap id="OrderResult" type="com.ruoyi.business.domain.StadMaintenanceOrder">
+        <result property="orderId"        column="order_id"        />
+        <result property="orderNo"        column="order_no"        />
+        <result property="userId"         column="user_id"         />
+        <result property="shopId"         column="shop_id"         />
+        <result property="vehicleId"      column="vehicle_id"      />
+        <result property="serviceItem"    column="service_item"    />
+        <result property="servicePrice"   column="service_price"   />
+        <result property="totalAmount"    column="total_amount"    />
+        <result property="paidAmount"     column="paid_amount"     />
+        <result property="expectDate"     column="expect_date"     />
+        <result property="expectTimeSlot" column="expect_time_slot" />
+        <result property="orderStatus"    column="order_status"    />
+        <result property="cancelReason"   column="cancel_reason"   />
+        <result property="finishTime"     column="finish_time"     />
+        <result property="rating"         column="rating"          />
+        <result property="commentContent" column="comment_content"  />
+        <result property="payStatus"      column="pay_status"      />
+        <result property="paymentMethod"  column="payment_method"  />
+        <result property="createTime"     column="create_time"     />
+        <result property="shopName"       column="shop_name"       />
+        <result property="nickName"       column="nick_name"       />
+    </resultMap>
+
+    <sql id="selectOrderVo">
+        SELECT o.order_id, o.order_no, o.user_id, o.shop_id, o.vehicle_id,
+               o.service_item, o.service_price, o.total_amount, o.paid_amount,
+               o.expect_date, o.expect_time_slot, o.order_status, o.cancel_reason,
+               o.finish_time, o.rating, o.comment_content, o.pay_status,
+               o.payment_method, o.create_time,
+               s.shop_name, u.nick_name
+        FROM stad_maintenance_order o
+                 LEFT JOIN stad_maintenance_shop s ON o.shop_id = s.shop_id
+                 LEFT JOIN sys_user u ON o.user_id = u.user_id
+    </sql>
+
+
+    <select id="selectDashboardStats" resultType="java.util.Map">
+        SELECT
+                (SELECT COUNT(*) FROM stad_maintenance_shop) AS shopCount,
+                (SELECT COUNT(*) FROM stad_maintenance_order WHERE DATE(create_time) = CURDATE()) AS orderCount,
+            (SELECT COUNT(*) FROM stad_maintenance_order WHERE rating IS NOT NULL) AS reviewCount,
+                                                             (SELECT COALESCE(ROUND(AVG(rating), 1), 0) FROM stad_maintenance_shop) AS avgRating,
+            DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i') AS updateTime,
+            (SELECT COALESCE(SUM(total_amount), 0) FROM stad_maintenance_order WHERE pay_status = '1') AS revenue
+    </select>
+
+
+    <select id="selectStatusDist" resultType="java.util.Map">
+        SELECT
+            CASE order_status
+                WHEN '0' THEN '待确认' WHEN '1' THEN '已确认'
+                WHEN '2' THEN '服务中' WHEN '3' THEN '已完成'
+                WHEN '4' THEN '已取消' ELSE '其他'
+                END AS label,
+            COUNT(*) AS `count`,
+            CASE order_status
+                WHEN '0' THEN '#f59e0b' WHEN '1' THEN '#3b82f6'
+                WHEN '2' THEN '#8b5cf6' WHEN '3' THEN '#059669'
+                WHEN '4' THEN '#94a3b8' ELSE '#6b7280'
+                END AS color
+        FROM stad_maintenance_order
+        GROUP BY order_status
+        ORDER BY order_status
+    </select>
+
+
+    <select id="selectMonthlyTrend" resultType="java.util.Map">
+        SELECT DATE_FORMAT(create_time, '%Y-%m') AS `month`, COUNT(*) AS `count`
+        FROM stad_maintenance_order
+        WHERE YEAR(create_time) = #{year}
+        GROUP BY DATE_FORMAT(create_time, '%Y-%m')
+        ORDER BY `month`
+    </select>
+
+
+    <select id="selectRecentReviews" resultMap="OrderResult">
+        <include refid="selectOrderVo"/>
+        WHERE o.rating IS NOT NULL AND (o.comment_content IS NOT NULL AND o.comment_content != '')
+        ORDER BY o.update_time DESC
+        LIMIT #{limit}
+    </select>
+
+
+    <select id="selectOrderStats" resultType="java.util.Map">
+        SELECT COUNT(*) AS total,
+               SUM(CASE WHEN order_status = '0' THEN 1 ELSE 0 END) AS pending,
+               SUM(CASE WHEN order_status = '1' THEN 1 ELSE 0 END) AS confirmed,
+               SUM(CASE WHEN order_status = '2' THEN 1 ELSE 0 END) AS serving,
+               SUM(CASE WHEN order_status = '3' THEN 1 ELSE 0 END) AS completed,
+               SUM(CASE WHEN order_status = '4' THEN 1 ELSE 0 END) AS cancelled
+        FROM stad_maintenance_order
+    </select>
+
+
+    <select id="selectStadMaintenanceOrderReviewList" resultMap="OrderResult">
+        <include refid="selectOrderVo"/>
+        <where>
+            o.rating IS NOT NULL
+            <if test="orderStatus != null and orderStatus != ''">
+                AND o.order_status = #{orderStatus}
+            </if>
+        </where>
+        ORDER BY o.update_time DESC
+    </select>
+
+</mapper>

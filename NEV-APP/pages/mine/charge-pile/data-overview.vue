@@ -14,7 +14,7 @@
       <view class="header">
         <view class="header-bg"></view>
         <view class="back-btn" hover-class="btn-hover" @tap="goBack">
-          <text class="back-icon">❮</text>
+          <text class="back-icon">‹</text>
         </view>
         <view class="header-info">
           <text class="header-title">数据概览</text>
@@ -52,7 +52,7 @@
       </view>
 
       <!-- 营收趋势图 -->
-      <view class="chart-section">
+      <view class="chart-section" v-if="revenueTrend.length > 0">
         <view class="section-title">
           <view class="title-line"></view>
           <text class="title-text">营收趋势</text>
@@ -82,7 +82,7 @@
       </view>
 
       <!-- 充电量趋势 -->
-      <view class="chart-section">
+      <view class="chart-section" v-if="energyTrend.length > 0">
         <view class="section-title">
           <view class="title-line line-green"></view>
           <text class="title-text">充电量趋势</text>
@@ -146,7 +146,7 @@
       </view>
 
       <!-- 时段分布 -->
-      <view class="section-block">
+      <view class="section-block" v-if="timeDistribution.length > 0">
         <view class="section-title">
           <view class="title-line line-purple"></view>
           <text class="title-text">充电时段分布</text>
@@ -166,7 +166,7 @@
       </view>
 
       <!-- 用户分析 -->
-      <view class="section-block">
+      <view class="section-block" v-if="userStats.length > 0">
         <view class="section-title">
           <view class="title-line line-blue"></view>
           <text class="title-text">用户分析</text>
@@ -187,6 +187,9 @@
 </template>
 
 <script>
+import { getMerchantStationList } from '@/api/charger/station'
+import { getOrderList } from '@/api/charger/order'
+
 export default {
   data() {
     return {
@@ -197,75 +200,36 @@ export default {
       glowRows: [],
       yLabels: ['2000', '1500', '1000', '500', '0'],
       energyYLabels: ['400', '300', '200', '100', '0'],
-      kpiData: [
-        { icon: '¥', value: '¥1,280.00', label: '今日营收', trend: '12.5%', trendUp: true },
-        { icon: '⚡', value: '256.8', label: '充电量(kWh)', trend: '8.2%', trendUp: true },
-        { icon: '📋', value: '42', label: '充电订单', trend: '5.1%', trendUp: true },
-        { icon: '👤', value: '38', label: '活跃用户', trend: '3.2%', trendUp: false }
-      ],
-      revenueTrend: [
-        { label: '05-28', value: '980', percent: 53 },
-        { label: '05-29', value: '1,250', percent: 68 },
-        { label: '05-30', value: '1,560', percent: 85 },
-        { label: '05-31', value: '1,130', percent: 62 },
-        { label: '06-01', value: '1,820', percent: 100 },
-        { label: '06-02', value: '1,450', percent: 79 },
-        { label: '06-03', value: '1,280', percent: 70 }
-      ],
-      energyTrend: [
-        { label: '05-28', value: 185, percent: 55 },
-        { label: '05-29', value: 242, percent: 72 },
-        { label: '05-30', value: 310, percent: 92 },
-        { label: '05-31', value: 220, percent: 65 },
-        { label: '06-01', value: 336, percent: 100 },
-        { label: '06-02', value: 268, percent: 80 },
-        { label: '06-03', value: 256, percent: 76 }
-      ],
-      stationRank: [
-        { id: 1, name: '济南高新区充电站', income: '9,320', growth: 8.3, percent: 100 },
-        { id: 2, name: '济南历下区旗舰站', income: '7,850', growth: 5.6, percent: 84 },
-        { id: 3, name: '济南市中区超充站', income: '6,420', growth: -2.1, percent: 69 },
-        { id: 4, name: '济南天桥区充电站', income: '4,980', growth: 12.8, percent: 53 },
-        { id: 5, name: '济南槐荫区充电站', income: '3,650', growth: 3.4, percent: 39 }
-      ],
-      timeDistribution: [
-        { label: '00-04', count: 28, percent: 12 },
-        { label: '04-08', count: 52, percent: 22 },
-        { label: '08-12', count: 145, percent: 62 },
-        { label: '12-16', count: 168, percent: 72 },
-        { label: '16-20', count: 235, percent: 100 },
-        { label: '20-24', count: 112, percent: 48 }
-      ],
-      userStats: [
-        { value: '186', label: '总用户数', sub: '较上月+12' },
-        { value: '42%', label: '复购率', sub: '较上月+3.5%' },
-        { value: '35min', label: '平均充电时长', sub: '较上月-2min' },
-        { value: '¥32.5', label: '客单价', sub: '较上月+1.8' }
-      ]
+      kpiData: [],
+      revenueTrend: [],
+      energyTrend: [],
+      stationRank: [],
+      timeDistribution: [],
+      userStats: []
     }
   },
   computed: {
     energyLinePoints() {
       var pts = this.energyTrend
-      var maxP = pts.length > 0 ? Math.max.apply(null, pts.map(function(p) { return p.percent })) : 100
-      if (maxP === 0) maxP = 100
+      if (!pts || pts.length === 0) return ''
+      var maxP = Math.max.apply(null, pts.map(function(p) { return p.percent || 0 })) || 100
       var w = 300, h = 160, pad = 10
       var stepX = pts.length > 1 ? (w - pad * 2) / (pts.length - 1) : 0
       return pts.map(function(p, i) {
         var x = pad + i * stepX
-        var y = h - pad - (p.percent / maxP) * (h - pad * 2)
+        var y = h - pad - ((p.percent || 0) / maxP) * (h - pad * 2)
         return x + ',' + y
       }).join(' ')
     },
     energyAreaPoints() {
       var pts = this.energyTrend
-      var maxP = pts.length > 0 ? Math.max.apply(null, pts.map(function(p) { return p.percent })) : 100
-      if (maxP === 0) maxP = 100
+      if (!pts || pts.length === 0) return ''
+      var maxP = Math.max.apply(null, pts.map(function(p) { return p.percent || 0 })) || 100
       var w = 300, h = 160, pad = 10
       var stepX = pts.length > 1 ? (w - pad * 2) / (pts.length - 1) : 0
       var linePts = pts.map(function(p, i) {
         var x = pad + i * stepX
-        var y = h - pad - (p.percent / maxP) * (h - pad * 2)
+        var y = h - pad - ((p.percent || 0) / maxP) * (h - pad * 2)
         return x + ',' + y
       }).join(' ')
       return linePts + ' ' + (w - pad) + ',' + (h - pad) + ' ' + pad + ',' + (h - pad)
@@ -273,6 +237,7 @@ export default {
   },
   created() {
     this.buildGlowRows()
+    this.loadAllData()
     var self = this
     setTimeout(function() { self.isReady = true }, 200)
   },
@@ -285,57 +250,106 @@ export default {
         var count = 6 + Math.floor(Math.random() * 5)
         for (var c = 0; c < count; c++) {
           var color = colors[Math.floor(Math.random() * colors.length)]
-          var size = 4 + Math.floor(Math.random() * 10)
+          var size = 60 + Math.floor(Math.random() * 70)
           var dur = 2.5 + Math.random() * 3
           var delay = Math.random() * 2
+          var alpha = 0.08 + Math.random() * 0.18
           dots.push({
-            style: 'width:' + size + 'px;height:' + size + 'px;background:' + color + ';animation-duration:' + dur + 's;animation-delay:' + delay + 's;'
+            style: 'width:' + size + 'rpx;height:' + size + 'rpx;background:radial-gradient(circle,' + color + ',' + color + '00);opacity:' + alpha.toFixed(2) + ';animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's;'
           })
         }
         rows.push({ dots: dots })
       }
       this.glowRows = rows
     },
-    switchTab(idx) {
-      this.activeTab = idx
-      this.loadTabData()
+    loadAllData() {
+      this.loadStations()
+      this.loadPiles()
+      this.loadOrders()
     },
-    loadTabData() {
+    loadStations() {
       var self = this
-      if (self.activeTab === 0) {
-        self.kpiData = [
-          { icon: '¥', value: '¥1,280.00', label: '今日营收', trend: '12.5%', trendUp: true },
-          { icon: '⚡', value: '256.8', label: '充电量(kWh)', trend: '8.2%', trendUp: true },
-          { icon: '📋', value: '42', label: '充电订单', trend: '5.1%', trendUp: true },
-          { icon: '👤', value: '38', label: '活跃用户', trend: '3.2%', trendUp: false }
-        ]
-      } else if (self.activeTab === 1) {
-        self.kpiData = [
-          { icon: '¥', value: '¥8,960.00', label: '本周营收', trend: '15.8%', trendUp: true },
-          { icon: '⚡', value: '1,798.6', label: '充电量(kWh)', trend: '11.3%', trendUp: true },
-          { icon: '📋', value: '286', label: '充电订单', trend: '7.6%', trendUp: true },
-          { icon: '👤', value: '156', label: '活跃用户', trend: '2.1%', trendUp: true }
-        ]
-      } else {
-        self.kpiData = [
-          { icon: '¥', value: '¥46,690.70', label: '本月营收', trend: '22.4%', trendUp: true },
-          { icon: '⚡', value: '8,524.3', label: '充电量(kWh)', trend: '18.6%', trendUp: true },
-          { icon: '📋', value: '1,024', label: '充电订单', trend: '12.9%', trendUp: true },
-          { icon: '👤', value: '580', label: '活跃用户', trend: '8.5%', trendUp: true }
+      getMerchantStationList().then(function(res) {
+        if (res.code === 200 && res.data && res.data.rows) {
+          var stations = res.data.rows || []
+          var rankList = []
+          for (var i = 0; i < Math.min(stations.length, 10); i++) {
+            rankList.push({
+              id: stations[i].stationId,
+              name: stations[i].stationName || '--',
+              income: stations[i].todayIncome || '0',
+              growth: 0,
+              percent: Math.max(10, 100 - i * 8)
+            })
+          }
+          self.stationRank = rankList
+          self.updateKPI('stations', stations.length)
+        }
+      }).catch(function() {})
+    },
+    loadPiles() {
+      // 商户端桩总数从站点列表汇总
+      var self = this
+      getMerchantStationList().then(function(res) {
+        if (res.code === 200 && res.data && res.data.rows) {
+          var total = 0
+          var stations = res.data.rows || []
+          for (var i = 0; i < stations.length; i++) {
+            total += Number(stations[i].totalPiles) || 0
+          }
+          self.updateKPI('piles', total)
+        }
+      }).catch(function() {})
+    },
+    loadOrders() {
+      var self = this
+      getOrderList({ pageSize: 100 }).then(function(res) {
+        if (res.code === 200 && res.data && res.data.rows) {
+          var orders = res.data.rows || []
+          var totalAmount = 0
+          var totalEnergy = 0
+          for (var i = 0; i < orders.length; i++) {
+            totalAmount += Number(orders[i].totalAmount) || 0
+            totalEnergy += Number(orders[i].totalEnergy) || 0
+          }
+          self.updateKPI('orders', { count: orders.length, amount: totalAmount, energy: totalEnergy })
+        }
+      }).catch(function() {})
+    },
+    updateKPI(type, value) {
+      if (!this.kpiData || this.kpiData.length === 0) {
+        this.kpiData = [
+          { icon: '¥', value: '¥0.00', label: '总营收', trend: '-', trendUp: true },
+          { icon: '⚡', value: '0', label: '充电量(kWh)', trend: '-', trendUp: true },
+          { icon: '📋', value: '0', label: '充电订单', trend: '-', trendUp: true },
+          { icon: '🏪', value: '0', label: '充电站点', trend: '-', trendUp: true }
         ]
       }
+      if (type === 'stations') {
+        this.kpiData[3].value = String(value)
+      } else if (type === 'piles') {
+        this.kpiData[2].value = String(value)
+      } else if (type === 'orders') {
+        this.kpiData[0].value = '¥' + Number(value.amount).toFixed(2)
+        this.kpiData[1].value = Number(value.energy).toFixed(1)
+        this.kpiData[2].value = String(value.count)
+      }
+    },
+    switchTab(idx) {
+      this.activeTab = idx
     },
     goBack() { uni.navigateBack() },
     refreshData() {
       uni.showLoading({ title: '刷新中' })
       var self = this
+      this.loadAllData()
       setTimeout(function() {
         uni.hideLoading()
         uni.showToast({ title: '数据已更新', icon: 'success', duration: 1500 })
-      }, 800)
+      }, 500)
     },
     onKpiTap(kpi) {
-      uni.showToast({ title: kpi.label + '详情', icon: 'none', duration: 1500 })
+      uni.showToast({ title: kpi.label, icon: 'none', duration: 1500 })
     },
     goStationList() { uni.navigateTo({ url: '/pages/mine/charge-pile/station-list' }) },
     goStationDetail(id) { uni.navigateTo({ url: '/pages/mine/charge-pile/station-detail?stationId=' + id }) }
@@ -380,8 +394,15 @@ export default {
 }
 .overlay-mask {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  pointer-events: none; z-index: 0;
-  background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0) 0%, rgba(255,251,235,0.3) 60%, rgba(254,249,239,0.5) 100%);
+  pointer-events: none; z-index: 1;
+  background: linear-gradient(180deg,
+    rgba(255,247,237,0.85) 0%,
+    rgba(255,251,235,0.88) 25%,
+    rgba(254,252,232,0.90) 50%,
+    rgba(255,251,235,0.92) 75%,
+    rgba(255,247,237,0.94) 100%
+  );
+  backdrop-filter: blur(8px);
 }
 
 /* ========== 入场动画 ========== */
@@ -420,6 +441,7 @@ export default {
   box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
 }
 .back-icon { font-size: 32rpx; color: #f97316; font-weight: bold; }
+.btn-hover { transform: scale(0.9); opacity: 0.7; }
 .header-info { flex: 1; margin-left: 20rpx; z-index: 1; }
 .header-title { font-size: 36rpx; font-weight: 700; color: #1f2937; display: block; }
 .header-sub { font-size: 22rpx; color: #9ca3af; margin-top: 4rpx; display: block; }

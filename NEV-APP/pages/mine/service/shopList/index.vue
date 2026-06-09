@@ -21,15 +21,15 @@
 
 		<!-- 门店列表 -->
 		<view class="shop-list">
-			<view class="shop-card" v-for="(shop, index) in shopList" :key="shop.shop_id" @click="handleDetail(shop)">
+			<view class="shop-card" v-for="(shop, index) in shopList" :key="shop.shopId" @click="handleDetail(shop)">
 				<image class="shop-img" :src="shop.image" mode="aspectFill" v-if="shop.image"></image>
 				<view class="shop-top">
-					<view class="shop-name">{{ shop.shop_name }}</view>
+					<view class="shop-name">{{ shop.shopName }}</view>
 					<view class="status-tag" :class="'status-' + shop.status">{{ statusText(shop.status) }}</view>
 				</view>
 				<view class="shop-rating">
-					
-					<text v-for="st in getStars(shop.rating,'star')" :key="st.key" :class="st.cls">★</text>
+					<text class="star fill" v-for="s in Math.floor(shop.rating)" :key="'on' + s">★</text>
+					<text class="star" v-for="s in (5 - Math.floor(shop.rating))" :key="'off' + s">★</text>
 					<text class="rating-num">{{ shop.rating }}</text>
 				</view>
 				<view class="shop-addr">
@@ -39,19 +39,19 @@
 				<view class="shop-contact">
 					<view class="contact-item">
 						<view class="iconfont icon-user contact-icon"></view>
-						<text>{{ shop.contact_name }}</text>
+						<text>{{ shop.contactName }}</text>
 					</view>
 					<view class="contact-item">
 						<view class="iconfont icon-service contact-icon"></view>
-						<text>{{ shop.contact_phone }}</text>
+						<text>{{ shop.contactPhone }}</text>
 					</view>
 				</view>
-				<view class="shop-services" v-if="shop.services_info">
-					<text class="service-tag" v-for="(svc, si) in parseServices(shop.services_info)" :key="si">{{ svc }}</text>
+				<view class="shop-services" v-if="shop.servicesInfo">
+					<text class="service-tag" v-for="(svc, si) in parseServices(shop.servicesInfo)" :key="si">{{ svc }}</text>
 				</view>
 				<view class="shop-desc" v-if="shop.description">{{ shop.description }}</view>
 				<view class="shop-footer">
-					<text class="shop-time">创建: {{ shop.create_time }}</text>
+					<text class="shop-time">创建: {{ shop.createTime }}</text>
 					<view class="shop-actions">
 						<text class="action-btn" @click.stop="handleEdit(shop)">编辑</text>
 						<text class="action-btn action-btn-del" @click.stop="handleDelete(shop)">删除</text>
@@ -74,6 +74,7 @@
 </template>
 
 <script>
+	import { listShop, deleteShop } from '@/api/maintenance/shop'
 	export default {
 		data() {
 			return {
@@ -91,32 +92,32 @@
 		},
 		methods: {
 			loadList() {
-				this.loading = true
-				// 模拟数据 — 对接后端时替换为 API 调用
-				setTimeout(() => {
-					this.shopList = this.mockData().filter(s => {
-						const matchKeyword = !this.keyword || s.shop_name.includes(this.keyword) || s.contact_name.includes(this.keyword) || s.contact_phone.includes(this.keyword)
-						const matchStatus = !this.curStatus || s.status === this.curStatus
-						return matchKeyword && matchStatus
-					})
-					this.loading = false
-					uni.stopPullDownRefresh()
-				}, 300)
+				 listShop({
+				    pageNum: 1,
+				    pageSize: 50,
+				    keyword: this.keyword,
+				    status: this.curStatus
+				  }).then(res => {
+				    this.shopList = res.data.list || []
+				    uni.stopPullDownRefresh()
+				  })
 			},
 			handleSearch() {
 				this.loadList()
 			},
 			handleDetail(shop) {
-				this.$tab.navigateTo('/pages/mine/service/shopEdit/index?shop_id=' + shop.shop_id)
+				this.$tab.navigateTo('/pages/mine/service/shopEdit/index?shop_id=' + shop.shopId)
 			},
 			handleEdit(shop) {
-				this.$tab.navigateTo('/pages/mine/service/shopEdit/index?shop_id=' + shop.shop_id)
+				this.$tab.navigateTo('/pages/mine/service/shopEdit/index?shop_id=' + shop.shopId)
 			},
 			handleDelete(shop) {
-				this.$modal.confirm('确认删除门店「' + shop.shop_name + '」？').then(() => {
-					this.$modal.msgSuccess('删除成功')
-					this.shopList = this.shopList.filter(s => s.shop_id !== shop.shop_id)
-				}).catch(() => {})
+			  this.$modal.confirm('确认删除门店「' + shop.shopName + '」？').then(() => {
+			    deleteShop(shop.shopId).then(() => {
+			      this.$modal.msgSuccess('删除成功')
+			      this.loadList()
+			    })
+			  }).catch(() => {})
 			},
 			statusText(status) {
 				const map = { '0': '待审核', '1': '营业中', '2': '已停用' }
@@ -129,61 +130,11 @@
 				} catch {
 					return info ? info.split(/[,，、]/).slice(0, 3) : []
 				}
-			},
-			mockData() {
-				return [
-					{
-						shop_id: 1, shop_name: '旗舰维保中心', merchant_id: 1,
-						image: '/static/images/service/service_shopList4.jpg',
-						province: '山东省', city: '济南市', district: '历下区', address: '经十路11001号',
-						longitude: 117.0481, latitude: 36.6512,
-						contact_name: '赵经理', contact_phone: '13800001111',
-						services_info: '["常规保养","电池检测","空调维修","轮胎更换"]',
-						rating: 4.8, description: '专业新能源汽车维保服务，设备齐全，技师持证上岗。',
-						status: '1', create_time: '2026-01-15', update_time: '2026-05-20'
-					},
-					{
-						shop_id: 2, shop_name: '新城服务站', merchant_id: 1,
-						image: '/static/images/service/service_shopList3.jpg',
-						province: '山东省', city: '济南市', district: '历城区', address: '工业北路2000号',
-						longitude: 117.1542, latitude: 36.7123,
-						contact_name: '钱店长', contact_phone: '13800002222',
-						services_info: '["常规保养","充电桩安装","故障诊断"]',
-						rating: 4.5, description: '交通便利，提供快速保养服务。',
-						status: '1', create_time: '2026-02-20', update_time: '2026-05-18'
-					},
-					{
-						shop_id: 3, shop_name: '高新维保点', merchant_id: 1,
-						image: '/static/images/service/service_shopList2.jpg',
-						province: '山东省', city: '济南市', district: '高新区', address: '舜华路500号',
-						longitude: 117.1340, latitude: 36.6578,
-						contact_name: '孙主管', contact_phone: '13800003333',
-						services_info: '["电池检测","电机维修","系统升级"]',
-						rating: 4.2, description: '',
-						status: '0', create_time: '2026-04-10', update_time: null
-					},
-					{
-						shop_id: 4, shop_name: '耀莱汽车服务中心', merchant_id: 2,
-						image: '/static/images/service/service_shopList1.jpg',
-						province: '山东省', city: '济南市', district: '槐荫区', address: '经十西路300号',
-						longitude: 116.9240, latitude: 36.6512,
-						contact_name: '周经理', contact_phone: '13800004444',
-						services_info: '["常规保养","钣金喷漆","轮胎服务"]',
-						rating: 3.8, description: '暂停营业，设备升级中。',
-						status: '2', create_time: '2025-11-01', update_time: '2026-03-15'
-					}
-				]
-				},
-				getStars(rating, baseClass) {
-					const filled = Math.floor(rating)
-					const items = []
-					for (let i = 0; i < 5; i++) {
-						items.push({ key: 'k' + i, cls: baseClass + (i < filled ? ' fill' : '') })
-					}
-					return items
-				}
 			}
+		
+	
 		}
+	}
 </script>
 
 <style lang="scss" scoped>

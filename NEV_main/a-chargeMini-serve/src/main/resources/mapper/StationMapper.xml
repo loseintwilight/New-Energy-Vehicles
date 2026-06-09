@@ -221,4 +221,18 @@
         LIMIT 10
     </select>
 
+    <!-- 根据实际pile_status统计并更新站点的可用/占用桩数 -->
+    <update id="syncStationPileCounts">
+        UPDATE stad_charging_station
+        SET available_piles = (
+            SELECT COUNT(*) FROM stad_charging_pile
+            WHERE station_id = #{stationId} AND pile_status = '0'
+        ),
+        occupying_piles = (
+            SELECT COUNT(*) FROM stad_charging_pile
+            WHERE station_id = #{stationId} AND pile_status = '1'
+        )
+        WHERE station_id = #{stationId}
+    </update>
+
 </mapper>

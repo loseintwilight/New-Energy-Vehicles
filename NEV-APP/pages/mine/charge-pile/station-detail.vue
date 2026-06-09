@@ -24,7 +24,7 @@
         </view>
         <view class="header-info">
           <text class="header-title">站点详情</text>
-          <text class="header-sub">{{ station.name }}</text>
+          <text class="header-sub">{{ station.stationName }}</text>
         </view>
         <view class="header-right" @tap="goEdit">
           <text class="edit-text">编辑</text>
@@ -39,20 +39,17 @@
             <text class="hero-icon">🏪</text>
           </view>
           <view class="hero-name-area">
-            <text class="hero-name">{{ station.name }}</text>
-            <text class="hero-code">{{ station.code }}</text>
+            <text class="hero-name">{{ station.stationName }}</text>
+            <text class="hero-code">{{ station.stationCode }}</text>
           </view>
-          <view :class="['status-badge', 'badge-' + station.status]">
-            <view class="badge-dot" v-if="station.status === '1'"></view>
+          <view :class="['status-badge', 'badge-' + station.stationStatus]">
+            <view class="badge-dot" v-if="station.stationStatus === '1'"></view>
             <text>{{ statusText }}</text>
           </view>
         </view>
         <view class="hero-addr-row">
           <text class="addr-icon">📍</text>
-          <text class="addr-text">{{ station.province }}{{ station.city }}{{ station.district }}{{ station.address }}</text>
-        </view>
-        <view class="hero-coord-row">
-          <text class="coord-text">经度 {{ station.longitude }} · 纬度 {{ station.latitude }}</text>
+          <text class="addr-text">{{ station.address || '暂无地址' }}</text>
         </view>
       </view>
 
@@ -68,22 +65,18 @@
         <view class="info-card">
           <view class="info-row">
             <text class="info-label">站点名称</text>
-            <text class="info-value">{{ station.name }}</text>
+            <text class="info-value">{{ station.stationName }}</text>
           </view>
           <view class="info-row">
             <text class="info-label">站点编码</text>
-            <text class="info-value code-val">{{ station.code }}</text>
+            <text class="info-value code-val">{{ station.stationCode }}</text>
           </view>
           <view class="info-row info-row-full">
             <text class="info-label">详细地址</text>
             <view class="addr-full">
               <text class="addr-mark">📍</text>
-              <text class="info-value addr-val">{{ station.province }}{{ station.city }}{{ station.district }}{{ station.address }}</text>
+              <text class="info-value addr-val">{{ station.address || '暂无地址' }}</text>
             </view>
-          </view>
-          <view class="info-row">
-            <text class="info-label">坐标位置</text>
-            <text class="info-value coord-val">{{ station.longitude }}, {{ station.latitude }}</text>
           </view>
         </view>
       </view>
@@ -132,60 +125,10 @@
         </view>
         <view class="ops-info">
           <view class="ops-row">
-            <text class="ops-label">营业时间</text>
-            <view class="ops-right">
-              <view :class="['biz-badge', isBusinessOpen ? 'bb-open' : 'bb-close']">
-                <text>{{ isBusinessOpen ? '营业中' : '已打烊' }}</text>
-              </view>
-              <text class="ops-time">{{ fmtTime(station.openTime) }} - {{ fmtTime(station.closeTime) }}</text>
+            <text class="ops-label">站点状态</text>
+            <view :class="['biz-badge', station.stationStatus === '1' ? 'bb-open' : 'bb-close']">
+              <text>{{ statusText }}</text>
             </view>
-          </view>
-          <view class="ops-row ops-row-last">
-            <text class="ops-label">停车收费</text>
-            <text class="ops-value">{{ station.parkingFee || '免费' }}</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- 联系方式卡（蓝色色条） -->
-      <view class="section-block sb-blue">
-        <view class="title-bar">
-          <view class="bar-line bar-line-blue"></view>
-          <view class="icon-wrap iw-blue">
-            <text class="bar-icon">📞</text>
-          </view>
-          <text class="bar-title">联系方式</text>
-        </view>
-        <view class="contact-card">
-          <view class="contact-row" @tap="callPhone(station.servicePhone)">
-            <text class="contact-label">服务电话</text>
-            <view class="contact-phone-wrap">
-              <text class="contact-phone">{{ station.servicePhone || '未设置' }}</text>
-              <text class="call-arrow">›</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 配套设施卡（紫色色条） -->
-      <view class="section-block sb-purple">
-        <view class="title-bar">
-          <view class="bar-line bar-line-purple"></view>
-          <view class="icon-wrap iw-purple">
-            <text class="bar-icon">🛎️</text>
-          </view>
-          <text class="bar-title">配套设施</text>
-        </view>
-        <view class="facility-card">
-          <view v-if="station.facilities && station.facilities.length > 0" class="facility-tags">
-            <text
-              v-for="(fac, fidx) in station.facilities"
-              :key="fidx"
-              class="facility-tag"
-            >{{ fac }}</text>
-          </view>
-          <view v-else class="facility-empty">
-            <text class="empty-txt">暂无配套设施信息</text>
           </view>
         </view>
       </view>
@@ -215,19 +158,19 @@
             <view class="pi-left-bar"></view>
             <view class="pi-body">
               <view class="pi-top">
-                <text class="pi-code">{{ pile.code }}</text>
-                <view :class="['type-tag', pile.type === 'dc' ? 'tag-dc' : 'tag-ac']">
-                  <text>{{ pile.type === 'dc' ? 'DC快充' : 'AC慢充' }}</text>
+                <text class="pi-code">{{ pile.pileCode }}</text>
+                <view :class="['type-tag', pile.pileType === 'dc_fast' || pile.pileType === 'dc_ultra' ? 'tag-dc' : 'tag-ac']">
+                  <text>{{ pile.pileType === 'dc_fast' ? 'DC快充' : (pile.pileType === 'dc_ultra' ? 'DC超充' : 'AC慢充') }}</text>
                 </view>
               </view>
               <view class="pi-bottom">
                 <view class="pi-power">
                   <text class="power-icon">⚡</text>
-                  <text class="power-num">{{ pile.power }}kW</text>
-                  <text class="connector-text">{{ pile.connector }}</text>
+                  <text class="power-num">{{ pile.powerKw }}kW</text>
+                  <text class="connector-text">{{ pile.connectorType }}</text>
                 </view>
-                <view :class="['pile-status-tag', 'pst-' + pile.status]">
-                  <text>{{ getPileStatusText(pile.status) }}</text>
+                <view :class="['pile-status-tag', 'pst-' + pile.pileStatus]">
+                  <text>{{ getPileStatusText(pile.pileStatus) }}</text>
                 </view>
               </view>
             </view>
@@ -296,68 +239,40 @@
 </template>
 
 <script>
+import { getStationDetail, deleteStation } from '@/api/charger/station'
+import { getPilesByStation } from '@/api/charger/pile'
+
 export default {
   data: function() {
     return {
       isReady: false,
       glowRows: [],
+      stationId: '',
       station: {
-        stationId: 1,
-        name: '济南奥体中心充电站',
-        code: 'JN-AT-001',
-        merchantId: 2,
-        province: '山东省',
-        city: '济南市',
-        district: '历下区',
-        address: '奥体中路2000号奥体中心P1停车场',
-        longitude: 117.1082,
-        latitude: 36.6578,
-        totalPiles: 8,
-        availablePiles: 6,
-        occupyingPiles: 2,
-        openTime: '00:00:00',
-        closeTime: '23:59:59',
-        parkingFee: '充电免停2小时',
-        servicePhone: '0531-88881001',
-        facilities: ['卫生间', '休息室', '免费WiFi', '自动售货机'],
-        images: ['station_01_01.jpg', 'station_01_02.jpg'],
-        status: '1'
+        stationId: '',
+        stationName: '',
+        stationCode: '',
+        merchantId: '',
+        address: '',
+        totalPiles: 0,
+        availablePiles: 0,
+        stationStatus: ''
       },
-      piles: [
-        { pileId: 1, code: 'AT-DC-01', type: 'dc', power: 120, connector: 'GB/T', status: '0' },
-        { pileId: 2, code: 'AT-DC-02', type: 'dc', power: 120, connector: 'GB/T', status: '0' },
-        { pileId: 3, code: 'AT-DC-03', type: 'dc', power: 180, connector: 'GB/T', status: '1' },
-        { pileId: 4, code: 'AT-DC-04', type: 'dc', power: 180, connector: 'CCS', status: '0' },
-        { pileId: 5, code: 'AT-AC-01', type: 'ac', power: 7, connector: 'Type2', status: '0' },
-        { pileId: 6, code: 'AT-AC-02', type: 'ac', power: 7, connector: 'Type2', status: '0' },
-        { pileId: 7, code: 'AT-AC-03', type: 'ac', power: 7, connector: 'Type2', status: '0' },
-        { pileId: 8, code: 'AT-AC-04', type: 'ac', power: 7, connector: 'Type2', status: '0' }
-      ]
+      piles: []
     }
   },
   computed: {
     statusText: function() {
       if (!this.station) return ''
       var map = { '1': '运营中', '2': '维护中', '3': '停用' }
-      return map[this.station.status] || '未知'
+      return map[this.station.stationStatus] || '未知'
     },
     faultPiles: function() {
       var count = 0
       for (var i = 0; i < this.piles.length; i++) {
-        if (this.piles[i].status === '3') count++
+        if (this.piles[i].pileStatus === '3') count++
       }
       return count
-    },
-    isBusinessOpen: function() {
-      if (!this.station.openTime || !this.station.closeTime) return true
-      var now = new Date()
-      var curHM = now.getHours() * 100 + now.getMinutes()
-      var openHM = this.timeToHM(this.station.openTime)
-      var closeHM = this.timeToHM(this.station.closeTime)
-      if (closeHM <= openHM) {
-        return curHM >= openHM || curHM < closeHM
-      }
-      return curHM >= openHM && curHM < closeHM
     }
   },
   created: function() {
@@ -369,9 +284,42 @@ export default {
   },
   onLoad: function(options) {
     if (options && options.stationId) {
+      this.stationId = options.stationId
+      this.loadStationData(options.stationId)
+      this.loadPiles(options.stationId)
     }
   },
   methods: {
+    loadStationData: function(stationId) {
+      var self = this
+      getStationDetail(stationId).then(function(res) {
+        if (res.code === 200 && res.data) {
+          var d = res.data
+          self.station = {
+            stationId: d.stationId || '',
+            stationName: d.stationName || '未知站点',
+            stationCode: d.stationCode || '',
+            merchantId: d.merchantId || '',
+            address: d.address || '',
+            totalPiles: d.totalPiles || 0,
+            availablePiles: d.availablePiles || 0,
+            stationStatus: d.stationStatus || ''
+          }
+        } else {
+          uni.showToast({ title: res.msg || '加载站点失败', icon: 'none' })
+        }
+      }).catch(function() {
+        uni.showToast({ title: '网络异常', icon: 'none' })
+      })
+    },
+    loadPiles: function(stationId) {
+      var self = this
+      getPilesByStation(stationId).then(function(res) {
+        if (res.code === 200 && res.data) {
+          self.piles = res.data
+        }
+      }).catch(function() {})
+    },
     buildGlowRows: function() {
       var rows = []
       var colors = ['#f59e0b', '#f97316', '#fb923c', '#fbbf24', '#fcd34d', '#fde68a']
@@ -393,33 +341,9 @@ export default {
       this.glowRows = rows
     },
 
-    timeToHM: function(timeStr) {
-      if (!timeStr) return 0
-      var parts = timeStr.split(':')
-      if (parts.length >= 2) {
-        return parseInt(parts[0]) * 100 + parseInt(parts[1])
-      }
-      return 0
-    },
-
-    fmtTime: function(timeStr) {
-      if (!timeStr) return '--:--'
-      var parts = timeStr.split(':')
-      if (parts.length >= 2) {
-        return parts[0] + ':' + parts[1]
-      }
-      return timeStr
-    },
-
     getPileStatusText: function(status) {
       var map = { '0': '空闲', '1': '充电中', '2': '离线', '3': '故障' }
       return map[status] || '未知'
-    },
-
-    callPhone: function(phone) {
-      if (phone) {
-        uni.makePhoneCall({ phoneNumber: phone })
-      }
     },
 
     goBack: function() {
@@ -448,7 +372,7 @@ export default {
       var self = this
       uni.showModal({
         title: '确认删除',
-        content: '确定要删除站点「' + this.station.name + '」吗？删除后该站点下所有充电桩数据也将被清除，不可恢复。',
+        content: '确定要删除站点「' + this.station.stationName + '」吗？删除后该站点下所有充电桩数据也将被清除，不可恢复。',
         confirmColor: '#ef4444',
         success: function(res) {
           if (res.confirm) {

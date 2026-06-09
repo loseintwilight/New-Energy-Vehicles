@@ -11,26 +11,26 @@
     <!-- 主滚动区 -->
     <scroll-view scroll-y class="main-scroll" :show-scrollbar="false">
       <!-- 顶栏（根据订单状态显示不同颜色） -->
-      <view class="header" :class="'header-' + order.status">
-        <view class="header-bg" :class="'hbg-' + order.status"></view>
+      <view class="header" :class="'header-' + order.orderStatus">
+        <view class="header-bg" :class="'hbg-' + order.orderStatus"></view>
         <view class="back-btn" hover-class="btn-hover" @tap="goBack">
           <text class="back-icon">‹</text>
         </view>
         <view class="header-info">
           <text class="header-title">订单详情</text>
-          <view :class="['status-mini', 'sm-' + order.status]">
-            <view class="sm-dot" v-if="order.status === '0'"></view>
+          <view :class="['status-mini', 'sm-' + order.orderStatus]">
+            <view class="sm-dot" v-if="order.orderStatus === '0'"></view>
             <text>{{ statusText }}</text>
           </view>
         </view>
       </view>
 
       <!-- Hero区域 - 金额大卡 -->
-      <view class="hero-section" :class="'hero-' + order.status">
-        <view class="hero-glow" :class="'hg-' + order.status"></view>
+      <view class="hero-section" :class="'hero-' + order.orderStatus">
+        <view class="hero-glow" :class="'hg-' + order.orderStatus"></view>
         <view class="hero-status-row">
-          <view :class="['hero-badge', 'hb-' + order.status]">
-            <view class="badge-dot" v-if="order.status === '0'"></view>
+          <view :class="['hero-badge', 'hb-' + order.orderStatus]">
+            <view class="badge-dot" v-if="order.orderStatus === '0'"></view>
             <text>{{ statusText }}</text>
           </view>
         </view>
@@ -74,7 +74,7 @@
           </view>
           <view class="info-row">
             <text class="info-label">充电功率</text>
-            <text class="info-value power-val">{{ order.power }} kW</text>
+            <text class="info-value power-val">{{ order.powerKw }} kW</text>
           </view>
         </view>
       </view>
@@ -93,13 +93,13 @@
             <text class="info-label">开始充电</text>
             <text class="info-value">{{ order.startTime }}</text>
           </view>
-          <view class="info-row" v-if="order.status !== '0'">
+          <view class="info-row" v-if="order.orderStatus !== '0'">
             <text class="info-label">结束充电</text>
             <text class="info-value">{{ order.endTime }}</text>
           </view>
           <view class="info-row">
             <text class="info-label">充电时长</text>
-            <text class="info-value duration-highlight">{{ order.duration }}</text>
+            <text class="info-value duration-highlight">{{ durationText }}</text>
           </view>
         </view>
       </view>
@@ -161,7 +161,7 @@
       </view>
 
       <!-- 取消原因（红色色条，仅已取消时显示） -->
-      <view v-if="order.status === '2'" class="section-block sb-red slide-up-5">
+      <view v-if="order.orderStatus === '2'" class="section-block sb-red slide-up-5">
         <view class="title-bar">
           <view class="bar-line bar-line-red"></view>
           <view class="icon-wrap iw-red">
@@ -196,6 +196,8 @@
 </template>
 
 <script>
+import { getOrderDetail } from '@/api/charger/order.js'
+
 export default {
   data: function() {
     return {
@@ -203,29 +205,26 @@ export default {
       glowRows: [],
       orderId: '',
       order: {
-        orderId: 'CO20260530000008',
-        orderNo: 'CO20260530000008',
-        pileId: 1,
-        pileCode: 'AT-DC-01',
-        stationId: 1,
-        stationName: '济南奥体中心充电站',
-        connectorType: 'GB/T',
-        power: 120,
-        userId: 2,
-        userName: '李**',
-        userPhone: '137****00003',
-        startTime: '2026-05-30 22:30:00',
-        endTime: '2026-05-30 23:15:00',
-        duration: '45分钟',
-        status: '1',
-        statusText: '已完成',
-        totalEnergy: 42.5,
-        electricFee: 59.50,
-        serviceFee: 15.70,
-        totalAmount: 75.20,
-        rateName: '奥体中心-快充费率',
-        cancelReason: '',
-        createTime: '2026-05-30 22:28:00'
+        orderId: '',
+        orderNo: '',
+        pileId: '',
+        pileCode: '',
+        stationId: '',
+        stationName: '',
+        connectorType: '',
+        powerKw: 0,
+        userId: '',
+        userName: '',
+        userPhone: '',
+        startTime: '',
+        endTime: '',
+        totalEnergy: 0,
+        electricFee: 0,
+        serviceFee: 0,
+        totalAmount: 0,
+        rateName: '',
+        orderStatus: '1',
+        createTime: ''
       }
     }
   },
@@ -233,7 +232,18 @@ export default {
     statusText: function() {
       if (!this.order) return ''
       var map = { '0': '充电中', '1': '已完成', '2': '已取消' }
-      return map[this.order.status] || '未知'
+      return map[this.order.orderStatus] || '未知'
+    },
+    durationText: function() {
+      if (!this.order || !this.order.startTime || this.order.orderStatus === '0') return '--'
+      var start = new Date(this.order.startTime.replace(/-/g, '/'))
+      var end = this.order.endTime ? new Date(this.order.endTime.replace(/-/g, '/')) : new Date()
+      var diffMin = Math.floor((end - start) / 1000 / 60)
+      if (diffMin < 0) diffMin = 0
+      if (diffMin >= 60) {
+        return Math.floor(diffMin / 60) + '小时' + (diffMin % 60) + '分钟'
+      }
+      return diffMin + '分钟'
     },
     shortOrderNo: function() {
       if (!this.order || !this.order.orderNo) return '-'
@@ -259,9 +269,44 @@ export default {
   onLoad: function(options) {
     if (options && options.orderId) {
       this.orderId = options.orderId
+      this.loadOrderData(options.orderId)
     }
   },
   methods: {
+    loadOrderData: function(orderId) {
+      var self = this
+      getOrderDetail(orderId).then(function(res) {
+        if (res.code === 200 && res.data) {
+          var d = res.data
+          self.order = {
+            orderId: d.orderId || '',
+            orderNo: d.orderNo || '',
+            pileId: d.pileId || '',
+            pileCode: d.pileCode || '',
+            stationId: d.stationId || '',
+            stationName: d.stationName || '未知站点',
+            connectorType: d.connectorType || '',
+            powerKw: d.powerKw || 0,
+            userId: d.userId || '',
+            userName: d.userName || '--',
+            userPhone: d.userPhone || '',
+            startTime: d.startTime || '',
+            endTime: d.endTime || '',
+            totalEnergy: d.totalEnergy || 0,
+            electricFee: d.electricFee || 0,
+            serviceFee: d.serviceFee || 0,
+            totalAmount: d.totalAmount || 0,
+            rateName: d.rateName || '',
+            orderStatus: d.orderStatus || '1',
+            createTime: d.createTime || ''
+          }
+        } else {
+          uni.showToast({ title: res.msg || '加载失败', icon: 'none' })
+        }
+      }).catch(function() {
+        uni.showToast({ title: '网络异常', icon: 'none' })
+      })
+    },
     buildGlowRows: function() {
       var rows = []
       var colors = ['#f59e0b', '#f97316', '#fb923c', '#fbbf24', '#fcd34d', '#fde68a']

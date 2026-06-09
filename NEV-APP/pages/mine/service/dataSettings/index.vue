@@ -68,12 +68,12 @@
 		<view class="data-card">
 			<view class="data-card-title">门店评分排行</view>
 			<view class="rank-list">
-				<view class="rank-item" v-for="(s, i) in shopRanking" :key="s.shop_id">
+				<view class="rank-item" v-for="(s, i) in shopRanking" :key="s.shopId">
 					<view class="rank-pos" :class="'rank-' + (i + 1)">{{ i + 1 }}</view>
-					<text class="rank-name">{{ s.shop_name }}</text>
+					<text class="rank-name">{{ s.shopName }}</text>
 					<view class="rank-stars">
-						
-						<text v-for="st in getStars(s.rating,'star')" :key="st.key" :class="st.cls">★</text>
+						<text class="star fill" v-for="n in Math.floor(s.rating)" :key="'on' + n">★</text>
+						<text class="star" v-for="n in (5 - Math.floor(s.rating))" :key="'off' + n">★</text>
 						<text class="rank-rating">{{ s.rating }}</text>
 					</view>
 				</view>
@@ -85,6 +85,7 @@
 </template>
 
 <script>
+	import { getDashboardStats, getStatusDist, getMonthlyTrend, getShopRanking } from '@/api/maintenance/dashboard'
 	export default {
 		data() {
 			return {
@@ -100,48 +101,24 @@
 		onPullDownRefresh() { this.loadData() },
 		methods: {
 			loadData() {
-				setTimeout(() => {
-					this.data = {
-						shopCount: 4, orderCount: 6, revenue: '4,510', avgRating: '4.3',
-						updateTime: '2026-05-29 18:00'
-					}
-					this.statusDist = [
-						{ label: '待确认', count: 0, color: '#f59e0b' },
-						{ label: '已确认', count: 1, color: '#3b82f6' },
-						{ label: '服务中', count: 1, color: '#8b5cf6' },
-						{ label: '已完成', count: 3, color: '#10b981' },
-						{ label: '已取消', count: 1, color: '#94a3b8' }
-					]
-					const max = 62
-					this.statusDist.forEach(d => { d.pct = Math.round(d.count / max * 100) })
-
-					this.monthlyData = [
-						{ month: '1月', count: 0 }, { month: '2月', count: 1 },
-						{ month: '3月', count: 1 }, { month: '4月', count: 1 },
-						{ month: '5月', count: 3 }, { month: '6月', count: 0 }
-					]
-					const maxM = Math.max(...this.monthlyData.map(m => m.count))
-					this.monthlyData.forEach(m => { m.pct = Math.round(m.count / maxM * 100) })
-
-					this.shopRanking = [
-						{ shop_id: 1, shop_name: '旗舰维保中心', rating: 4.8 },
-						{ shop_id: 2, shop_name: '新城服务站', rating: 4.5 },
-						{ shop_id: 3, shop_name: '高新维保点', rating: 4.2 },
-						{ shop_id: 4, shop_name: '西城服务中心', rating: 3.8 }
-					]
-					uni.stopPullDownRefresh()
-				}, 300)
-				},
-				getStars(rating, baseClass) {
-					const filled = Math.floor(rating)
-					const items = []
-					for (let i = 0; i < 5; i++) {
-						items.push({ key: 'k' + i, cls: baseClass + (i < filled ? ' fill' : '') })
-					}
-					return items
-				}
+			  getDashboardStats().then(res => {
+			    this.data = res.data
+			  })
+			  getStatusDist().then(res => {
+			    const max = Math.max(...res.data.map(d => d.count), 1)
+			    this.statusDist = res.data.map(d => ({ ...d, pct: Math.round(d.count / max * 100) }))
+			  })
+			  getMonthlyTrend({ year: new Date().getFullYear() }).then(res => {
+			    const maxM = Math.max(...res.data.map(m => m.count), 1)
+			    this.monthlyData = res.data.map(m => ({ ...m, pct: Math.round(m.count / maxM * 100) }))
+			  })
+			  getShopRanking().then(res => {
+			    this.shopRanking = res.data
+			  })
+			  uni.stopPullDownRefresh()
 			}
 		}
+	}
 </script>
 
 <style lang="scss" scoped>

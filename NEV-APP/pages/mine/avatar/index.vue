@@ -70,6 +70,9 @@
 </template>
 
 <script>
+  import { uploadAvatar } from "@/api/system/user"
+  import config from '@/config'
+
   export default {
     data() {
       return {
@@ -77,8 +80,8 @@
       }
     },
     onLoad() {
-      // 模拟获取当前头像
-      this.avatarUrl = ''
+      // 从 Vuex 获取当前头像
+      this.avatarUrl = this.$store.state.user.avatar || ''
     },
     methods: {
       chooseImage() {
@@ -126,15 +129,23 @@
         }
 
         this.$modal.loading('上传中...')
-        
-        // 模拟上传
-        setTimeout(() => {
+
+        uploadAvatar({
+          filePath: this.avatarUrl,
+          name: 'avatarfile'
+        }).then(response => {
           this.$modal.closeLoading()
           this.$modal.msgSuccess('头像上传成功')
+          // 后端返回 imgUrl （相对路径），拼接 baseUrl 得到完整访问地址
+          const newAvatar = response.imgUrl ? (config.baseUrl + response.imgUrl) : (response.data || response.url || this.avatarUrl)
+          this.$store.commit('SET_AVATAR', newAvatar)
           setTimeout(() => {
             this.$tab.navigateBack()
           }, 1500)
-        }, 1500)
+        }).catch(() => {
+          this.$modal.closeLoading()
+          this.$modal.msgError('头像上传失败，请重试')
+        })
       }
     }
   }

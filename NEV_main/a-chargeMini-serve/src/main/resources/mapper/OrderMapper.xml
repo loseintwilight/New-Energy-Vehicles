@@ -110,10 +110,12 @@
         INSERT INTO stad_charging_order (
             order_no, user_id, station_id, pile_code, pile_id,
             start_time, total_energy, total_amount, energy_price, service_price,
+            rate_id, rate_period_id,
             order_status, pay_status, create_time
         ) VALUES (
             #{orderNo}, #{userId}, #{stationId}, #{pileNo}, #{pileId},
             NOW(), #{energy}, #{amount}, #{electricPrice}, #{servicePrice},
+            #{rateId}, #{ratePeriodId},
             '0', '0', NOW()
         )
     </insert>

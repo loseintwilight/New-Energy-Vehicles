@@ -64,21 +64,6 @@
             <text class="info-label">车辆名称</text>
             <text class="info-value vehicle-val">{{ order.vehicleName }}</text>
           </view>
-          <view class="info-row">
-            <text class="info-label">品牌型号</text>
-            <text class="info-value">{{ order.brand }} {{ order.model }}</text>
-          </view>
-          <view class="info-row">
-            <text class="info-label">配置信息</text>
-            <text class="info-value config-val">{{ order.config }}</text>
-          </view>
-          <view class="info-row">
-            <text class="info-label">车身颜色</text>
-            <view class="color-wrap">
-              <view class="color-dot" :style="{ background: colorMap[order.color] || '#94a3b8' }"></view>
-              <text class="color-name">{{ order.color }}</text>
-            </view>
-          </view>
         </view>
       </view>
 
@@ -99,39 +84,6 @@
           <view class="info-row">
             <text class="info-label">手机号码</text>
             <text class="info-value phone-val">{{ order.customerPhone }}</text>
-          </view>
-          <view class="info-row">
-            <text class="info-label">身份证号</text>
-            <text class="info-value idcard-val">{{ order.idCard }}</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- 金融方案（绿色色条，如有） -->
-      <view v-if="order.financePlan" class="section-block sb-green slide-up-3">
-        <view class="title-bar">
-          <view class="bar-line bar-line-green"></view>
-          <view class="icon-wrap iw-green">
-            <text class="bar-icon">🏦</text>
-          </view>
-          <text class="bar-title">金融方案</text>
-        </view>
-        <view class="info-card">
-          <view class="info-row">
-            <text class="info-label">方案名称</text>
-            <text class="info-value plan-val">{{ order.financePlan.planName }}</text>
-          </view>
-          <view class="info-row">
-            <text class="info-label">首付比例</text>
-            <text class="info-value">{{ (order.financePlan.downPaymentRatio * 100).toFixed(0) }}%</text>
-          </view>
-          <view class="info-row">
-            <text class="info-label">贷款期限</text>
-            <text class="info-value">{{ order.financePlan.loanMonths }}期</text>
-          </view>
-          <view class="info-row">
-            <text class="info-label">月供金额</text>
-            <text class="info-value monthly-val">¥{{ formatAmount(order.financePlan.monthlyPayment) }}</text>
           </view>
         </view>
       </view>
@@ -162,7 +114,7 @@
           <view class="fee-divider fee-divider-bold"></view>
           <view class="fee-item">
             <text class="fee-label">支付方式</text>
-            <text class="fee-value method-val">{{ order.payMethod }}</text>
+            <text class="fee-value method-val">{{ order.paymentMethod }}</text>
           </view>
         </view>
       </view>
@@ -215,6 +167,8 @@
 </template>
 
 <script>
+import { getOrder } from '@/api/vehicle/vehicle'
+
 export default {
   data: function() {
     return {
@@ -222,28 +176,18 @@ export default {
       glowRows: [],
       orderId: '',
       order: {
-        orderId: 'VO20260530000004',
-        orderNo: 'VO20260530000004',
-        vehicleId: 3,
-        vehicleName: '蔚来 ES6 75kWh 运动版',
-        brand: '蔚来',
-        model: 'ES6',
-        config: '75kWh 运动版 星空蓝',
-        color: '星空蓝',
-        customerId: 8,
-        customerName: '王**',
-        customerPhone: '139****5678',
-        idCard: '3701***********1234',
-        financePlan: { planName: '24期0息方案', downPaymentRatio: 0.3, loanMonths: 24, monthlyPayment: 9858 },
-        totalAmount: 338000,
-        paidAmount: 101400,
-        remainingAmount: 236600,
-        payMethod: '银行转账',
-        status: '2',
-        createTime: '2026-05-30 09:00:00',
-        payTime: '2026-05-30 14:30:00',
-        approveTime: '2026-05-30 15:00:00',
-        deliverTime: '2026-06-01 10:00:00'
+        orderId: '',
+        orderNo: '',
+        vehicleId: '',
+        vehicleName: '-',
+        customerName: '-',
+        customerPhone: '-',
+        totalAmount: 0,
+        paidAmount: 0,
+        remainingAmount: 0,
+        paymentMethod: '-',
+        status: '0',
+        createTime: '-'
       },
       colorMap: {
         '星空蓝': '#1e40af',
@@ -269,24 +213,47 @@ export default {
     },
     timelineNodes: function() {
       var o = this.order
-      return [
+      var status = o.status || '0'
+      var nodes = [
         { title: '下单', time: o.createTime, done: true, active: false },
-        { title: '付款', time: o.payTime || '', done: ['2'].indexOf(o.status) >= 0, active: o.status === '0' },
-        { title: '审核', time: o.approveTime || '', done: o.status === '2', active: o.status === '1' },
-        { title: '交付', time: o.deliverTime || '', done: o.status === '2', active: false }
+        { title: '付款', time: status !== '0' ? o.createTime : '', done: ['1','2','3'].indexOf(status) >= 0, active: status === '0' },
+        { title: '审核', time: status === '2' ? o.createTime : '', done: status === '2', active: status === '1' },
+        { title: '交付', time: status === '2' ? o.createTime : '', done: false, active: false }
       ]
+      return nodes
     }
   },
   created: function() {
     this.buildGlowRows()
     var that = this
-    setTimeout(function() {
-      that.isReady = true
-    }, 200)
+    setTimeout(function() { that.isReady = true }, 200)
   },
   onLoad: function(options) {
+    var that = this
     if (options && options.orderId) {
-      this.orderId = options.orderId
+      that.orderId = options.orderId
+      // 从后端加载订单详情
+      getOrder(options.orderId).then(function(res) {
+        if (res.code === 1 && res.data) {
+          var o = res.data
+          that.order = {
+            orderId: o.orderId,
+            orderNo: o.orderNo || '',
+            vehicleId: o.vehicleId,
+            vehicleName: o.vehicleName || '-',
+            customerName: o.contactName || '-',
+            customerPhone: o.contactPhone || '-',
+            totalAmount: o.totalAmount || 0,
+            paidAmount: o.paidAmount || 0,
+            remainingAmount: (o.totalAmount || 0) - (o.paidAmount || 0),
+            paymentMethod: o.paymentMethod || '-',
+            status: o.status || '0',
+            createTime: o.createTime || '-'
+          }
+        }
+      }).catch(function() {
+        console.log('获取订单详情失败')
+      })
     }
   },
   methods: {

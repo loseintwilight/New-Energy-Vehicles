@@ -118,6 +118,9 @@
 </template>
 
 <script>
+import { getStationList } from '@/api/charger/station'
+import { getPileDetail } from '@/api/charger/pile'
+
 export default {
   data() {
     return {
@@ -125,11 +128,13 @@ export default {
       isEditMode: false,
       editPileId: '',
       glowRows: [],
-      stationOptions: ['济南高新区充电站', '济南历下区旗舰站', '济南市中区超充站', '济南天桥区充电站', '济南槐荫区快充站'],
+      stationOptions: [],
+      stationList: [],
       typeOptions: ['直流快充', '直流超充', '交流慢充'],
       connectorOptions: ['GB/T 20234 (国标)', 'CCS Combo2 (欧标)', 'CHAdeMO (日标)', 'Tesla (美标)'],
       rateOptions: ['标准充电费率', '超充专属费率', '夜间优惠费率'],
       form: {
+        stationId: '',
         station: '',
         code: '',
         name: '',
@@ -150,6 +155,7 @@ export default {
     setTimeout(function() { self.isReady = true }, 200)
   },
   onLoad: function(options) {
+    this.loadStations()
     if (options && options.mode === 'edit' && options.pileId) {
       this.isEditMode = true
       this.editPileId = options.pileId
@@ -157,31 +163,42 @@ export default {
     }
   },
   methods: {
-    loadPileData: function(pileId) {
-      var USE_MOCK = true
+    loadStations: function() {
       var self = this
-      if (USE_MOCK) {
-        /* 模拟根据pileId加载桩数据 */
-        var mockData = {
-          'DC-001': { station: '济南奥体中心充电站', code: 'DC-001', name: '1号快充桩', type: '直流快充', power: '120', voltage: '750', connector: 'GB/T 20234 (国标)', connCount: '2', rate: '标准充电费率', serviceFee: '0.40', remark: '位于A区靠入口位置' },
-          'DC-002': { station: '济南奥体中心充电站', code: 'DC-002', name: '2号超充桩', type: '直流超充', power: '180', voltage: '1000', connector: 'GB/T 20234 (国标)', connCount: '2', rate: '超充专属费率', serviceFee: '0.60', remark: '超充专区，支持480kW' },
-          'AC-001': { station: '济南奥体中心充电站', code: 'AC-001', name: '3号慢充桩', type: '交流慢充', power: '7', voltage: '220', connector: 'GB/T 20234 (国标)', connCount: '1', rate: '夜间优惠费率', serviceFee: '0.20', remark: '适合长时间停放' }
+      getStationList({ pageSize: 100 }).then(function(res) {
+        if (res.code === 200 && res.rows) {
+          self.stationList = res.rows
+          var names = []
+          for (var i = 0; i < res.rows.length; i++) {
+            names.push(res.rows[i].stationName)
+          }
+          self.stationOptions = names
         }
-        var data = mockData[pileId] || mockData['DC-001']
-        if (data) {
-          self.form.station = data.station
-          self.form.code = data.code
-          self.form.name = data.name
-          self.form.type = data.type
-          self.form.power = data.power
-          self.form.voltage = data.voltage
-          self.form.connector = data.connector
-          self.form.connCount = data.connCount
-          self.form.rate = data.rate
-          self.form.serviceFee = data.serviceFee
-          self.form.remark = data.remark
+      }).catch(function() {})
+    },
+    loadPileData: function(pileId) {
+      var self = this
+      getPileDetail(pileId).then(function(res) {
+        if (res.code === 200) {
+          var data = res.data
+          self.form.stationId = data.stationId || ''
+          self.form.station = data.stationName || ''
+          self.form.code = data.pileCode || ''
+          self.form.name = data.pileCode || ''
+          self.form.type = data.pileType === 'dc_fast' ? '直流快充' : (data.pileType === 'dc_ultra' ? '直流超充' : (data.pileType === 'ac_slow' ? '交流慢充' : ''))
+          self.form.power = String(data.powerKw || '')
+          self.form.voltage = ''
+          self.form.connector = data.connectorType || ''
+          self.form.connCount = ''
+          self.form.rate = ''
+          self.form.serviceFee = ''
+          self.form.remark = ''
+        } else {
+          uni.showToast({ title: res.msg || '加载数据失败', icon: 'none' })
         }
-      }
+      }).catch(function() {
+        uni.showToast({ title: '网络异常', icon: 'none' })
+      })
     },
     buildGlowRows() {
       var rows = []
@@ -198,7 +215,13 @@ export default {
       this.glowRows = rows
     },
     goBack() { uni.navigateBack() },
-    onStationChange(e) { this.form.station = this.stationOptions[e.detail.value] },
+    onStationChange(e) {
+      var idx = e.detail.value
+      this.form.station = this.stationOptions[idx]
+      if (this.stationList[idx]) {
+        this.form.stationId = this.stationList[idx].stationId
+      }
+    },
     onTypeChange(e) { this.form.type = this.typeOptions[e.detail.value] },
     onConnectorChange(e) { this.form.connector = this.connectorOptions[e.detail.value] },
     onRateChange(e) { this.form.rate = this.rateOptions[e.detail.value] },

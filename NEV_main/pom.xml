@@ -182,6 +182,13 @@
         <module>ruoyi-common</module>
         <module>a-buycar-server</module>
         <module>a-chargeMini-serve</module>
+        <module>a-charging-serve</module>
+        <module>a-vehicle</module>
+        <module>a-vehicle-orders</module>
+        <module>a-vehicle-review</module>
+        <module>a-maintenance-order</module>
+        <module>a-mine</module>
+
     </modules>
     <packaging>pom</packaging>
 

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mine.mapper.StadUserFavoriteMapper">
+
+    <resultMap type="com.ruoyi.mine.domain.MineStadUserFavorite" id="StadUserFavoriteResult">
+        <result property="favoriteId" column="favorite_id"  />
+        <result property="userId"     column="user_id"      />
+        <result property="nickName"   column="nick_name"    />
+        <result property="targetType" column="target_type"  />
+        <result property="targetId"   column="target_id"    />
+        <result property="targetName" column="target_name"  />
+        <result property="targetImage" column="target_image" />
+        <result property="targetPrice" column="target_price" />
+        <result property="targetAddress" column="target_address" />
+        <result property="targetStatus" column="target_status" />
+        <result property="targetStock" column="target_stock" />
+        <result property="targetPiles" column="target_piles" />
+        <result property="targetAvailablePiles" column="target_available_piles" />
+        <result property="targetVehicleType" column="target_vehicle_type" />
+        <result property="createTime" column="create_time"  />
+    </resultMap>
+
+    <sql id="selectUserFavoriteVo">
+        select f.favorite_id, f.user_id, u.nick_name, f.target_type, f.target_id, f.create_time,
+               case 
+                   when f.target_type = 'vehicle' then v.model_name
+                   when f.target_type = 'station' then s.station_name
+                   when f.target_type = 'article' then concat('文章ID:', f.target_id)
+                   else '未知类型'
+               end as target_name,
+               case 
+                   when f.target_type = 'vehicle' then v.title
+                   when f.target_type = 'station' then s.address
+                   when f.target_type = 'article' then '文章内容预览'
+                   else ''
+               end as target_address,
+               case 
+                   when f.target_type = 'vehicle' then v.guide_price
+                   else 0
+               end as target_price,
+               v.vehicle_type as target_vehicle_type,
+               v.stock as target_stock,
+               s.total_piles as target_piles,
+               s.available_piles as target_available_piles,
+               case 
+                   when f.target_type = 'vehicle' then v.status
+                   when f.target_type = 'station' then s.station_status
+                   else '1'
+               end as target_status
+        from stad_user_favorite f
+        left join sys_user u on f.user_id = u.user_id
+        left join stad_vehicle v on f.target_type = 'vehicle' and f.target_id = v.vehicle_id
+        left join stad_charging_station s on f.target_type = 'station' and f.target_id = s.station_id
+    </sql>
+
+    <select id="selectStadUserFavoriteById" parameterType="Long" resultMap="StadUserFavoriteResult">
+        <include refid="selectUserFavoriteVo"/>
+        where favorite_id = #{favoriteId}
+    </select>
+
+    <select id="selectStadUserFavoriteList" parameterType="com.ruoyi.mine.domain.MineStadUserFavorite" resultMap="StadUserFavoriteResult">
+        <include refid="selectUserFavoriteVo"/>
+        <where>
+            <if test="userId != null">
+                AND f.user_id = #{userId}
+            </if>
+            <if test="targetType != null and targetType != ''">
+                AND f.target_type = #{targetType}
+            </if>
+            <if test="targetId != null">
+                AND f.target_id = #{targetId}
+            </if>
+        </where>
+        order by favorite_id desc
+    </select>
+
+    <insert id="insertStadUserFavorite" parameterType="com.ruoyi.mine.domain.MineStadUserFavorite" useGeneratedKeys="true" keyProperty="favoriteId">
+        insert into stad_user_favorite
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="targetType != null and targetType != ''">target_type,</if>
+            <if test="targetId != null">target_id,</if>
+            create_time
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="targetType != null and targetType != ''">#{targetType},</if>
+            <if test="targetId != null">#{targetId},</if>
+            sysdate()
+        </trim>
+    </insert>
+
+    <update id="updateStadUserFavorite" parameterType="com.ruoyi.mine.domain.MineStadUserFavorite">
+        update stad_user_favorite
+        <set>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="targetType != null">target_type = #{targetType},</if>
+            <if test="targetId != null">target_id = #{targetId},</if>
+        </set>
+        where favorite_id = #{favoriteId}
+    </update>
+
+    <delete id="deleteStadUserFavoriteById" parameterType="Long">
+        delete from stad_user_favorite where favorite_id = #{favoriteId}
+    </delete>
+
+    <delete id="deleteStadUserFavoriteByIds" parameterType="Long">
+        delete from stad_user_favorite where favorite_id in
+        <foreach item="favoriteId" collection="array" open="(" separator="," close=")">
+            #{favoriteId}
+        </foreach>
+    </delete>
+
+</mapper>

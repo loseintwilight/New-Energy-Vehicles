@@ -98,9 +98,7 @@
           @tap="goDetail(item)"
         >
           <!-- 左侧彩色状态条 -->
-          <view class="status-bar">
-            <view class="pulse-ring" v-if="item.status === '0'"></view>
-          </view>
+          <view class="status-bar"></view>
 
           <!-- 卡片内容区 -->
           <view class="card-body">
@@ -120,7 +118,6 @@
               <view class="card-right">
                 <text class="amount-big">¥{{ fmtAmount(item.amount) }}</text>
                 <view :class="['status-tag', 'stag-' + item.status]">
-                  <view class="stag-dot" v-if="item.status === '0'"></view>
                   <text>{{ item.statusText }}</text>
                 </view>
               </view>
@@ -145,6 +142,8 @@
 </template>
 
 <script>
+import { listOrder } from '@/api/vehicle/vehicle'
+
 export default {
   data: function() {
     return {
@@ -152,11 +151,11 @@ export default {
       glowRows: [],
       loading: false,
       hasMore: false,
+      pageNum: 1,
       activeStatus: 0,
       activeTime: 0,
       statusTabs: [
         { label: '全部', value: '' },
-        { label: '待付款', value: '0' },
         { label: '已付待交付', value: '1' },
         { label: '已完成', value: '2' },
         { label: '已取消', value: '3' }
@@ -166,26 +165,13 @@ export default {
         { label: '近7天', value: 'week' },
         { label: '近30天', value: 'month' }
       ],
-      mockOrders: [
-        { orderId: 'VO20260531000001', orderNo: 'VO20260531000001', vehicleName: '比亚迪海豹 EV 700km 四驱旗舰版',
-          customerName: '张**', amount: 228000, status: '0', statusText: '待付款', time: '2026-05-31 10:30' },
-        { orderId: 'VO20260530000005', orderNo: 'VO20260530000005', vehicleName: '特斯拉 Model Y 后驱版',
-          customerName: '李**', amount: 263900, status: '1', statusText: '已付待交付', time: '2026-05-30 16:20' },
-        { orderId: 'VO20260530000004', orderNo: 'VO20260530000004', vehicleName: '蔚来 ES6 75kWh 运动版',
-          customerName: '王**', amount: 338000, status: '2', statusText: '已完成', time: '2026-05-30 09:15' },
-        { orderId: 'VO20260529000003', orderNo: 'VO20260529000003', vehicleName: '理想 L7 Pro 增程版',
-          customerName: '赵**', amount: 319800, status: '2', statusText: '已完成', time: '2026-05-29 14:00' },
-        { orderId: 'VO20260528000002', orderNo: 'VO20260528000002', vehicleName: '比亚迪汉 DM-i 冠军版',
-          customerName: '刘**', amount: 189800, status: '2', statusText: '已完成', time: '2026-05-28 11:30' },
-        { orderId: 'VO20260527000001', orderNo: 'VO20260527000001', vehicleName: '问界 M5 纯电版',
-          customerName: '陈**', amount: 259800, status: '3', statusText: '已取消', time: '2026-05-27 09:00' }
-      ]
+      orders: []
     }
   },
   computed: {
     filteredOrders: function() {
       var self = this
-      var list = self.mockOrders
+      var list = self.orders
       var statusVal = self.statusTabs[self.activeStatus].value
       if (statusVal !== '') {
         list = list.filter(function(o) { return o.status === statusVal })
@@ -194,21 +180,26 @@ export default {
     },
     todayOrderCount: function() {
       var self = this
-      return self.mockOrders.filter(function(o) { return o.time.indexOf('2026-05-31') !== -1 }).length
+      var today = new Date()
+      var todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0')
+      return self.orders.filter(function(o) { return o.time && o.time.indexOf(todayStr) !== -1 }).length
     },
     todayRevenue: function() {
       var self = this
+      var today = new Date()
+      var todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0')
       var sum = 0
-      self.mockOrders.filter(function(o) { return o.time.indexOf('2026-05-31') !== -1 && o.status !== '3' }).forEach(function(o) { sum += o.amount })
+      self.orders.filter(function(o) { return o.time && o.time.indexOf(todayStr) !== -1 && o.status !== '3' }).forEach(function(o) { sum += o.amount })
       return sum.toLocaleString('zh-CN')
     },
     pendingDeliveryCount: function() {
       var self = this
-      return self.mockOrders.filter(function(o) { return o.status === '1' }).length
+      return self.orders.filter(function(o) { return o.status === '1' }).length
     }
   },
   created: function() {
     this.buildGlowRows()
+    this.loadOrders()
     var that = this
     setTimeout(function() { that.isReady = true }, 200)
   },
@@ -233,11 +224,46 @@ export default {
       }
       this.glowRows = rows
     },
+
+    loadOrders: function() {
+      var self = this
+      self.loading = true
+      var statusVal = self.statusTabs[self.activeStatus].value
+      var params = { pageNum: self.pageNum, pageSize: 20 }
+      if (statusVal) params.status = statusVal
+      listOrder(params).then(function(res) {
+        if (res.code === 1 && res.data) {
+          var list = res.data.list || []
+          var statusMap = { '1': '已付待交付', '2': '已完成', '3': '已取消' }
+          var mapped = list.map(function(o) {
+            return {
+              orderId: o.orderId,
+              orderNo: o.orderNo || '',
+              vehicleName: o.vehicleName || '-',
+              customerName: o.contactName || '-',
+              amount: o.totalAmount || 0,
+              status: o.status || '0',
+              statusText: statusMap[o.status] || '未知',
+              time: o.createTime || ''
+            }
+          })
+          self.orders = mapped
+          self.hasMore = res.data.hasNextPage || false
+        }
+        self.loading = false
+      }).catch(function() {
+        self.loading = false
+        console.log('获取订单列表失败')
+      })
+    },
+
     goBack: function() {
       uni.navigateBack({ delta: 1 })
     },
     switchStatus: function(idx) {
       this.activeStatus = idx
+      this.pageNum = 1
+      this.loadOrders()
     },
     switchTime: function(idx) {
       this.activeTime = idx
@@ -250,7 +276,8 @@ export default {
     },
     onLoadMore: function() {
       if (!this.hasMore) return
-      uni.showToast({ title: '加载更多数据...', icon: 'none', duration: 1000 })
+      this.pageNum++
+      this.loadOrders()
     },
     shortOrderNo: function(no) {
       if (!no) return ''

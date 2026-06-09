@@ -24,10 +24,10 @@
         </view>
         <view class="header-info">
           <text class="header-title">充电桩详情</text>
-          <text class="header-sub">{{ pile.code }}</text>
+          <text class="header-sub">{{ pile.pileCode }}</text>
         </view>
-        <view :class="['status-mini', 'sm-' + pile.status]">
-          <view class="sm-dot" v-if="pile.status === '1'"></view>
+        <view :class="['status-mini', 'sm-' + pile.pileStatus]">
+          <view class="sm-dot" v-if="pile.pileStatus === '1'"></view>
           <text>{{ statusText }}</text>
         </view>
       </view>
@@ -40,19 +40,19 @@
             <text class="hero-icon">{{ pile.type === 'dc' ? '⚡' : '🔌' }}</text>
           </view>
           <view class="hero-name-area">
-            <text class="hero-name">{{ pile.code }}</text>
+            <text class="hero-name">{{ pile.pileCode }}</text>
             <text class="hero-type-label">{{ pile.typeLabel }}</text>
           </view>
-          <view :class="['status-badge', 'badge-' + pile.status]">
-            <view class="badge-dot" v-if="pile.status === '1'"></view>
+          <view :class="['status-badge', 'badge-' + pile.pileStatus]">
+            <view class="badge-dot" v-if="pile.pileStatus === '1'"></view>
             <text>{{ statusText }}</text>
           </view>
         </view>
         <view class="hero-power-row">
-          <text class="power-big-num">{{ pile.power }}</text>
+          <text class="power-big-num">{{ pile.powerKw }}</text>
           <text class="power-unit">kW</text>
           <view class="connector-tag">
-            <text>{{ pile.connector }}</text>
+            <text>{{ pile.connectorType }}</text>
           </view>
         </view>
         <view class="hero-station-row">
@@ -73,7 +73,7 @@
         <view class="info-card">
           <view class="info-row">
             <text class="info-label">桩编码</text>
-            <text class="info-value code-val">{{ pile.code }}</text>
+            <text class="info-value code-val">{{ pile.pileCode }}</text>
           </view>
           <view class="info-row">
             <text class="info-label">所属站点</text>
@@ -89,14 +89,14 @@
             <text class="info-label">接口类型</text>
             <view class="connector-wrap">
               <text class="connector-icon">{{ connectorIcon }}</text>
-              <text class="connector-name">{{ pile.connector }}</text>
+              <text class="connector-name">{{ pile.connectorType }}</text>
             </view>
           </view>
         </view>
       </view>
 
       <!-- 实时状态卡（蓝色色条）- 仅充电中时显示 -->
-      <view v-if="pile.status === '1'" class="section-block sb-blue">
+      <view v-if="pile.pileStatus === '1'" class="section-block sb-blue">
         <view class="title-bar">
           <view class="bar-line bar-line-blue"></view>
           <view class="icon-wrap iw-blue">
@@ -133,7 +133,7 @@
           </view>
           <view class="extra-row">
             <text class="extra-label">充电用户</text>
-            <text class="extra-value">{{ pile.currentUser }}</text>
+            <text class="extra-value">{{ pile.currentUserName }}</text>
           </view>
           <view class="extra-row">
             <text class="extra-label">开始时间</text>
@@ -218,7 +218,7 @@
           <text class="act-desc">移除此充电桩</text>
         </view>
         <view
-          v-if="pile.status === '2'"
+          v-if="pile.pileStatus === '2'"
           class="action-card act-restart"
           hover-class="act-hover"
           @tap="doRestart"
@@ -227,17 +227,6 @@
           <text class="act-icon">🔄</text>
           <text class="act-name">远程重启</text>
           <text class="act-desc">尝试恢复设备运行</text>
-        </view>
-        <view
-          v-if="pile.status === '1'"
-          class="action-card act-order"
-          hover-class="act-hover"
-          @tap="goOrder"
-        >
-          <view class="act-color-bar ac-order-bar"></view>
-          <text class="act-icon">📋</text>
-          <text class="act-name">查看订单</text>
-          <text class="act-desc">查看当前充电订单详情</text>
         </view>
         <view
           class="action-card act-back"
@@ -257,6 +246,8 @@
 </template>
 
 <script>
+import { getPileDetail, updatePile, deletePile } from '@/api/charger/pile.js'
+
 export default {
   data: function() {
     return {
@@ -265,27 +256,26 @@ export default {
       pileId: '',
       timer: null,
       pile: {
-        pileId: 3,
-        code: 'AT-DC-03',
-        type: 'dc',
-        typeLabel: 'DC快充',
-        power: 180,
-        connector: 'GB/T',
-        accessType: 'public',
-        status: '1',
-        statusText: '充电中',
-        stationId: 1,
-        stationName: '济南奥体中心充电站',
-        currentOrderNo: 'CO20260531000001',
-        currentUser: '张**',
-        currentStartTime: '2026-05-31 08:00:00',
-        voltage: 380,
-        currentA: 120,
-        powerNow: 45.6,
-        energyTotal: 12800.80,
-        todayEnergy: 128.0,
-        todayCount: 8,
-        lastHeartbeat: '2026-05-31 08:45:00'
+        pileId: '',
+        pileCode: '',
+        type: '',
+        typeLabel: '',
+        powerKw: 0,
+        connectorType: '',
+        accessType: '',
+        pileStatus: '',
+        stationId: '',
+        stationName: '',
+        currentOrderNo: '',
+        currentUserName: '',
+        currentStartTime: '',
+        voltage: 0,
+        currentA: 0,
+        powerNow: 0,
+        energyTotal: 0,
+        todayEnergy: 0,
+        todayCount: 0,
+        lastHeartbeat: ''
       }
     }
   },
@@ -293,7 +283,7 @@ export default {
     statusText: function() {
       if (!this.pile) return ''
       var map = { '0': '空闲', '1': '充电中', '2': '离线', '3': '故障' }
-      return map[this.pile.status] || '未知'
+      return map[this.pile.pileStatus] || '未知'
     },
     accessTypeText: function() {
       if (!this.pile) return ''
@@ -303,7 +293,7 @@ export default {
     connectorIcon: function() {
       if (!this.pile) return '🔌'
       var icons = { 'GB/T': '🔌', 'CCS': '⚡', 'Type2': '🔋' }
-      return icons[this.pile.connector] || '🔌'
+      return icons[this.pile.connectorType] || '🔌'
     },
     isOnline: function() {
       if (!this.pile || !this.pile.lastHeartbeat) return false
@@ -323,14 +313,14 @@ export default {
       return Math.floor(diffMin / 1440) + '天前'
     },
     chargingDuration: function() {
-      if (!this.pile || !this.pile.currentStartTime || this.pile.status !== '1') return '--'
+      if (!this.pile || !this.pile.currentStartTime || this.pile.pileStatus !== '1') return '--'
       var startTime = new Date(this.pile.currentStartTime.replace(/-/g, '/'))
       var now = new Date()
       var diffMin = Math.floor((now - startTime) / 1000 / 60)
       return diffMin > 0 ? diffMin : 0
     },
     chargedEnergy: function() {
-      if (this.pile.status !== '1' || !this.pile.powerNow) return '0.00'
+      if (this.pile.pileStatus !== '1' || !this.pile.powerNow) return '0.00'
       var duration = this.chargingDuration
       if (duration <= 0) return '0.00'
       var energy = (this.pile.powerNow * duration / 60).toFixed(2)
@@ -347,6 +337,7 @@ export default {
   onLoad: function(options) {
     if (options && options.pileId) {
       this.pileId = options.pileId
+      this.loadPileData(options.pileId)
     }
   },
   onShow: function() {
@@ -359,6 +350,44 @@ export default {
     this.stopTimer()
   },
   methods: {
+    loadPileData: function(pileId) {
+      var self = this
+      getPileDetail(pileId).then(function(res) {
+        if (res.code === 200 && res.data) {
+          var d = res.data
+          self.pile = {
+            pileId: d.pileId || '',
+            pileCode: d.pileCode || '',
+            type: d.pileType || '',
+            typeLabel: self.getPileTypeLabel(d.pileType),
+            powerKw: d.powerKw || 0,
+            connectorType: d.connectorType || '',
+            accessType: d.accessType || '',
+            pileStatus: d.pileStatus || '',
+            stationId: d.stationId || '',
+            stationName: d.stationName || '未知站点',
+            currentOrderNo: d.currentOrderNo || '--',
+            currentUserName: d.currentUserName || '--',
+            currentStartTime: d.currentStartTime || '',
+            voltage: d.voltage || 0,
+            currentA: d.currentA || 0,
+            powerNow: d.powerNow || 0,
+            energyTotal: d.energyTotal || 0,
+            todayEnergy: d.todayEnergy || 0,
+            todayCount: d.todayCount || 0,
+            lastHeartbeat: d.lastHeartbeat || ''
+          }
+        } else {
+          uni.showToast({ title: res.msg || '加载数据失败', icon: 'none' })
+        }
+      }).catch(function() {
+        uni.showToast({ title: '网络异常', icon: 'none' })
+      })
+    },
+    getPileTypeLabel: function(type) {
+      var map = { 'dc_fast': '直流快充', 'dc_ultra': '直流超充', 'ac_slow': '交流慢充' }
+      return map[type] || type || '-'
+    },
     buildGlowRows: function() {
       var rows = []
       var colors = ['#f59e0b', '#f97316', '#fb923c', '#fbbf24', '#fcd34d', '#fde68a']
@@ -407,7 +436,7 @@ export default {
       var self = this
       uni.showModal({
         title: '确认删除',
-        content: '确定要删除充电桩「' + this.pile.code + '」吗？删除后不可恢复。',
+        content: '确定要删除充电桩「' + this.pile.pileCode + '」吗？删除后不可恢复。',
         confirmColor: '#ef4444',
         success: function(res) {
           if (res.confirm) {
@@ -431,12 +460,7 @@ export default {
       })
     },
 
-    goOrder: function() {
-      uni.showToast({
-        title: '正在跳转订单详情...',
-        icon: 'none'
-      })
-    }
+
   }
 }
 </script>
@@ -1154,13 +1178,7 @@ export default {
 .act-restart .act-icon, .act-restart .act-name { color: #ffffff; }
 .act-restart .act-desc { color: rgba(255, 255, 255, 0.8); }
 
-/* 查看订单（琥珀系） */
-.act-order {
-  background: linear-gradient(135deg, #f59e0b, #f97316, #ea580c);
-}
-.ac-order-bar { background: linear-gradient(180deg, #ffffff 0%, rgba(255,255,255,0.3) 100%); }
-.act-order .act-icon, .act-order .act-name { color: #ffffff; }
-.act-order .act-desc { color: rgba(255, 255, 255, 0.8); }
+
 
 /* 返回列表（灰色系） */
 .act-back {

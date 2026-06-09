@@ -42,4 +42,7 @@ public interface StationMapper {
 
     /** 获取热门搜索 */
     List<SuggestionVO> selectHotSearches();
+
+    /** 根据实际pile_status重新计算站点的可用/占用桩数并更新 */
+    int syncStationPileCounts(@Param("stationId") Long stationId);
 }

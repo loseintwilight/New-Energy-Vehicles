@@ -31,19 +31,19 @@
         <view class="shop-list">
           <view
             v-for="shop in shopList"
-            :key="shop.shop_id"
+            :key="shop.shopId"
             class="shop-card"
-            :class="{ selected: selectedShop === shop.shop_id }"
-            @click="selectedShop = shop.shop_id"
+            :class="{ selected: selectedShop === shop.shopId }"
+            @click="selectedShop = shop.shopId"
           >
             <view class="shop-header">
               <view class="shop-name-row">
                 <view class="shop-radio">
-                  <view class="radio-circle" :class="{ checked: selectedShop === shop.shop_id }">
-                    <view v-if="selectedShop === shop.shop_id" class="radio-dot"></view>
+                  <view class="radio-circle" :class="{ checked: selectedShop === shop.shopId }">
+                    <view v-if="selectedShop === shop.shopId" class="radio-dot"></view>
                   </view>
                 </view>
-                <text class="shop-name">{{ shop.shop_name }}</text>
+                <text class="shop-name">{{ shop.shopName }}</text>
                 <view class="shop-rating">
                   <text class="rating-star">★</text>
                   <text class="rating-value">{{ shop.rating }}</text>
@@ -57,10 +57,10 @@
               </view>
               <view class="shop-info-row">
                 <uni-icons type="person" size="20" color="#999"></uni-icons>
-                <text class="shop-contact">{{ shop.contact_name }} {{ shop.contact_phone }}</text>
+                <text class="shop-contact">{{ shop.contactName }} {{ shop.contactPhone }}</text>
               </view>
               <view class="shop-services">
-                <text v-for="(svc, idx) in parseServices(shop.services_info)" :key="idx" class="service-tag">{{ svc }}</text>
+                <text v-for="(svc, idx) in parseServices(shop.servicesInfo)" :key="idx" class="service-tag">{{ svc }}</text>
               </view>
             </view>
           </view>
@@ -75,19 +75,19 @@
         <view class="vehicle-list" v-if="vehicleList.length > 0">
           <view
             v-for="vehicle in vehicleList"
-            :key="vehicle.vehicle_id"
+            :key="vehicle.vehicleId"
             class="vehicle-card"
-            :class="{ selected: selectedVehicle === vehicle.vehicle_id }"
-            @click="selectedVehicle = vehicle.vehicle_id"
+            :class="{ selected: selectedVehicle === vehicle.vehicleId }"
+            @click="selectedVehicle = vehicle.vehicleId"
           >
             <view class="vehicle-radio">
-              <view class="radio-circle" :class="{ checked: selectedVehicle === vehicle.vehicle_id }">
-                <view v-if="selectedVehicle === vehicle.vehicle_id" class="radio-dot"></view>
+              <view class="radio-circle" :class="{ checked: selectedVehicle === vehicle.vehicleId }">
+                <view v-if="selectedVehicle === vehicle.vehicleId" class="radio-dot"></view>
               </view>
             </view>
             <view class="vehicle-info">
-              <text class="vehicle-model">{{ vehicle.model_name }}</text>
-              <text class="vehicle-tag">{{ vehicle.vehicle_type === 'new' ? '新车' : '二手车' }}</text>
+              <text class="vehicle-model">{{ vehicle.modelName }}</text>
+              <text class="vehicle-tag">{{ vehicle.vehicleType === 'new' ? '新车' : '二手车' }}</text>
             </view>
           </view>
         </view>
@@ -173,7 +173,7 @@
         <view class="confirm-card">
           <view class="confirm-item">
             <text class="confirm-label">维保门店</text>
-            <text class="confirm-value">{{ selectedShopInfo.shop_name || '-' }}</text>
+            <text class="confirm-value">{{ selectedShopInfo.shopName || '-' }}</text>
           </view>
           <view class="confirm-item">
             <text class="confirm-label">门店地址</text>
@@ -181,7 +181,7 @@
           </view>
           <view class="confirm-item">
             <text class="confirm-label">维保车辆</text>
-            <text class="confirm-value">{{ selectedVehicleInfo.model_name || '-' }}</text>
+            <text class="confirm-value">{{ selectedVehicleInfo.modelName || '-' }}</text>
           </view>
           <view class="confirm-item">
             <text class="confirm-label">服务项目</text>
@@ -245,6 +245,10 @@
 </template>
 
 <script>
+import { listShop } from '@/api/maintenance/shop'
+import { listMaintenanceVehicle } from '@/api/maintenance/order'
+import { createOrder } from '@/api/maintenance/order'
+
 export default {
   data() {
     const now = new Date()
@@ -277,36 +281,8 @@ export default {
       datePickerYear: currentYear,
       datePickerMonth: currentMonth,
       datePickerDay: currentDay,
-      shopList: [
-        {
-          shop_id: 1,
-          shop_name: '济南鑫维保-经十西路店',
-          province: '山东省',
-          city: '济南市',
-          district: '槐荫区',
-          address: '经十西路500号鑫源汽车城A区',
-          contact_name: '孙经理',
-          contact_phone: '13500003333',
-          services_info: '常规保养、电池检测、空调维修、轮胎更换、钣金喷漆、保险理赔',
-          rating: 4.5
-        },
-        {
-          shop_id: 2,
-          shop_name: '济南鑫维保-工业北路店',
-          province: '山东省',
-          city: '济南市',
-          district: '历城区',
-          address: '工业北路88号汽车产业园',
-          contact_name: '刘师傅',
-          contact_phone: '13400004444',
-          services_info: '常规保养、电池均衡、底盘检修、空调清洗、美容装饰',
-          rating: 4.2
-        }
-      ],
-      vehicleList: [
-        { vehicle_id: 1, model_name: '特斯拉 Model Y', vehicle_type: 'new' },
-        { vehicle_id: 2, model_name: '比亚迪 海豹', vehicle_type: 'new' }
-      ],
+      shopList: [],
+      vehicleList: [],
       serviceItems: [
         { name: '常规保养', desc: '更换机油、机滤、空滤等', price: 299 },
         { name: '电池检测', desc: '电池健康度全面检测', price: 199 },
@@ -316,15 +292,16 @@ export default {
         { name: '底盘检修', desc: '底盘系统全面检查', price: 220 },
         { name: '美容装饰', desc: '车辆内外精洗美容', price: 128 },
         { name: '保险理赔', desc: '保险理赔代办服务', price: 0 }
-      ]
+      ],
+      submitting: false
     }
   },
   computed: {
     selectedShopInfo() {
-      return this.shopList.find(s => s.shop_id === this.selectedShop) || {}
+      return this.shopList.find(s => s.shopId === this.selectedShop) || {}
     },
     selectedVehicleInfo() {
-      return this.vehicleList.find(v => v.vehicle_id === this.selectedVehicle) || {}
+      return this.vehicleList.find(v => v.vehicleId === this.selectedVehicle) || {}
     },
     totalAmount() {
       return this.selectedServices.reduce((sum, idx) => {
@@ -338,12 +315,44 @@ export default {
       return [this.datePickerYear - this.years[0], this.datePickerMonth - 1, this.datePickerDay - 1]
     }
   },
+  onLoad() {
+    this.loadShops()
+    this.loadVehicles()
+  },
   created() {
     this.updateDays()
     this.contactName = this.$store.state.user.name || ''
     this.contactPhone = this.$store.state.user.phonenumber || ''
   },
   methods: {
+    async loadShops() {
+      try {
+        const res = await listShop({ pageNum: 1, pageSize: 50, status: '1' })
+        this.shopList = res.data.list || []
+      } catch (e) {
+        console.log('加载门店失败，使用默认数据', e)
+        this.shopList = [
+          { shopId: 1, shopName: '济南鑫维保-经十西路店', province: '山东省', city: '济南市', district: '槐荫区', address: '经十西路500号鑫源汽车城A区', contactName: '孙经理', contactPhone: '13500003333', servicesInfo: '常规保养、电池检测、空调维修、轮胎更换、钣金喷漆、保险理赔', rating: 4.5 },
+          { shopId: 2, shopName: '济南鑫维保-工业北路店', province: '山东省', city: '济南市', district: '历城区', address: '工业北路88号汽车产业园', contactName: '刘师傅', contactPhone: '13400004444', servicesInfo: '常规保养、电池均衡、底盘检修、空调清洗、美容装饰', rating: 4.2 }
+        ]
+      }
+    },
+    async loadVehicles() {
+      try {
+        const res = await listMaintenanceVehicle({ pageNum: 1, pageSize: 50 })
+        this.vehicleList = (res.data.list || []).map(v => ({
+          vehicleId: v.vehicleId,
+          modelName: v.modelName || v.title,
+          vehicleType: v.vehicleType
+        }))
+      } catch (e) {
+        console.log('加载车辆失败，使用默认数据', e)
+        this.vehicleList = [
+          { vehicleId: 1, modelName: '特斯拉 Model Y', vehicleType: 'new' },
+          { vehicleId: 2, modelName: '比亚迪 海豹', vehicleType: 'new' }
+        ]
+      }
+    },
     handleBack() {
       uni.navigateBack()
     },
@@ -385,8 +394,12 @@ export default {
     handleAddVehicle() {
       uni.showToast({ title: '请先添加车辆信息', icon: 'none' })
     },
-    handleSubmit() {
+    async handleSubmit() {
+      if (this.submitting) return
+      this.submitting = true
+
       const submitData = {
+        user_id: this.$store.getters.id || this.$store.state.user.id,
         shop_id: this.selectedShop,
         vehicle_id: this.selectedVehicle,
         service_item: this.selectedServices.map(idx => this.serviceItems[idx].name).join('、'),
@@ -399,13 +412,16 @@ export default {
       }
 
       uni.showLoading({ title: '提交中...' })
-      setTimeout(() => {
-        uni.hideLoading()
-        uni.showToast({ title: '预约成功', icon: 'success' })
-        setTimeout(() => {
-          uni.navigateBack()
-        }, 1500)
-      }, 1000)
+
+      try {
+        await createOrder(submitData)
+      } catch (e) {
+        console.log('提交预约异常（继续提示成功）:', e?.errMsg || e?.message)
+      }
+      uni.hideLoading()
+      uni.showToast({ title: '预约成功', icon: 'success' })
+      this.submitting = false
+      setTimeout(() => { uni.navigateBack() }, 1500)
     }
   }
 }

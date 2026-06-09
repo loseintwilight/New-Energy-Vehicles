@@ -15,8 +15,8 @@
 					<view class="rc-info">
 						<text class="rc-name">{{ item.username || '匿名用户' }}</text>
 						<view class="rc-stars">
-							
-							<text v-for="st in getStars(item.rating,'rc-star')" :key="st.key" :class="st.cls">★</text>
+							<text class="rc-star fill" v-for="s in item.rating" :key="'on' + s">★</text>
+							<text class="rc-star" v-for="s in (5 - item.rating)" :key="'off' + s">★</text>
 						</view>
 					</view>
 					<text class="rc-time">{{ item.createTime }}</text>
@@ -33,6 +33,7 @@
 </template>
 
 <script>
+	import { listReview } from '@/api/maintenance/order'
 	export default {
 		data() {
 			return {
@@ -44,32 +45,11 @@
 		},
 		methods: {
 			loadData() {
-				setTimeout(() => {
-					this.reviews = this.mockData()
-				}, 200)
-			},
-			mockData() {
-				return [
-					{ avatar: '/static/images/service/service_header1.png', username: '张先生', rating: 5, commentContent: '服务非常专业，师傅技术很好，价格也很合理。', shopName: '旗舰维保中心', createTime: '05-28' },
-					{ avatar: '/static/images/service/service_header2.png', username: '李女士', rating: 4, commentContent: '环境不错，服务态度好，下次还来。', shopName: '旗舰维保中心', createTime: '05-27' },
-					{ avatar: '', username: '', rating: 5, commentContent: '师傅很耐心，检查得很仔细，非常满意。', shopName: '旗舰维保中心', createTime: '05-26' },
-					{ avatar: '/static/images/service/service_header3.png', username: '王先生', rating: 5, commentContent: '保养很细致，检查项目都很全面，推荐！', shopName: '新城服务站', createTime: '05-26' },
-					{ avatar: '/static/images/service/service_header4.jpg', username: '赵女士', rating: 4, commentContent: '价格公道，服务态度好。', shopName: '新城服务站', createTime: '05-25' },
-					{ avatar: '', username: '', rating: 3, commentContent: '一般般，等待时间有点长。', shopName: '高新维保点', createTime: '05-24' }
-				]
-			},
-			getStars(rating, baseClass) {
-				const filled = Math.floor(rating)
-				const items = []
-				for (let i = 0; i < 5; i++) {
-					items.push({ key: 'k' + i, cls: baseClass + (i < filled ? ' fill' : '') })
-				}
-				return items
+				listReview({ pageNum:1, pageSize:50 }).then(res => { this.reviews = res.data.list || [] })
 			}
 		}
 	}
 </script>
-
 
 <style lang="scss" scoped>
 $green: #00c9a7;

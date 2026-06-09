@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mapper.VehicleOrdersMapper">
+
+    <resultMap type="com.ruoyi.domain.VehicleOrders" id="VehicleOrdersResult">
+        <id     property="orderId"        column="order_id"/>
+        <result property="orderNo"        column="order_no"/>
+        <result property="orderType"      column="order_type"/>
+        <result property="userId"         column="user_id"/>
+        <result property="vehicleId"      column="vehicle_id"/>
+        <result property="merchantId"     column="merchant_id"/>
+        <result property="contactName"    column="contact_name"/>
+        <result property="contactPhone"   column="contact_phone"/>
+        <result property="addressId"      column="address_id"/>
+        <result property="vehiclePrice"   column="vehicle_price"/>
+        <result property="totalAmount"    column="total_amount"/>
+        <result property="paidAmount"     column="paid_amount"/>
+        <result property="paymentMethod"  column="payment_method"/>
+        <result property="insuranceInfo"  column="insurance_info"/>
+        <result property="expectDate"     column="expect_date"/>
+        <result property="expectTimeSlot" column="expect_time_slot"/>
+        <result property="oldVehicleId"   column="old_vehicle_id"/>
+        <result property="oldValuation"   column="old_valuation"/>
+        <result property="newOrderId"     column="new_order_id"/>
+        <result property="status"         column="status"/>
+        <result property="cancelReason"   column="cancel_reason"/>
+        <result property="createTime"     column="create_time"/>
+        <result property="updateTime"     column="update_time"/>
+        <result property="vehicleName"    column="vehicle_name"/>
+        <!-- 旧车信息：品牌型号来自stad_vehicle.model_name -->
+        <result property="oldCarBrand"    column="old_car_brand"/>
+        <!-- 上牌年份来自stad_vehicle_used.license_year -->
+        <result property="oldLicenseYear"  column="old_license_year"/>
+        <!-- 上牌月份来自stad_vehicle_used.license_month -->
+        <result property="oldLicenseMonth" column="old_license_month"/>
+        <!-- 行驶里程来自stad_vehicle_used.mileage -->
+        <result property="oldMileage"      column="old_mileage"/>
+    </resultMap>
+
+    <!-- 订单列表查询：旧车id(old_vehicle_id)关联二手车的used_id，再联车辆表取品牌型号 -->
+    <select id="selectOrderList" resultMap="VehicleOrdersResult">
+        select o.order_id, o.order_no, o.order_type, o.user_id, o.vehicle_id, o.merchant_id,
+               o.contact_name, o.contact_phone, o.address_id, o.vehicle_price, o.total_amount,
+               o.paid_amount, o.payment_method, o.insurance_info, o.expect_date, o.expect_time_slot,
+               o.old_vehicle_id, o.old_valuation, o.new_order_id, o.status, o.cancel_reason,
+               o.create_time, o.update_time,
+               v.model_name as vehicle_name,
+               ov.model_name as old_car_brand,
+               uv.license_year as old_license_year,
+               uv.license_month as old_license_month,
+               uv.mileage as old_mileage
+        from stad_unified_order o
+        left join stad_vehicle v on o.vehicle_id = v.vehicle_id
+        left join stad_vehicle_used uv on o.old_vehicle_id = uv.vehicle_id
+        left join stad_vehicle ov on uv.vehicle_id = ov.vehicle_id
+        <where>
+            <if test="orderType != null and orderType != ''">
+                AND o.order_type = #{orderType}
+            </if>
+            <if test="paymentStatus != null and paymentStatus != ''">
+                AND o.status = #{paymentStatus}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (o.order_no like concat('%',#{keyword},'%')
+                     OR o.contact_name like concat('%',#{keyword},'%')
+                     OR v.model_name like concat('%',#{keyword},'%'))
+            </if>
+        </where>
+        order by o.create_time desc
+    </select>
+
+    <!-- 订单详情查询：旧车id(old_vehicle_id)关联二手车的used_id，再联车辆表取品牌型号 -->
+    <select id="selectOrderById" resultMap="VehicleOrdersResult">
+        select o.order_id, o.order_no, o.order_type, o.user_id, o.vehicle_id, o.merchant_id,
+               o.contact_name, o.contact_phone, o.address_id, o.vehicle_price, o.total_amount,
+               o.paid_amount, o.payment_method, o.insurance_info, o.expect_date, o.expect_time_slot,
+               o.old_vehicle_id, o.old_valuation, o.new_order_id, o.status, o.cancel_reason,
+               o.create_time, o.update_time,
+               v.model_name as vehicle_name,
+               ov.model_name as old_car_brand,
+               uv.license_year as old_license_year,
+               uv.license_month as old_license_month,
+               uv.mileage as old_mileage
+        from stad_unified_order o
+        left join stad_vehicle v on o.vehicle_id = v.vehicle_id
+        left join stad_vehicle_used uv on o.old_vehicle_id = uv.vehicle_id
+        left join stad_vehicle ov on uv.vehicle_id = ov.vehicle_id
+        where o.order_id = #{orderId}
+    </select>
+
+    <update id="updateOrderStatus">
+        update stad_unified_order set status = #{status}, update_time = sysdate()
+        where order_id = #{orderId}
+    </update>
+
+    <delete id="deleteOrderById">
+        delete from stad_unified_order where order_id = #{orderId}
+    </delete>
+
+</mapper>

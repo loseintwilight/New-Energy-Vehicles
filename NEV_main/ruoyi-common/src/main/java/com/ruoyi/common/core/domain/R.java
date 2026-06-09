@@ -73,6 +73,15 @@ public class R<T> implements Serializable
         return apiResult;
     }
 
+
+    public static <T> R<T> success(T t){
+        R<T> r = new R<>();
+        r.setCode(1);
+        r.setData(t);
+        r.setMsg(null);
+        return r;
+    }
+
     public int getCode()
     {
         return code;

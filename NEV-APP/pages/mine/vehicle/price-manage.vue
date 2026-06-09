@@ -23,7 +23,7 @@
         </view>
         <view class="header-info">
           <text class="header-title">价格管理</text>
-          <text class="header-sub">{{ mockPrices.length }} 款车型定价</text>
+          <text class="header-sub">{{ prices.length }} 款车型定价</text>
         </view>
       </view>
 
@@ -156,6 +156,8 @@
 </template>
 
 <script>
+import { listVehicle, updateVehicle } from '@/api/vehicle/vehicle'
+
 export default {
   data: function() {
     var rows = []
@@ -190,42 +192,56 @@ export default {
         { label: '购车补贴', value: '购车补贴' },
         { label: '爆款特惠', value: '爆款特惠' }
       ],
-      mockPrices: [
-        { vehicleId: 1, name: '比亚迪海豹 EV 700km 四驱旗舰版', type: 'ev',
-          currentPrice: 228000, originalPrice: 249800, discount: 0.91, discountLabel: '9.1折',
-          promo: '限时优惠', promoColor: 'red', updateTime: '2026-06-01' },
-        { vehicleId: 2, name: '特斯拉 Model Y 后驱版', type: 'ev',
-          currentPrice: 263900, originalPrice: 263900, discount: 1.0, discountLabel: '原价',
-          promo: '', updateTime: '2026-05-20' },
-        { vehicleId: 3, name: '蔚来 ES6 75kWh 运动版', type: 'ev',
-          currentPrice: 338000, originalPrice: 358000, discount: 0.944, discountLabel: '9.4折',
-          promo: '购车补贴', promoColor: 'green', updateTime: '2026-05-28' },
-        { vehicleId: 4, name: '理想 L7 Pro 增程版', type: 'erev',
-          currentPrice: 319800, originalPrice: 339800, discount: 0.941, discountLabel: '9.4折',
-          promo: '', updateTime: '2026-05-25' },
-        { vehicleId: 5, name: '比亚迪汉 DM-i 冠军版', type: 'phev',
-          currentPrice: 189800, originalPrice: 209800, discount: 0.905, discountLabel: '超值',
-          promo: '爆款特惠', promoColor: 'orange', updateTime: '2026-06-02' },
-        { vehicleId: 6, name: '问界 M5 纯电版', type: 'ev',
-          currentPrice: 259800, originalPrice: 279800, discount: 0.929, discountLabel: '9.3折',
-          promo: '', updateTime: '2026-05-15', status: '0' }
-      ]
+      prices: []
     }
   },
   computed: {
     filteredPrices: function() {
       var self = this
-      if (!self.keyword) return self.mockPrices
-      return self.mockPrices.filter(function(p) {
+      if (!self.keyword) return self.prices
+      return self.prices.filter(function(p) {
         return p.name.indexOf(self.keyword) >= 0
       })
     }
   },
   created: function() {
     var that = this
+    that.loadPrices()
     setTimeout(function() { that.isReady = true }, 200)
   },
   methods: {
+    loadPrices: function() {
+      var self = this
+      listVehicle({ pageNum: 1, pageSize: 100 }).then(function(res) {
+        if (res.code === 200 && res.rows) {
+          var list = res.rows || []
+          self.prices = list.map(function(v) {
+            var ogPrice = v.originalPrice || v.guidePrice
+            var curPrice = v.guidePrice || 0
+            var discount = ogPrice > 0 ? curPrice / ogPrice : 1
+            var discountLabel = '原价'
+            if (discount < 0.99) {
+              discountLabel = discount >= 0.9 ? (discount * 10).toFixed(1) + '折' : '超值'
+            }
+            return {
+              vehicleId: v.vehicleId,
+              name: v.modelName || v.title || '',
+              type: v.vehicleType === 'new' ? 'ev' : 'used',
+              currentPrice: curPrice,
+              originalPrice: ogPrice,
+              discount: discount,
+              discountLabel: discountLabel,
+              promo: '',
+              promoColor: 'orange',
+              updateTime: v.updateTime ? v.updateTime.substring(0, 10) : '-'
+            }
+          })
+        }
+      }).catch(function() {
+        console.log('获取价格数据失败')
+      })
+    },
+
     goBack: function() {
       uni.navigateBack({ delta: 1 })
     },
@@ -256,32 +272,41 @@ export default {
       this.editingItem = null
     },
     confirmEdit: function() {
-      if (!this.editingItem || !this.editForm.price) {
+      var self = this
+      if (!self.editingItem || !self.editForm.price) {
         uni.showToast({ title: '请输入有效价格', icon: 'none', duration: 1200 })
         return
       }
-      var newPrice = parseInt(this.editForm.price)
+      var newPrice = parseInt(self.editForm.price)
       if (isNaN(newPrice) || newPrice <= 0) {
         uni.showToast({ title: '价格格式错误', icon: 'none', duration: 1200 })
         return
       }
-      this.editingItem.currentPrice = newPrice
-      this.editingItem.promo = this.editForm.promo
-      // 更新折扣率
-      this.editingItem.discount = newPrice / this.editingItem.originalPrice
-      if (this.editingItem.discount >= 0.99) {
-        this.editingItem.discountLabel = '原价'
-      } else if (this.editingItem.discount >= 0.9) {
-        this.editingItem.discountLabel = (this.editingItem.discount * 10).toFixed(1) + '折'
-      } else {
-        this.editingItem.discountLabel = '超值'
-      }
-      var now = new Date()
-      var m = now.getMonth() + 1
-      var d = now.getDate()
-      this.editingItem.updateTime = now.getFullYear() + '-' + (m < 10 ? '0' + m : m) + '-' + (d < 10 ? '0' + d : d)
-      uni.showToast({ title: '价格已更新', icon: 'success', duration: 1200 })
-      this.closeEdit()
+      // 调用后端更新接口
+      updateVehicle({ vehicleId: self.editingItem.vehicleId, guidePrice: newPrice }).then(function(res) {
+        if (res.code === 1) {
+          self.editingItem.currentPrice = newPrice
+          self.editingItem.promo = self.editForm.promo
+          self.editingItem.discount = newPrice / self.editingItem.originalPrice
+          if (self.editingItem.discount >= 0.99) {
+            self.editingItem.discountLabel = '原价'
+          } else if (self.editingItem.discount >= 0.9) {
+            self.editingItem.discountLabel = (self.editingItem.discount * 10).toFixed(1) + '折'
+          } else {
+            self.editingItem.discountLabel = '超值'
+          }
+          var now = new Date()
+          var m = now.getMonth() + 1
+          var d = now.getDate()
+          self.editingItem.updateTime = now.getFullYear() + '-' + (m < 10 ? '0' + m : m) + '-' + (d < 10 ? '0' + d : d)
+          uni.showToast({ title: '价格已更新', icon: 'success', duration: 1200 })
+          self.closeEdit()
+        } else {
+          uni.showToast({ title: res.msg || '更新失败', icon: 'none' })
+        }
+      }).catch(function() {
+        uni.showToast({ title: '更新失败', icon: 'none' })
+      })
     }
   }
 }

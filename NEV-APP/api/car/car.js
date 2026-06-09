@@ -115,3 +115,18 @@ export function getFilterModels() {
     method: 'get'
   })
 }
+
+export function sendOrderToAdmin(data) {
+  return request({
+    url: '/admin/car/order/receive',
+    method: 'post',
+    data
+  })
+}
+
+export function getAdminOrderList() {
+  return request({
+    url: '/admin/car/order/list',
+    method: 'get'
+  })
+}

@@ -30,6 +30,10 @@ public class StadMaintenanceOrder extends BaseEntity {
 
     private String shopName;
     private String nickName;
+    private String shopAddress;
+    private String contactName;
+    private String contactPhone;
+    private String vehicleName;
 
     public Long getOrderId() { return orderId; }
     public void setOrderId(Long orderId) { this.orderId = orderId; }
@@ -90,6 +94,18 @@ public class StadMaintenanceOrder extends BaseEntity {
 
     public String getNickName() { return nickName; }
     public void setNickName(String nickName) { this.nickName = nickName; }
+
+    public String getShopAddress() { return shopAddress; }
+    public void setShopAddress(String shopAddress) { this.shopAddress = shopAddress; }
+
+    public String getContactName() { return contactName; }
+    public void setContactName(String contactName) { this.contactName = contactName; }
+
+    public String getContactPhone() { return contactPhone; }
+    public void setContactPhone(String contactPhone) { this.contactPhone = contactPhone; }
+
+    public String getVehicleName() { return vehicleName; }
+    public void setVehicleName(String vehicleName) { this.vehicleName = vehicleName; }
 
     @Override
     public String toString() {

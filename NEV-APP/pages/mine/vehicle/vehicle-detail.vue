@@ -15,7 +15,13 @@
 
     <!-- 主滚动区 -->
     <scroll-view scroll-y class="main-scroll" :show-scrollbar="false">
+      <!-- 加载中 -->
+      <view v-if="loading || !vehicle" class="loading-wrap">
+        <text class="loading-text">加载中...</text>
+      </view>
+
       <!-- 顶栏（琥珀渐变） -->
+      <template v-else>
       <view class="header">
         <view class="header-bg"></view>
         <view class="header-circle"></view>
@@ -114,45 +120,8 @@
         </view>
       </view>
 
-      <!-- 规格参数卡（蓝色色条） -->
-      <view class="section-block sb-blue">
-        <view class="title-bar">
-          <view class="bar-line bar-line-blue"></view>
-          <view class="icon-wrap iw-blue">
-            <text class="bar-icon">⚙️</text>
-          </view>
-          <text class="bar-title">规格参数</text>
-        </view>
-        <view class="spec-grid">
-          <view class="spec-item">
-            <text class="spec-label">长×宽×高</text>
-            <text class="spec-value">{{ getDimensions() }}</text>
-          </view>
-          <view class="spec-item">
-            <text class="spec-label">轴距</text>
-            <text class="spec-value">{{ vehicle.wheelbase || '-' }}<text class="spec-unit">mm</text></text>
-          </view>
-          <view class="spec-item">
-            <text class="spec-label">整备质量</text>
-            <text class="spec-value">{{ vehicle.curbWeight || '-' }}<text class="spec-unit">kg</text></text>
-          </view>
-          <view class="spec-item">
-            <text class="spec-label">最高车速</text>
-            <text class="spec-value">{{ vehicle.maxSpeed || '-' }}<text class="spec-unit">km/h</text></text>
-          </view>
-          <view class="spec-item">
-            <text class="spec-label">电机功率</text>
-            <text class="spec-value">{{ vehicle.motorPower || '-' }}<text class="spec-unit">kW</text></text>
-          </view>
-          <view class="spec-item">
-            <text class="spec-label">最大扭矩</text>
-            <text class="spec-value">{{ vehicle.torque || '-' }}<text class="spec-unit">N·m</text></text>
-          </view>
-        </view>
-      </view>
-
-      <!-- 电池诊断卡（绿色色条） -->
-      <view class="section-block sb-green">
+      <!-- 电池诊断卡（绿色色条，仅二手车显示） -->
+      <view class="section-block sb-green" v-if="vehicle.type === 'used'">
         <view class="title-bar">
           <view class="bar-line bar-line-green"></view>
           <view class="icon-wrap iw-green">
@@ -179,38 +148,14 @@
           </view>
           <view class="battery-meta">
             <view class="meta-item">
-              <text class="meta-label">温度范围</text>
-              <text class="meta-value">{{ vehicle.batteryTemp || '-' }}</text>
+              <text class="meta-label">诊断评级</text>
+              <text class="meta-value">{{ vehicle.batteryDiagnosis || '-' }}</text>
             </view>
             <view class="meta-divider"></view>
             <view class="meta-item">
               <text class="meta-label">循环次数</text>
               <text class="meta-value">{{ vehicle.cycleCount || '-' }}<text class="meta-unit">次</text></text>
             </view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 详细描述卡（紫色色条） -->
-      <view class="section-block sb-purple">
-        <view class="title-bar">
-          <view class="bar-line bar-line-purple"></view>
-          <view class="icon-wrap iw-purple">
-            <text class="bar-icon">📝</text>
-          </view>
-          <text class="bar-title">详细描述</text>
-        </view>
-        <view class="desc-card">
-          <view v-if="vehicle.description" class="desc-content">
-            <rich-text :nodes="getSafeDesc(vehicle.description)"></rich-text>
-          </view>
-          <view v-if="vehicle.description && needExpand" class="expand-row" @tap="toggleDesc">
-            <text class="expand-text">{{ descExpanded ? '收起' : '展开全文' }}</text>
-            <text class="expand-arrow">{{ descExpanded ? '∧' : '∨' }}</text>
-          </view>
-          <view v-if="!vehicle.description" class="desc-empty" @tap="goEditDesc">
-            <text class="empty-hint">暂无描述，点击添加车辆详细介绍</text>
-            <text class="empty-arrow">→</text>
           </view>
         </view>
       </view>
@@ -252,12 +197,6 @@
           <text class="act-name">编辑信息</text>
           <text class="act-desc">修改车辆基础信息</text>
         </view>
-        <view class="action-card act-desc" hover-class="act-hover" @tap="goEditDesc">
-          <view class="act-color-bar"></view>
-          <text class="act-icon">📝</text>
-          <text class="act-name">编辑描述</text>
-          <text class="act-desc">修改车辆详细介绍</text>
-        </view>
         <view class="action-card act-back" hover-class="act-hover" @tap="goBack">
           <view class="act-color-bar"></view>
           <text class="act-icon">←</text>
@@ -266,57 +205,14 @@
         </view>
       </view>
 
+      </template>
       <view style="height: 120rpx;"></view>
     </scroll-view>
   </view>
 </template>
 
 <script>
-var USE_MOCK = true
-
-function mockGetVehicleDetail(vehicleId) {
-  var baseData = {
-    vehicleId: vehicleId || 1,
-    name: '比亚迪海豹 EV 700km 四驱旗舰版',
-    brand: '比亚迪',
-    model: '海豹',
-    year: '2026款',
-    type: 'ev',
-    typeLabel: '纯电动',
-    price: 228000,
-    originalPrice: 249800,
-    range: 700,
-    batteryCapacity: 82.5,
-    fastChargeTime: '28分钟',
-    colors: [
-      { name: '北极白', value: '#F5F5F5' },
-      { name: '迷雾灰', value: '#6B7280' },
-      { name: '海洋蓝', value: '#1E40AF' },
-      { name: '热情红', value: '#DC2626' }
-    ],
-    selectedColor: '北极白',
-    length: 4800,
-    width: 1875,
-    height: 1460,
-    wheelbase: 2920,
-    curbWeight: 2150,
-    maxSpeed: 180,
-    motorPower: 230,
-    torque: 360,
-    soh: 98.5,
-    batteryTemp: '22~35°C',
-    cycleCount: 128,
-    batteryStatus: '优秀',
-    description: '<p>比亚迪海豹是基于e平台3.0打造的纯电中型轿车，采用CTB电池车身一体化技术，整车扭转刚度高达40500N·m/deg。</p><p><strong>核心亮点：</strong></p><ul><li>CLTC续航里程700km，支持800V高压快充</li><li>双电机四驱系统，最大功率230kW，峰值扭矩360N·m</li><li>零百加速仅需3.8秒，最高时速180km/h</li><li>配备DiPilot智能驾驶辅助系统，支持L2+级智能驾驶</li><li>刀片电池技术，安全性行业领先</li></ul><p>该车定位中高端纯电轿跑市场，凭借出色的性能表现和智能化配置，深受年轻消费者喜爱。</p>',
-    stock: 5,
-    soldCount: 23,
-    stockStatus: '充足',
-    status: '1',
-    images: ['vehicle_seal_01.jpg'],
-    createTime: '2026-01-15'
-  }
-  return { code: 200, msg: '操作成功', data: baseData }
-}
+import { getVehicle, getBatteryDiagnosis } from '@/api/vehicle/vehicle'
 
 export default {
   data: function() {
@@ -325,9 +221,7 @@ export default {
       glowRows: [],
       vehicleId: '',
       vehicle: null,
-      loading: true,
-      descExpanded: false,
-      needExpand: false
+      loading: true
     }
   },
   onLoad: function(options) {
@@ -399,43 +293,87 @@ export default {
     loadDetail: function() {
       var self = this
       self.loading = true
-      if (USE_MOCK) {
-        var res = mockGetVehicleDetail(self.vehicleId)
-        setTimeout(function() { self.handleRes(res) }, 300)
-      } else {
-        uni.request({
-          url: '/merchant/vehicle/' + self.vehicleId,
-          method: 'GET',
-          success: function(res) { self.handleRes(res.data) },
-          fail: function(err) {
-            self.loading = false
-            uni.showToast({ title: '获取数据失败', icon: 'none' })
-          }
-        })
-      }
+      getVehicle(self.vehicleId).then(function(res) {
+        self.loading = false
+        if (res.code === 1 && res.data) {
+          self.mapVehicleData(res.data)
+          self.loadBatteryDiagnosis()
+        } else {
+          uni.showToast({ title: res.msg || '获取数据失败', icon: 'none' })
+        }
+      }).catch(function() {
+        self.loading = false
+        uni.showToast({ title: '获取数据失败', icon: 'none' })
+      })
     },
 
-    handleRes: function(res) {
+    loadBatteryDiagnosis: function() {
       var self = this
-      self.loading = false
-      if (res.code === 200 && res.data) {
-        self.vehicle = res.data
-        self.checkDescLength()
-      }
+      getBatteryDiagnosis(self.vehicleId).then(function(res) {
+        if (res.code === 1 && res.data) {
+          var data = res.data
+          self.vehicle.soh = data.batterySoh != null ? Number(data.batterySoh) : '-'
+          self.vehicle.batteryDiagnosis = data.batteryDiagnosis || '-'
+          self.vehicle.cycleCount = data.batteryCycles != null ? data.batteryCycles : '-'
+          self.vehicle.batteryStatus = self.getBatteryStatusText(data.batterySoh)
+        }
+      }).catch(function() {
+        // 电池诊断数据可选，静默失败
+      })
     },
 
-    checkDescLength: function() {
-      if (!this.vehicle || !this.vehicle.description) {
-        this.needExpand = false
-        return
-      }
-      var plainText = this.stripHtmlTags(this.vehicle.description)
-      this.needExpand = plainText.length > 200
+    getBatteryStatusText: function(soh) {
+      if (soh == null) return '-'
+      var s = Number(soh)
+      if (s >= 90) return '极佳'
+      if (s >= 80) return '良好'
+      if (s >= 60) return '一般'
+      return '较差'
     },
 
-    stripHtmlTags: function(html) {
-      if (!html) return ''
-      return String(html).replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+    mapVehicleData: function(v) {
+      var spec = v.vehicleSpec || {}
+      this.vehicle = {
+        vehicleId: v.vehicleId,
+        name: v.modelName || v.title || '-',
+        modelName: v.modelName || '',
+        title: v.title || '',
+        type: v.vehicleType || 'new',
+        typeLabel: v.vehicleType === 'new' ? '新车' : (v.vehicleType === 'used' ? '二手车' : v.vehicleType || '新车'),
+        year: spec.modelYear || '',
+        price: v.guidePrice || 0,
+        originalPrice: v.originalPrice || 0,
+        brand: v.description || '-',
+        model: v.modelName || '-',
+        range: spec.rangeKm || '-',
+        batteryCapacity: spec.batteryCapacity || '-',
+        fastChargeTime: spec.chargeTimeFast || '-',
+        colors: v.color ? [{ name: v.color, value: v.color }] : [],
+        color: v.color || '',
+        status: v.status || '0',
+        stock: v.stock || 0,
+        description: v.description || '',
+        tags: v.tags || '',
+        viewCount: v.viewCount || 0,
+        publishTime: v.publishTime || '',
+        merchantName: v.merchantName || '',
+        images: [],
+        length: '-',
+        width: '-',
+        height: '-',
+        wheelbase: '-',
+        curbWeight: '-',
+        maxSpeed: '-',
+        motorPower: '-',
+        torque: '-',
+        soh: '-',
+        batteryStatus: '-',
+        batteryDiagnosis: '-',
+        cycleCount: '-',
+        soldCount: 0,
+        stockStatus: (v.stock || 0) > 3 ? '库存充足' : ((v.stock || 0) > 0 ? '库存紧张' : '缺货'),
+        selectedColor: v.color || ''
+      }
     },
 
     getStatusLabel: function(status) {
@@ -454,28 +392,6 @@ export default {
       return '/static/images/vehicle/' + img
     },
 
-    getDimensions: function() {
-      var v = this.vehicle
-      if (!v.length || !v.width || !v.height) return '-'
-      return v.length + '×' + v.width + '×' + v.height
-    },
-
-    getSohClass: function(soh) {
-      if (!soh) return ''
-      if (soh >= 95) return 'soh-excellent'
-      if (soh >= 80) return 'soh-good'
-      if (soh >= 60) return 'soh-normal'
-      return 'soh-warning'
-    },
-
-    getSohLevel: function(soh) {
-      if (!soh) return 'normal'
-      if (soh >= 95) return 'excellent'
-      if (soh >= 80) return 'good'
-      if (soh >= 60) return 'normal'
-      return 'warning'
-    },
-
     getStockClass: function(stock) {
       if (!stock) return ''
       if (stock <= 3) return 'stock-low'
@@ -492,18 +408,6 @@ export default {
       return 'unknown'
     },
 
-    getSafeDesc: function(desc) {
-      if (!desc) return ''
-      var safe = String(desc)
-      safe = safe.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      safe = safe.replace(/on\w+\s*=/gi, '')
-      return safe
-    },
-
-    toggleDesc: function() {
-      this.descExpanded = !this.descExpanded
-    },
-
     goBack: function() {
       uni.navigateBack({ delta: 1 })
     },
@@ -511,12 +415,6 @@ export default {
     goEditVehicle: function() {
       uni.navigateTo({
         url: '/pages/mine/vehicle/vehicle-add?editMode=1&vehicleId=' + this.vehicleId
-      })
-    },
-
-    goEditDesc: function() {
-      uni.navigateTo({
-        url: '/pages/mine/vehicle/vehicle-desc-edit?vehicleId=' + this.vehicleId + '&currentDesc=' + encodeURIComponent(this.vehicle ? (this.vehicle.description || '') : '')
       })
     }
   }
@@ -530,6 +428,18 @@ export default {
   background: linear-gradient(180deg, #fff7ed 0%, #fffbeb 30%, #fefce8 60%, #fffbeb 100%);
   position: relative;
   overflow-x: hidden;
+}
+
+/* ========== 加载状态 ========== */
+.loading-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 200rpx 0;
+}
+.loading-text {
+  color: #92400e;
+  font-size: 28rpx;
 }
 
 /* ========== 入场动画 ========== */
@@ -948,38 +858,6 @@ export default {
   font-weight: 700;
 }
 
-/* ========== 规格参数卡 ========== */
-.spec-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12rpx;
-}
-.spec-item {
-  background: linear-gradient(135deg, rgba(238, 242, 255, 0.98), rgba(255, 255, 255, 1));
-  border-radius: 14rpx;
-  padding: 16rpx 14rpx;
-  display: flex;
-  flex-direction: column;
-  border: 1rpx solid rgba(59, 130, 246, 0.06);
-}
-.spec-label {
-  font-size: 23rpx;
-  color: #475569;
-  font-weight: 600;
-  margin-bottom: 8rpx;
-}
-.spec-value {
-  font-size: 27rpx;
-  color: #1c1917;
-  font-weight: 700;
-}
-.spec-unit {
-  font-size: 22rpx;
-  font-weight: normal;
-  color: #78716c;
-  margin-left: 4rpx;
-}
-
 /* ========== 电池诊断卡 ========== */
 .battery-card {
   background: linear-gradient(135deg, rgba(240, 253, 244, 0.98), rgba(255, 255, 255, 1));
@@ -1077,55 +955,6 @@ export default {
   width: 1rpx;
   height: 40rpx;
   background: linear-gradient(180deg, transparent, #6b7280, transparent);
-}
-
-/* ========== 描述卡 ========== */
-.desc-card {
-  background: linear-gradient(135deg, rgba(250, 245, 255, 0.98), rgba(255, 255, 255, 1));
-  border-radius: 18rpx;
-  padding: 18rpx 20rpx;
-  border: 1rpx solid rgba(168, 85, 247, 0.08);
-}
-.desc-content {
-  font-size: 26rpx;
-  color: #44403c;
-  line-height: 1.85;
-}
-.expand-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8rpx;
-  margin-top: 16rpx;
-  padding: 12rpx 0;
-  border-top: 1rpx solid rgba(168, 85, 247, 0.08);
-}
-.expand-text {
-  font-size: 24rpx;
-  color: #d97706;
-  font-weight: 600;
-}
-.expand-arrow {
-  font-size: 24rpx;
-  color: #d97706;
-  font-weight: 700;
-}
-.desc-empty {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 36rpx 20rpx;
-  border: 2rpx dashed rgba(168, 85, 247, 0.2);
-  border-radius: 14rpx;
-}
-.empty-hint {
-  font-size: 25rpx;
-  color: #a8a29e;
-}
-.empty-arrow {
-  font-size: 30rpx;
-  color: #d97706;
-  font-weight: 700;
 }
 
 /* ========== 库存信息卡 ========== */

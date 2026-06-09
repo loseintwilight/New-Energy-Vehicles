@@ -34,16 +34,7 @@
 				<text class="form-label">详细地址 <text class="required">*</text></text>
 				<input class="form-input" v-model="form.address" placeholder="请输入详细地址" maxlength="255" />
 			</view>
-			<!-- <view class="form-row">
-				<view class="form-item form-half">
-					<text class="form-label">经度</text>
-					<input class="form-input" v-model="form.longitude" placeholder="如 117.0481" type="digit" />
-				</view>
-				<view class="form-item form-half">
-					<text class="form-label">纬度</text>
-					<input class="form-input" v-model="form.latitude" placeholder="如 36.6512" type="digit" />
-				</view>
-			</view> -->
+			
 		</view>
 
 		<!-- 联系人 -->
@@ -51,11 +42,11 @@
 			<view class="form-title">联系人信息</view>
 			<view class="form-item">
 				<text class="form-label">联系人姓名 <text class="required">*</text></text>
-				<input class="form-input" v-model="form.contact_name" placeholder="请输入联系人" maxlength="30" />
+				<input class="form-input" v-model="form.contactName" placeholder="请输入联系人" maxlength="30" />
 			</view>
 			<view class="form-item">
 				<text class="form-label">联系电话 <text class="required">*</text></text>
-				<input class="form-input" v-model="form.contact_phone" placeholder="请输入手机号" maxlength="11" type="number" />
+				<input class="form-input" v-model="form.contactPhone" placeholder="请输入手机号" maxlength="11" type="number" />
 			</view>
 		</view>
 
@@ -93,6 +84,7 @@
 </template>
 
 <script>
+	import { getShop, createShop, updateShop } from '@/api/maintenance/shop'
 	export default {
 		data() {
 			return {
@@ -107,8 +99,8 @@
 					address: '',
 					longitude: '',
 					latitude: '',
-					contact_name: '',
-					contact_phone: '',
+					contactName: '',
+					contactPhone: '',
 					description: ''
 				},
 				serviceList: [],
@@ -125,17 +117,23 @@
 		},
 		methods: {
 			loadShop(id) {
-				// 模拟加载 — 对接后端时替换
-				const data = {
-					shop_id: 1, shop_name: '旗舰维保中心', image: 'https://picsum.photos/seed/shop1/400/200',
-					province: '山东省', city: '济南市', district: '历下区', address: '经十路11001号',
-					longitude: '117.0481', latitude: '36.6512',
-					contact_name: '赵经理', contact_phone: '13800001111',
-					services_info: '["常规保养","电池检测","空调维修","轮胎更换"]',
-					description: '专业新能源汽车维保服务，设备齐全，技师持证上岗。'
-				}
-				this.form = { ...data }
-				this.serviceList = JSON.parse(data.services_info || '[]')
+				getShop(id).then(res => {
+				  this.form = res.data
+				  try {
+				    const info = res.data.servicesInfo
+				    if (!info) {
+				      this.serviceList = []
+				    } else if (Array.isArray(info)) {
+				      this.serviceList = info
+				    } else if (typeof info === 'string') {
+				      this.serviceList = info.split(/[,，、]/).filter(s => s.trim())
+				    } else {
+				      this.serviceList = []
+				    }
+				  } catch {
+				    this.serviceList = []
+				  }
+				}).catch(() => {})
 			},
 			handleUploadImg() {
 				uni.chooseImage({
@@ -157,20 +155,29 @@
 				this.serviceList.splice(index, 1)
 			},
 			handleSubmit() {
-				if (!this.form.shop_name) return this.$modal.msgError('请输入门店名称')
-				if (!this.form.province) return this.$modal.msgError('请输入省份')
-				if (!this.form.city) return this.$modal.msgError('请输入城市')
-				if (!this.form.address) return this.$modal.msgError('请输入详细地址')
-				if (!this.form.contact_name) return this.$modal.msgError('请输入联系人姓名')
-				if (!this.form.contact_phone || !/^1\d{10}$/.test(this.form.contact_phone)) return this.$modal.msgError('请输入有效手机号')
-
-				const submitData = {
-					...this.form,
-					services_info: JSON.stringify(this.serviceList)
-				}
-				console.log('submit:', submitData)
-				this.$modal.msgSuccess(this.isEdit ? '修改成功' : '创建成功')
-				setTimeout(() => this.$tab.navigateBack(), 1000)
+			  if (!this.form.shop_name) return this.$modal.msgError('请输入门店名称')
+			  if (!this.form.province) return this.$modal.msgError('请输入省份')
+			  if (!this.form.city) return this.$modal.msgError('请输入城市')
+			  if (!this.form.address) return this.$modal.msgError('请输入详细地址')
+			  if (!this.form.contactName) return this.$modal.msgError('请输入联系人姓名')
+			  if (!this.form.contactPhone || !/^1\d{10}$/.test(this.form.contactPhone)) return this.$modal.msgError('请输入有效手机号')
+			
+			  const submitData = {
+			    ...this.form,
+			    servicesInfo: JSON.stringify(this.serviceList)
+			  }
+			
+			  if (this.isEdit) {
+			    updateShop(submitData).then(() => {
+			      this.$modal.msgSuccess('修改成功')
+			      setTimeout(() => this.$tab.navigateBack(), 1000)
+			    })
+			  } else {
+			    createShop(submitData).then(() => {
+			      this.$modal.msgSuccess('创建成功')
+			      setTimeout(() => this.$tab.navigateBack(), 1000)
+			    })
+			  }
 			}
 		}
 	}

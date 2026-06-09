@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mine.mapper.StadCouponMapper">
+
+    <resultMap type="com.ruoyi.mine.domain.MineStadCoupon" id="StadCouponResult">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="type" column="type"/>
+        <result property="amount" column="amount"/>
+        <result property="minAmount" column="min_amount"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="totalCount" column="total_count"/>
+        <result property="perUserLimit" column="per_user_limit"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <select id="selectStadCouponList" parameterType="com.ruoyi.mine.domain.MineStadCoupon" resultMap="StadCouponResult">
+        select id, name, type, amount, min_amount, start_time, end_time, total_count, per_user_limit, status, create_time
+        from stad_coupon
+        where status = 1
+        <if test="id != null">and id = #{id}</if>
+        order by create_time desc
+    </select>
+
+    <select id="selectStadCouponById" parameterType="Long" resultMap="StadCouponResult">
+        select id, name, type, amount, min_amount, start_time, end_time, total_count, per_user_limit, status, create_time
+        from stad_coupon
+        where id = #{id}
+    </select>
+
+    <insert id="insertStadCoupon" parameterType="com.ruoyi.mine.domain.MineStadCoupon">
+        insert into stad_coupon (name, type, amount, min_amount, start_time, end_time, total_count, per_user_limit, status, create_time)
+        values (#{name}, #{type}, #{amount}, #{minAmount}, #{startTime}, #{endTime}, #{totalCount}, #{perUserLimit}, #{status}, #{createTime})
+    </insert>
+
+    <update id="updateStadCoupon" parameterType="com.ruoyi.mine.domain.MineStadCoupon">
+        update stad_coupon
+        set name = #{name},
+            type = #{type},
+            amount = #{amount},
+            min_amount = #{minAmount},
+            start_time = #{startTime},
+            end_time = #{endTime},
+            total_count = #{totalCount},
+            per_user_limit = #{perUserLimit},
+            status = #{status}
+        where id = #{id}
+    </update>
+
+</mapper>

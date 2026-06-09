@@ -260,7 +260,8 @@
 </template>
 
 <script>
-import { startCharge, stopCharge } from '@/api/charge/station.js'
+import { startCharge, stopCharge, payOrder, getChargeStatus } from '@/api/charge/station.js'
+import { getStationDetail } from '@/api/charge/station.js'
 import safeAreaMixin from '@/mixins/safe-area.js'
 
 export default {
@@ -270,7 +271,7 @@ export default {
       systemInfo: uni.getSystemInfoSync(),
 
       // ====== 页面加载（小车动画） ======
-      pageLoading: false,
+      pageLoading: true,
 
       // ====== 充电参数 ======
       stationName: '',
@@ -279,7 +280,7 @@ export default {
       targetEnergy: 30,
       price: 1.28,
 
-      // ====== 充电数据 ======
+      // ====== 充电数据（从后端轮询更新） ======
       currentPower: 0,
       targetPower: 36,
       chargePercent: 0,
@@ -289,7 +290,7 @@ export default {
       chargedAmount: '0.00',
       totalEstimate: '0.00',
 
-      // ====== 监控数据 ======
+      // ====== 监控数据（从后端轮询） ======
       temperature: 36,
       current: 60,
       voltage: 380,
@@ -303,7 +304,7 @@ export default {
       monitorTimer: null,
       startTime: null,
       elapsedSeconds: 0,
-      orderId: null,
+      orderNo: null,
 
       // ====== 订单 / 支付 ======
       paying: false,
@@ -313,18 +314,24 @@ export default {
         electricFee: '0.00',
         serviceFee: '0.00',
         total: '0.00'
-      }
+      },
+
+      // ====== 桩实时数据（来自 PileVO） ======
+      pilePower: 0,        // 额定功率kW
+      pileVoltage: 0,      // 当前电压V
+      pileCurrent: 0,      // 当前电流A
+      pilePowerNow: 0      // 当前功率kW
     }
   },
 
   onLoad(options) {
-    this.stationId = options.stationId
+    this.stationId = parseInt(options.stationId)
     this.stationName = decodeURIComponent(options.stationName || '充电站')
     this.targetEnergy = parseFloat(options.targetEnergy || 30)
     this.price = parseFloat(options.price || 1.28)
     if (options.pileNumber) this.pileNumber = options.pileNumber
 
-    this.initCharge()
+    this.initPage()
   },
 
   onUnload() {
@@ -332,7 +339,46 @@ export default {
   },
 
   methods: {
-    /** 初始化充电 */
+    /** 页面初始化：先查站详情和桩信息，再开始充电 */
+    async initPage() {
+      try {
+        // 并行获取站详情与桩信息，更新站点价格
+        if (this.stationId) {
+          const stationRes = await getStationDetail(this.stationId)
+          // stationRes = AjaxResult.success(detailVO)
+          // → {code:200, msg:"操作成功", data: detailVO}
+          if (stationRes && stationRes.data) {
+            const detail = stationRes.data
+            this.stationName = detail.name || this.stationName
+            if (detail.price) this.price = parseFloat(detail.price)
+            // 取第一个匹配充电桩的编号
+            if (detail.piles && detail.piles.length > 0) {
+              // 如果 options 没传桩号，默认取第一个空闲桩
+              if (!this.pileNumber || this.pileNumber === 'A01') {
+                const freePile = detail.piles.find(p => p.pileStatus === '0')
+                if (freePile) this.pileNumber = freePile.pileCode
+              }
+              // 匹配当前桩信息
+              const curPile = detail.piles.find(p => p.pileCode === this.pileNumber)
+              if (curPile) {
+                this.pilePower = curPile.powerKw || 0
+                this.targetPower = curPile.powerKw || 36
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.log('[充电] 获取站详情失败', e)
+      }
+
+      // 开始充电
+      await this.initCharge()
+
+      // 隐藏加载动画
+      this.pageLoading = false
+    },
+
+    /** 初始化充电：调后端创建订单 */
     async initCharge() {
       try {
         const res = await startCharge({
@@ -340,9 +386,18 @@ export default {
           pileNo: this.pileNumber,
           energy: this.targetEnergy
         })
-        this.orderId = res.data?.orderId || 'ORD' + Date.now()
+        // res = AjaxResult.success({orderNo, electricPrice, servicePrice, totalPrice})
+        // → {code:200, data:{orderNo:"CO...", electricPrice:0.35, servicePrice:0.55, totalPrice:0.90}}
+        if (res && res.data) {
+          this.orderNo = res.data.orderNo
+          // 更新单价
+          if (res.data.totalPrice) this.price = parseFloat(res.data.totalPrice)
+          this.totalEstimate = (this.targetEnergy * this.price).toFixed(2)
+        }
       } catch (e) {
-        this.orderId = 'ORD' + Date.now()
+        console.log('[充电] startCharge失败', e)
+        uni.showToast({ title: '开始充电失败', icon: 'none' })
+        return
       }
 
       this.isCharging = true
@@ -350,65 +405,108 @@ export default {
       this.startPolling()
     },
 
-    /** 开始轮询充电数据 */
+    /** 开始轮询充电状态（1秒间隔，5秒内完成） */
     startPolling() {
+      // 快速轮询充电状态
       this.timer = setInterval(() => {
-        if (this.isStopped) return
-        if (this.currentPower < this.targetPower) {
-          const increment = Math.floor(Math.random() * 2) + 1
-          this.currentPower = Math.min(this.targetPower, this.currentPower + increment)
-          this.updateChargeData()
-          this.updateRealTimeParams()
-          this.updateMonitorData()
-        }
+        if (this.isStopped || !this.orderNo) return
+        this.fetchChargeStatus()
+      }, 1000)
 
-        if (this.currentPower >= this.targetPower) {
-          this.autoStop()
-        }
-      }, 3000)
-
+      // 监控数据更新（本地模拟补间 + 桩心跳）
       this.monitorTimer = setInterval(() => {
         this.updateMonitorData()
-      }, 2000)
+        // 即使后端没返回功率数据，也生成功率历史点
+        if (this.powerHistory.length === 0 || this.powerHistory.length < 6) {
+          const basePower = this.parseFloatSafe(this.realTimePower) || 5
+          const variation = basePower * (0.7 + Math.random() * 0.6)
+          this.addPowerPoint(Math.round(variation * 10) / 10)
+        }
+      }, 1000)
     },
 
-    /** 更新充电数据 */
-    updateChargeData() {
-      this.chargePercent = Math.round((this.currentPower / this.targetPower) * 100)
-      const energy = (this.currentPower / 36) * this.targetEnergy
-      this.chargedEnergy = energy.toFixed(1)
-      this.chargedAmount = (parseFloat(this.chargedEnergy) * this.price).toFixed(2)
+    /** 调后端实时充电状态 */
+    async fetchChargeStatus() {
+      if (!this.orderNo) return
+      try {
+        const res = await getChargeStatus(this.orderNo)
+        if (res && res.data) {
+          const d = res.data
 
-      this.elapsedSeconds = Math.floor((Date.now() - this.startTime) / 1000)
-      if (this.elapsedSeconds < 60) {
-        this.chargedTime = '1分钟'
-      } else if (this.elapsedSeconds < 3600) {
-        this.chargedTime = `${Math.floor(this.elapsedSeconds / 60)}分钟`
-      } else {
-        const h = Math.floor(this.elapsedSeconds / 3600)
-        const m = Math.floor((this.elapsedSeconds % 3600) / 60)
-        this.chargedTime = `${h}小时${m}分钟`
+          // 更新充电进度
+          if (d.chargePercent !== undefined) {
+            this.chargePercent = d.chargePercent
+          }
+          if (d.chargedEnergy) this.chargedEnergy = d.chargedEnergy
+          if (d.chargedTime) this.chargedTime = d.chargedTime
+          if (d.chargedAmount) this.chargedAmount = d.chargedAmount
+          if (d.totalEstimate) this.totalEstimate = d.totalEstimate
+
+          // 实时功率：根据进度模拟（带随机波动，让功率趋势图动起来）
+          const progress = this.chargePercent / 100
+          const basePower = Math.max(5, this.targetPower * progress)
+          const randomFactor = 0.75 + Math.random() * 0.5
+          this.realTimePower = Math.min(this.targetPower, Math.round(basePower * randomFactor * 10) / 10).toFixed(1)
+
+          // 更新功率历史（每次轮询加一点）
+          this.addPowerPoint(parseFloat(this.realTimePower))
+
+          // 检查是否已完成（后端自动完成充电）
+          if (d.status === '1' || d.status === '2') {
+            this.autoStopFromBackend(d)
+            return
+          }
+        }
+      } catch (e) {
+        console.log('[充电] getChargeStatus失败', e)
+      }
+    },
+
+    /** 后端标记充电已完成后的处理 */
+    autoStopFromBackend(data) {
+      this.clearTimers()
+      this.isCharging = false
+      this.isStopped = true
+
+      this.payData = {
+        duration: data.chargedTime || this.chargedTime,
+        energy: data.chargedEnergy || this.chargedEnergy,
+        electricFee: data.electricFee || '0.00',
+        serviceFee: data.serviceFee || '0.00',
+        total: data.chargedAmount || this.chargedAmount
       }
 
-      this.totalEstimate = (this.targetEnergy * this.price).toFixed(2)
-      this.realTimePower = (20 + Math.random() * 40).toFixed(1)
+      this.$nextTick(() => {
+        if (this.$refs.orderPopup) this.$refs.orderPopup.open()
+      })
+      uni.showToast({ title: '充电已完成', icon: 'none', duration: 1500 })
     },
 
-    /** 更新实时参数 */
-    updateRealTimeParams() {
-      this.current = Math.floor(58 + Math.random() * 20)
-      this.voltage = Math.floor(370 + Math.random() * 20)
-    },
-
-    /** 更新监控数据 */
+    /** 更新监控数据（结合后端桩心跳 + 本地补间） */
     updateMonitorData() {
-      this.temperature = Math.floor(35 + Math.random() * 20)
+      // 温度仍使用本地模拟（实际应由电池BMS上报）
+      this.temperature = Math.floor(35 + Math.random() * 15)
 
+      // 实时电流/电压从桩数据来（无桩心跳时用本地模拟）
+      if (this.pileCurrent > 0) this.current = this.pileCurrent
+      else this.current = Math.floor(58 + Math.random() * 20)
+      if (this.pileVoltage > 0) this.voltage = this.pileVoltage
+      else this.voltage = Math.floor(370 + Math.random() * 20)
+    },
+
+    /** 添加功率历史点 */
+    addPowerPoint(power) {
       if (this.powerHistory.length > 30) {
         this.powerHistory.shift()
       }
-      this.powerHistory.push(parseFloat(this.realTimePower))
+      this.powerHistory.push(power)
       this.maxPower = Math.max(this.maxPower, ...this.powerHistory.map(p => p * 1.2))
+    },
+
+    /** 辅助：安全解析浮点 */
+    parseFloatSafe(v) {
+      const n = parseFloat(v)
+      return isNaN(n) ? 0 : n
     },
 
     /** 确认停止充电 */
@@ -421,10 +519,14 @@ export default {
       if (this.$refs.stopConfirmPopup) this.$refs.stopConfirmPopup.close()
     },
 
-    /** 执行停止充电 → 弹出订单 */
+    /** 执行停止充电 → 弹出订单（费用由后端计算） */
     async doStop() {
+      let stopData = null
       try {
-        await stopCharge({ orderId: this.orderId })
+        const res = await stopCharge({ orderId: this.orderNo })
+        // res = AjaxResult.success({orderNo, duration, durationText, energy,
+        //   chargedAmount, electricFee, serviceFee, total})
+        if (res && res.data) stopData = res.data
       } catch (e) {
         console.log('[doStop] stopCharge error:', e)
       }
@@ -434,28 +536,39 @@ export default {
       this.isCharging = false
       this.isStopped = true
 
-      // 准备支付数据
-      const total = parseFloat(this.chargedAmount)
-      const electricFee = (total * 0.7).toFixed(2)
-      const serviceFee = (total * 0.3).toFixed(2)
-
-      this.payData = {
-        duration: this.chargedTime,
-        energy: this.chargedEnergy,
-        electricFee: electricFee,
-        serviceFee: serviceFee,
-        total: this.chargedAmount
+      // 优先使用后端数据
+      if (stopData) {
+        this.chargedAmount = (stopData.chargedAmount || 0).toFixed(2)
+        this.chargedEnergy = (stopData.energy || 0).toFixed(1)
+        this.chargedTime = stopData.durationText || this.chargedTime
+        this.payData = {
+          duration: stopData.durationText || this.chargedTime,
+          energy: (stopData.energy || 0).toFixed(1),
+          electricFee: (stopData.electricFee || 0).toFixed(2),
+          serviceFee: (stopData.serviceFee || 0).toFixed(2),
+          total: (stopData.total || stopData.chargedAmount || 0).toFixed(2)
+        }
+      } else {
+        // 降级：使用本地数据
+        const total = parseFloat(this.chargedAmount)
+        const electricFee = (total * 0.7).toFixed(2)
+        const serviceFee = (total * 0.3).toFixed(2)
+        this.payData = {
+          duration: this.chargedTime,
+          energy: this.chargedEnergy,
+          electricFee: electricFee,
+          serviceFee: serviceFee,
+          total: this.chargedAmount
+        }
       }
 
-      // 弹出订单，让用户选择支付或稍后处理
       this.$nextTick(() => {
         if (this.$refs.orderPopup) this.$refs.orderPopup.open()
       })
-
       uni.showToast({ title: '充电已停止', icon: 'none', duration: 1500 })
     },
 
-    /** 自动完成充电 → 弹出订单 */
+    /** 自动完成充电（由轮询触发） */
     autoStop() {
       this.clearTimers()
       this.isCharging = false
@@ -476,7 +589,6 @@ export default {
       this.$nextTick(() => {
         if (this.$refs.orderPopup) this.$refs.orderPopup.open()
       })
-
       uni.showToast({ title: '充电已完成', icon: 'none', duration: 1500 })
     },
 
@@ -490,21 +602,23 @@ export default {
       if (this.$refs.orderPopup) this.$refs.orderPopup.open()
     },
 
-    /** 支付处理 */
+    /** 支付处理 → 调后端API */
     async handlePay() {
       if (this.paying) return
       this.paying = true
 
       try {
-        await new Promise((resolve) => setTimeout(resolve, 1500))
+        await payOrder({
+          orderId: this.orderNo,
+          payMethod: '微信支付'
+        })
 
         uni.showToast({ title: '支付成功', icon: 'success' })
-
         if (this.$refs.orderPopup) this.$refs.orderPopup.close()
 
         setTimeout(() => {
           uni.redirectTo({
-            url: `/pages/charge/order?orderId=${this.orderId}&amount=${this.payData.total}`
+            url: `/pages/charge/order?orderId=${this.orderNo}&amount=${this.payData.total}`
           })
         }, 1000)
       } catch (e) {
@@ -549,7 +663,7 @@ export default {
   computed: {
     chargeStatus() {
       if (this.isStopped) return 'stopped'
-      if (this.currentPower >= this.targetPower && this.isCharging) return 'complete'
+      if (this.chargePercent >= 100 && this.isCharging) return 'complete'
       if (this.isCharging) return 'charging'
       return 'idle'
     },

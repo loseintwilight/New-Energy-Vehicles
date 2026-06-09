@@ -248,6 +248,10 @@
     },
     onShow() {
       this.syncFromGlobalData()
+      // 从 Vuex 同步用户信息（编辑后返回即时刷新）
+      this.name = this.$store.state.user.name || ''
+      this.phone = this.$store.state.user.phonenumber || ''
+      this.avatar = this.$store.state.user.avatar || ''
     },
     methods: {
       syncFromGlobalData() {

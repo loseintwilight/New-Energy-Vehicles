@@ -159,6 +159,10 @@
     onLoad() {
       this.getUser()
     },
+    onShow() {
+      // 从编辑页返回后刷新数据
+      this.getUser()
+    },
     methods: {
       getUser() {
         getUserProfile().then(response => {

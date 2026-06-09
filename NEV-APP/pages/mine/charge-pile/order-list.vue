@@ -60,21 +60,6 @@
             </view>
           </view>
         </scroll-view>
-
-        <!-- 筛选标签栏 - 时间范围 -->
-        <scroll-view scroll-x class="filter-scroll-x" :show-scrollbar="false">
-          <view class="filter-row">
-            <view
-              class="filter-chip time-chip"
-              v-for="(item, idx) in timeTabs"
-              :key="idx + 100"
-              :class="{ active: activeTime === idx }"
-              @tap="switchTime(idx)"
-            >
-              <text>{{ item.label }}</text>
-            </view>
-          </view>
-        </scroll-view>
       </view>
 
       <!-- 订单卡片列表 -->
@@ -91,7 +76,7 @@
           class="order-card"
           v-for="(item, idx) in filteredOrders"
           :key="item.orderId"
-          :class="'card-status-' + item.status"
+          :class="'card-status-' + item.orderStatus"
           :style="{ animationDelay: (idx * 0.08) + 's' }"
           hover-class="card-hover"
           :hover-stay-time="120"
@@ -99,7 +84,7 @@
         >
           <!-- 左侧彩色状态条 -->
           <view class="status-bar">
-            <view class="pulse-ring" v-if="item.status === '0'"></view>
+            <view class="pulse-ring" v-if="item.orderStatus === '0'"></view>
           </view>
 
           <!-- 卡片内容区 -->
@@ -113,15 +98,15 @@
                   <text class="no-text">{{ shortOrderNo(item.orderNo) }}</text>
                 </view>
                 <text class="info-line">🔌 {{ item.pileCode }}</text>
-                <text class="info-line">📍 {{ item.stationName }}</text>
+                <text class="info-line">📍 站点#{{ item.stationId || '--' }}</text>
                 <text class="info-line">🕐 {{ fmtTime(item.startTime) }}</text>
               </view>
               <!-- 右侧金额+状态 -->
               <view class="card-right">
                 <text class="amount-big">¥{{ fmtAmount(item.totalAmount) }}</text>
-                <view :class="['status-tag', 'stag-' + item.status]">
-                  <view class="stag-dot" v-if="item.status === '0'"></view>
-                  <text>{{ item.statusText }}</text>
+                <view :class="['status-tag', 'stag-' + item.orderStatus]">
+                  <view class="stag-dot" v-if="item.orderStatus === '0'"></view>
+                  <text>{{ getOrderStatusLabel(item.orderStatus) }}</text>
                 </view>
                 <text class="energy-text" v-if="item.totalEnergy > 0">⚡ {{ item.totalEnergy }}kWh</text>
                 <text class="energy-text energy-zero" v-else>⚡ -- kWh</text>
@@ -129,12 +114,6 @@
             </view>
 
             <!-- 底部虚线分隔 -->
-            <view class="card-dash-line"></view>
-
-            <!-- 底部附加信息 -->
-            <view class="card-bottom-info" v-if="item.cancelReason">
-              <text class="cancel-reason">取消原因：{{ item.cancelReason }}</text>
-            </view>
           </view>
         </view>
 
@@ -152,6 +131,8 @@
 </template>
 
 <script>
+import { getOrderList, exportOrders } from '@/api/charger/order.js'
+
 export default {
   data: function() {
     return {
@@ -172,59 +153,75 @@ export default {
         { label: '近7天', value: 'week' },
         { label: '近30天', value: 'month' }
       ],
-      mockOrders: [
-        { orderId: 'CO20260531000001', orderNo: 'CO20260531000001', pileCode: 'AT-DC-03', stationName: '济南奥体中心',
-          startTime: '2026-05-31 08:00:00', status: '0', statusText: '充电中', totalEnergy: 45.6, totalAmount: 80.50,
-          userName: '张**', userPhone: '138****8888' },
-        { orderId: 'CO20260530000008', orderNo: 'CO20260530000008', pileCode: 'AT-DC-01', stationName: '济南奥体中心',
-          startTime: '2026-05-30 22:30:00', endTime: '2026-05-30 23:15:00', status: '1', statusText: '已完成',
-          totalEnergy: 42.5, totalAmount: 75.20, userName: '李**' },
-        { orderId: 'CO20260530000007', orderNo: 'CO20260530000007', pileCode: 'AT-AC-02', stationName: '济南万达广场',
-          startTime: '2026-05-30 14:00:00', endTime: '2026-05-30 18:30:00', status: '1', statusText: '已完成',
-          totalEnergy: 28.6, totalAmount: 37.18, userName: '王**' },
-        { orderId: 'CO20260529000012', orderNo: 'CO20260529000012', pileCode: 'QD-DC-01', stationName: '青岛万象城',
-          startTime: '2026-05-29 10:20:00', endTime: '2026-05-29 11:05:00', status: '1', statusText: '已完成',
-          totalEnergy: 38.2, totalAmount: 65.40, userName: '赵**' },
-        { orderId: 'CO20260528000003', orderNo: 'CO20260528000003', pileCode: 'WD-DC-02', stationName: '济南万达广场',
-          startTime: '2026-05-28 09:00:00', endTime: '2026-05-28 09:45:00', status: '1', statusText: '已完成',
-          totalEnergy: 35.0, totalAmount: 61.25, userName: '刘**' },
-        { orderId: 'CO20260527000005', orderNo: 'CO20260527000005', pileCode: 'AT-DC-04', stationName: '济南奥体中心',
-          startTime: '2026-05-27 16:00:00', cancelTime: '2026-05-27 16:05:00', status: '2', statusText: '已取消',
-          totalEnergy: 0, totalAmount: 0, userName: '陈**', cancelReason: '用户主动取消' }
-      ]
+      /* 订单数据（从接口加载） */
+      orderList: []
     }
   },
   computed: {
     filteredOrders: function() {
       var self = this
-      var list = self.mockOrders
+      var list = self.orderList
       var statusVal = self.statusTabs[self.activeStatus].value
       if (statusVal !== '') {
-        list = list.filter(function(o) { return o.status === statusVal })
+        list = list.filter(function(o) { return o.orderStatus === statusVal })
       }
       return list
     },
     todayOrderCount: function() {
       var self = this
-      return self.mockOrders.filter(function(o) { return o.startTime.indexOf('2026-05-31') !== -1 }).length
+      var today = new Date().toISOString().slice(0, 10)
+      return self.orderList.filter(function(o) { return o.startTime && o.startTime.indexOf(today) !== -1 }).length
     },
     todayRevenue: function() {
       var self = this
       var sum = 0
-      self.mockOrders.filter(function(o) { return o.startTime.indexOf('2026-05-31') !== -1 && o.status !== '2' }).forEach(function(o) { sum += o.totalAmount })
+      var today = new Date().toISOString().slice(0, 10)
+      self.orderList.filter(function(o) { return o.startTime && o.startTime.indexOf(today) !== -1 && o.orderStatus !== '2' }).forEach(function(o) { sum += Number(o.amount) || 0 })
       return sum.toFixed(2)
     },
     chargingCount: function() {
       var self = this
-      return self.mockOrders.filter(function(o) { return o.status === '0' }).length
+      return self.orderList.filter(function(o) { return o.orderStatus === '0' }).length
     }
   },
   created: function() {
     this.buildGlowRows()
+    this.loadOrders()
     var that = this
     setTimeout(function() { that.isReady = true }, 200)
   },
   methods: {
+    /* ---------- 数据加载 ---------- */
+    loadOrders: function() {
+      var self = this
+      self.loading = true
+      getOrderList({ pageSize: 100 }).then(function(res) {
+        self.loading = false
+        if (res.code === 200) {
+          var list = res.data && res.data.rows ? res.data.rows : []
+          self.orderList = list.map(function(item) {
+            return {
+              orderId: item.orderId,
+              orderNo: item.orderNo,
+              orderStatus: item.status,
+              pileCode: item.pileNo,
+              startTime: item.startTime,
+              energy: item.energy,
+              amount: item.amount
+            }
+          })
+          if (self.orderList.length > 0) {
+            self.hasMore = true
+          }
+        } else {
+          uni.showToast({ title: res.msg || '加载失败', icon: 'none' })
+        }
+      }).catch(function(err) {
+        self.loading = false
+        uni.showToast({ title: '网络异常', icon: 'none' })
+      })
+    },
+
     buildGlowRows: function() {
       var rows = []
       var colors = ['#f59e0b', '#f97316', '#fb923c', '#fbbf24', '#fcd34d', '#fde68a']
@@ -288,6 +285,10 @@ export default {
     fmtAmount: function(amount) {
       if (amount === null || amount === undefined) return '0.00'
       return Number(amount).toFixed(2)
+    },
+    getOrderStatusLabel: function(status) {
+      var map = { '0': '充电中', '1': '已完成', '2': '已取消' }
+      return map[status] || '未知'
     }
   }
 }

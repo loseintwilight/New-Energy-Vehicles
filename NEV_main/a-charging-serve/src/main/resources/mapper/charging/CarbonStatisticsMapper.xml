@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.charging.mapper.CarbonStatisticsMapper">
+
+    <resultMap type="com.ruoyi.charging.domain.CarbonStatistics" id="CarbonStatisticsResult">
+        <id     property="statId"             column="stat_id"              />
+        <result property="statDate"           column="stat_date"            />
+        <result property="city"               column="city"                 />
+        <result property="district"           column="district"             />
+        <result property="totalChargeStations" column="total_charge_stations"/>
+        <result property="totalChargePiles"   column="total_charge_piles"   />
+        <result property="totalChargeOrders"  column="total_charge_orders"  />
+        <result property="totalEnergy"        column="total_energy"         />
+        <result property="carbonReduction"    column="carbon_reduction"     />
+        <result property="equivalentTrees"    column="equivalent_trees"     />
+        <result property="totalNevCount"      column="total_nev_count"      />
+        <result property="newNevCount"        column="new_nev_count"        />
+        <result property="totalPointsIssued"  column="total_points_issued"  />
+        <result property="totalPointsRedeemed" column="total_points_redeemed"/>
+        <result property="statData"           column="stat_data"            />
+        <result property="createTime"         column="create_time"          />
+    </resultMap>
+
+    <sql id="selectStatisticsVo">
+        select stat_id, stat_date, city, district, total_charge_stations,
+               total_charge_piles, total_charge_orders, total_energy,
+               carbon_reduction, equivalent_trees, total_nev_count, new_nev_count,
+               total_points_issued, total_points_redeemed, stat_data, create_time
+        from stad_carbon_statistics
+    </sql>
+
+    <select id="selectList" parameterType="com.ruoyi.charging.domain.CarbonStatistics" resultMap="CarbonStatisticsResult">
+        <include refid="selectStatisticsVo"/>
+        <where>
+            <if test="city != null and city != ''">
+                AND city = #{city}
+            </if>
+            <if test="district != null and district != ''">
+                AND district = #{district}
+            </if>
+            <if test="statDate != null">
+                AND date_format(stat_date,'%Y%m%d') = date_format(#{statDate},'%Y%m%d')
+            </if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                and date_format(create_time,'%Y%m%d') &gt;= date_format(#{params.beginTime},'%Y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                and date_format(create_time,'%Y%m%d') &lt;= date_format(#{params.endTime},'%Y%m%d')
+            </if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <select id="selectById" parameterType="Long" resultMap="CarbonStatisticsResult">
+        <include refid="selectStatisticsVo"/>
+        where stat_id = #{statId}
+    </select>
+
+    <insert id="insert" parameterType="com.ruoyi.charging.domain.CarbonStatistics">
+        insert into stad_carbon_statistics (
+            <if test="statDate != null">stat_date,</if>
+            <if test="city != null and city != ''">city,</if>
+            <if test="district != null and district != ''">district,</if>
+            <if test="totalChargeStations != null">total_charge_stations,</if>
+            <if test="totalChargePiles != null">total_charge_piles,</if>
+            <if test="totalChargeOrders != null">total_charge_orders,</if>
+            <if test="totalEnergy != null">total_energy,</if>
+            <if test="carbonReduction != null">carbon_reduction,</if>
+            <if test="equivalentTrees != null">equivalent_trees,</if>
+            <if test="totalNevCount != null">total_nev_count,</if>
+            <if test="newNevCount != null">new_nev_count,</if>
+            <if test="totalPointsIssued != null">total_points_issued,</if>
+            <if test="totalPointsRedeemed != null">total_points_redeemed,</if>
+            <if test="statData != null">stat_data,</if>
+            create_time
+        ) values (
+            <if test="statDate != null">#{statDate},</if>
+            <if test="city != null and city != ''">#{city},</if>
+            <if test="district != null and district != ''">#{district},</if>
+            <if test="totalChargeStations != null">#{totalChargeStations},</if>
+            <if test="totalChargePiles != null">#{totalChargePiles},</if>
+            <if test="totalChargeOrders != null">#{totalChargeOrders},</if>
+            <if test="totalEnergy != null">#{totalEnergy},</if>
+            <if test="carbonReduction != null">#{carbonReduction},</if>
+            <if test="equivalentTrees != null">#{equivalentTrees},</if>
+            <if test="totalNevCount != null">#{totalNevCount},</if>
+            <if test="newNevCount != null">#{newNevCount},</if>
+            <if test="totalPointsIssued != null">#{totalPointsIssued},</if>
+            <if test="totalPointsRedeemed != null">#{totalPointsRedeemed},</if>
+            <if test="statData != null">#{statData},</if>
+            sysdate()
+        )
+    </insert>
+
+    <update id="update" parameterType="com.ruoyi.charging.domain.CarbonStatistics">
+        update stad_carbon_statistics
+        <set>
+            <if test="statDate != null">stat_date = #{statDate},</if>
+            <if test="city != null and city != ''">city = #{city},</if>
+            <if test="district != null and district != ''">district = #{district},</if>
+            <if test="totalChargeStations != null">total_charge_stations = #{totalChargeStations},</if>
+            <if test="totalChargePiles != null">total_charge_piles = #{totalChargePiles},</if>
+            <if test="totalChargeOrders != null">total_charge_orders = #{totalChargeOrders},</if>
+            <if test="totalEnergy != null">total_energy = #{totalEnergy},</if>
+            <if test="carbonReduction != null">carbon_reduction = #{carbonReduction},</if>
+            <if test="equivalentTrees != null">equivalent_trees = #{equivalentTrees},</if>
+            <if test="totalNevCount != null">total_nev_count = #{totalNevCount},</if>
+            <if test="newNevCount != null">new_nev_count = #{newNevCount},</if>
+            <if test="totalPointsIssued != null">total_points_issued = #{totalPointsIssued},</if>
+            <if test="totalPointsRedeemed != null">total_points_redeemed = #{totalPointsRedeemed},</if>
+            <if test="statData != null">stat_data = #{statData},</if>
+        </set>
+        where stat_id = #{statId}
+    </update>
+
+    <delete id="deleteByIds" parameterType="String">
+        delete from stad_carbon_statistics where stat_id in
+        <foreach item="statId" collection="array" open="(" separator="," close=")">
+            #{statId}
+        </foreach>
+    </delete>
+
+</mapper>

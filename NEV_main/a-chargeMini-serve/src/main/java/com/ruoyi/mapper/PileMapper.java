@@ -14,4 +14,7 @@ public interface PileMapper {
 
     /** 更新充电桩状态 */
     int updatePileStatus(@Param("pileId") Long pileId, @Param("status") String status);
+
+    /** 重置所有异常占用桩为空闲（清理测试数据） */
+    int resetAllStuckPiles();
 }

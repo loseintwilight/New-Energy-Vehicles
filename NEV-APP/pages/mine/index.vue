@@ -6,8 +6,9 @@
       <view class="user-info">
         <view class="avatar-section">
           <view v-if="!avatar" class="avatar-wrapper" @click="handleToAvatar">
-            <uni-icons type="user" size="48" color="#fff"></uni-icons>
+            <uni-icons type="user" size="56" color="#3c96f3"></uni-icons>
           </view>
+
           <image v-else @click="handleToAvatar" :src="avatar" class="avatar-image" mode="aspectFill"></image>
           <view v-if="!name" @click="handleToLogin" class="login-btn">
             <text>登录</text>
@@ -18,14 +19,14 @@
           </view>
         </view>
         <view @click="handleToInfo" class="edit-btn">
-          <uni-icons type="compose" size="22" color="#fff"></uni-icons>
+          <uni-icons type="compose" size="28" color="#fff"></uni-icons>
         </view>
       </view>
-      
+
       <!-- 碳积分模块 -->
       <view class="carbon-section" v-if="name" @click="handleToCarbon">
         <view class="carbon-icon-wrapper">
-          <uni-icons type="tree" size="40" color="#fff"></uni-icons>
+          <text class="carbon-c">C</text>
         </view>
         <view class="carbon-content">
           <view class="carbon-title">碳积分</view>
@@ -36,38 +37,34 @@
           <uni-icons type="forward" size="24" color="#fff"></uni-icons>
         </view>
       </view>
-      
+
       <!-- 用户数据统计 -->
       <view class="stats-row" v-if="name">
         <view class="stat-item" @click="handleToOrders">
           <view class="stat-icon">
-            <uni-icons type="list" size="28" color="#3c96f3"></uni-icons>
+            <uni-icons type="list" size="24" color="#3c96f3"></uni-icons>
           </view>
-          <view class="stat-value">{{ orderCount }}</view>
           <view class="stat-label">我的订单</view>
         </view>
         <view class="stat-divider"></view>
         <view class="stat-item" @click="handleToFavorites">
           <view class="stat-icon">
-            <uni-icons type="heart" size="28" color="#e74c3c"></uni-icons>
+            <uni-icons type="heart" size="24" color="#e74c3c"></uni-icons>
           </view>
-          <view class="stat-value">{{ favoriteCount }}</view>
           <view class="stat-label">我的收藏</view>
         </view>
         <view class="stat-divider"></view>
         <view class="stat-item" @click="handleToCoupons">
           <view class="stat-icon">
-            <uni-icons type="star" size="28" color="#f39c12"></uni-icons>
+            <uni-icons type="star" size="24" color="#f39c12"></uni-icons>
           </view>
-          <view class="stat-value">{{ couponCount }}</view>
           <view class="stat-label">优惠券</view>
         </view>
         <view class="stat-divider"></view>
         <view class="stat-item" @click="handleToWallet">
           <view class="stat-icon">
-            <uni-icons type="wallet" size="28" color="#27ae60"></uni-icons>
+            <uni-icons type="wallet" size="24" color="#27ae60"></uni-icons>
           </view>
-          <view class="stat-value">{{ walletBalance }}</view>
           <view class="stat-label">钱包</view>
         </view>
       </view>
@@ -78,38 +75,37 @@
       <view class="action-grid">
         <view class="action-item" @click="handleToMyCar">
           <view class="action-icon-box bg-gradient-blue">
-            <uni-icons type="location" size="44" color="#fff"></uni-icons>
+            <uni-icons type="location" size="36" color="#fff"></uni-icons>
           </view>
           <text class="action-text">我的车辆</text>
         </view>
         <view class="action-item" @click="handleToCharging">
           <view class="action-icon-box bg-gradient-green">
-            <uni-icons type="star" size="44" color="#fff"></uni-icons>
+            <uni-icons type="star" size="36" color="#fff"></uni-icons>
           </view>
           <text class="action-text">充电记录</text>
         </view>
         <view class="action-item" @click="handleToReservation">
           <view class="action-icon-box bg-gradient-orange">
-            <uni-icons type="calendar" size="44" color="#fff"></uni-icons>
+            <uni-icons type="calendar" size="36" color="#fff"></uni-icons>
           </view>
           <text class="action-text">预约记录</text>
         </view>
         <view class="action-item" @click="handleToMessages">
           <view class="action-icon-box bg-gradient-purple">
-            <uni-icons type="info" size="44" color="#fff"></uni-icons>
+            <uni-icons type="info" size="36" color="#fff"></uni-icons>
           </view>
-          <view class="badge" v-if="messageCount > 0">{{ messageCount }}</view>
           <text class="action-text">消息通知</text>
         </view>
         <view class="action-item" @click="handleToService">
           <view class="action-icon-box bg-gradient-pink">
-            <uni-icons type="phone" size="44" color="#fff"></uni-icons>
+            <uni-icons type="phone" size="36" color="#fff"></uni-icons>
           </view>
           <text class="action-text">在线客服</text>
         </view>
         <view class="action-item" @click="handleToSetting">
           <view class="action-icon-box bg-gradient-cyan">
-            <uni-icons type="gear" size="44" color="#fff"></uni-icons>
+            <uni-icons type="gear" size="36" color="#fff"></uni-icons>
           </view>
           <text class="action-text">应用设置</text>
         </view>
@@ -130,7 +126,6 @@
           <uni-icons type="forward" size="24" color="#ccc"></uni-icons>
         </view>
       </view>
-      
     </view>
 
     <!-- 订单状态 -->
@@ -148,14 +143,12 @@
             <uni-icons type="star" size="32" color="#ff9800"></uni-icons>
           </view>
           <text class="status-text">待支付</text>
-          <view class="status-badge" v-if="orderStatus.unpaid > 0">{{ orderStatus.unpaid }}</view>
         </view>
         <view class="status-item" @click="handleToOrderStatus('pending')">
           <view class="status-icon-box bg-blue">
             <uni-icons type="circle" size="32" color="#2196f3"></uni-icons>
           </view>
           <text class="status-text">待服务</text>
-          <view class="status-badge" v-if="orderStatus.pending > 0">{{ orderStatus.pending }}</view>
         </view>
         <view class="status-item" @click="handleToOrderStatus('completed')">
           <view class="status-icon-box bg-green">
@@ -219,125 +212,210 @@
     </view>
   </view>
 </template>
-  
 
 <script>
-  export default {
-    data() {
-      return {
-        name: this.$store.state.user.name || '',
-        phone: this.$store.state.user.phonenumber || '',
-        avatar: this.$store.state.user.avatar || '',
-        orderCount: 12,
-        favoriteCount: 8,
-        couponCount: 3,
-        walletBalance: '¥50.00',
-        messageCount: 2,
-        carbonPoints: 2680,
-        carbonReduction: 134,
-        orderStatus: {
-          unpaid: 1,
-          pending: 1,
-          completed: 2,
-          cancelled: 1
-        }
+import { getWalletInfo } from '@/api/mine/wallet'
+import { getCarbonOverview } from '@/api/mine/carbon'
+import { getCollectionCount } from '@/api/mine/collection'
+import { getCouponCount } from '@/api/mine/coupon'
+import { getOrderStatusCount } from '@/api/mine/order'
+
+export default {
+  data() {
+    return {
+      name: this.$store.state.user.name || '',
+      phone: this.$store.state.user.phonenumber || '',
+      avatar: this.$store.state.user.avatar || '',
+      carbonPoints: 0,
+      carbonReduction: 0,
+      // 统计数据
+      collectionCount: 0,
+      couponCount: 0,
+      walletBalance: '0.00',
+      orderStatusCount: {
+        unpaid: 0,
+        pending: 0,
+        completed: 0,
+        cancelled: 0
       }
-    },
-    onLoad() {
-      this.syncFromGlobalData()
-    },
-    onShow() {
-      this.syncFromGlobalData()
-      // 从 Vuex 同步用户信息（编辑后返回即时刷新）
+    }
+  },
+  onLoad() {
+    this.syncUserInfo()
+    this.loadAllData()
+  },
+  onShow() {
+    this.syncUserInfo()
+    this.loadAllData()
+  },
+  methods: {
+    syncUserInfo() {
       this.name = this.$store.state.user.name || ''
       this.phone = this.$store.state.user.phonenumber || ''
       this.avatar = this.$store.state.user.avatar || ''
     },
-    methods: {
-      syncFromGlobalData() {
-        const app = getApp()
-        if (app.globalData.messageCount !== undefined) {
-          this.messageCount = app.globalData.messageCount
+    async loadAllData() {
+      await Promise.all([
+        this.loadWalletInfo(),
+        this.loadCarbonPoints(),
+        this.loadCollectionCount(),
+        this.loadCouponCount(),
+        this.loadOrderStatusCount()
+      ])
+    },
+    async loadWalletInfo() {
+      try {
+        const res = await getWalletInfo()
+        if (res && (res.code === 200 || res.code === 0)) {
+          const data = res.data || res
+          this.walletBalance = data.balance ? data.balance.toFixed(2) : '0.00'
         }
-        if (app.globalData.orderStatus) {
-          this.orderStatus = app.globalData.orderStatus
-        }
-      },
-      handleToLogin() {
-        this.$tab.reLaunch('/pages/login')
-      },
-      handleToInfo() {
-        this.$tab.navigateTo('/pages/mine/info/index')
-      },
-      handleToEditInfo() {
-        this.$tab.navigateTo('/pages/mine/info/edit')
-      },
-      handleToAvatar() {
-        this.$tab.navigateTo('/pages/mine/avatar/index')
-      },
-      handleToPwd() {
-        this.$tab.navigateTo('/pages/mine/pwd/index')
-      },
-      handleToSetting() {
-        this.$tab.navigateTo('/pages/mine/setting/index')
-      },
-      handleToSwitch() {
-        this.$tab.navigateTo('/pages/mine/switch/index')
-      },
-      handleToCarbon() {
-        this.$tab.navigateTo('/pages/mine/carbon/index')
-      },
-      handleToHelp() {
-        this.$tab.navigateTo('/pages/mine/help/index')
-      },
-      handleToAbout() {
-        this.$tab.navigateTo('/pages/mine/about/index')
-      },
-      handleToMyCar() {
-        this.$tab.navigateTo('/pages/mine/myCar/index')
-      },
-      handleToCharging() {
-        this.$tab.navigateTo('/pages/mine/charging/index')
-      },
-      handleToReservation() {
-        this.$tab.navigateTo('/pages/mine/reservation/index')
-      },
-      handleToMessages() {
-        this.$tab.navigateTo('/pages/mine/messages/index')
-      },
-      handleToService() {
-        this.$tab.navigateTo('/pages/mine/customer/index')
-      },
-      handleToFeedback() {
-        this.$tab.navigateTo('/pages/mine/feedback/index')
-      },
-      handleToOrders() {
-        this.$tab.navigateTo('/pages/mine/orders/index')
-      },
-      handleToFavorites() {
-        this.$tab.navigateTo('/pages/mine/favorites/index')
-      },
-      handleToCoupons() {
-        this.$tab.navigateTo('/pages/mine/coupons/index')
-      },
-      handleToWallet() {
-        this.$tab.navigateTo('/pages/mine/wallet/index')
-      },
-      handleToOrderStatus(status) {
-        this.$tab.navigateTo('/pages/mine/orders/index?tab=' + status)
-      },
-      handleLogout() {
-        this.$modal.confirm('确定退出登录吗？').then(() => {
-          this.$store.dispatch('LogOut').then(() => {
-            this.$tab.reLaunch('/pages/login')
-          })
-        })
-      },
-      switchToUser() {
-        this.$store.commit('SET_CURRENT_END', 'user')
+      } catch (e) {
+        console.error('加载钱包信息失败', e)
       }
+    },
+    async loadCarbonPoints() {
+      try {
+        const res = await getCarbonOverview()
+        if (res && (res.code === 200 || res.code === 0)) {
+          const data = res.data || res
+          this.carbonPoints = data.points !== undefined && data.points !== null ? data.points : 0
+          this.carbonReduction = data.totalReduction !== undefined && data.totalReduction !== null ? data.totalReduction : 0
+        }
+      } catch (e) {
+        console.error('加载碳积分失败', e)
+      }
+    },
+    async loadCollectionCount() {
+      try {
+        const res = await getCollectionCount()
+        if (res && (res.code === 200 || res.code === 0)) {
+          this.collectionCount = res.data || 0
+        }
+      } catch (e) {
+        console.error('加载收藏数量失败', e)
+      }
+    },
+    async loadCouponCount() {
+      try {
+        const res = await getCouponCount()
+        if (res && (res.code === 200 || res.code === 0)) {
+          this.couponCount = res.data || 0
+        }
+      } catch (e) {
+        console.error('加载优惠券数量失败', e)
+      }
+    },
+    async loadOrderStatusCount() {
+      try {
+        const res = await getOrderStatusCount()
+        if (res && (res.code === 200 || res.code === 0)) {
+          const data = res.data || {}
+          this.orderStatusCount = {
+            unpaid: data.unpaid || 0,
+            pending: data.pending || 0,
+            completed: data.completed || 0,
+            cancelled: data.cancelled || 0
+          }
+        }
+      } catch (e) {
+        console.error('加载订单状态统计失败', e)
+      }
+    },
+    // 跳转登录
+    handleToLogin() {
+      this.$tab.reLaunch('/pages/login')
+    },
+    // 跳转个人信息
+    handleToInfo() {
+      this.$tab.navigateTo('/pages/mine/info/index')
+    },
+    // 跳转编辑资料
+    handleToEditInfo() {
+      this.$tab.navigateTo('/pages/mine/info/edit')
+    },
+    // 跳转修改头像
+    handleToAvatar() {
+      this.$tab.navigateTo('/pages/mine/avatar/index')
+    },
+    // 跳转修改密码
+    handleToPwd() {
+      this.$tab.navigateTo('/pages/mine/pwd/index')
+    },
+    // 跳转设置
+    handleToSetting() {
+      this.$tab.navigateTo('/pages/mine/setting/index')
+    },
+    // 跳转端切换
+    handleToSwitch() {
+      this.$tab.navigateTo('/pages/mine/switch/index')
+    },
+    // 跳转碳积分
+    handleToCarbon() {
+      this.$tab.navigateTo('/pages/mine/carbon/index')
+    },
+    // 跳转帮助
+    handleToHelp() {
+      this.$tab.navigateTo('/pages/mine/help/index')
+    },
+    // 跳转关于
+    handleToAbout() {
+      this.$tab.navigateTo('/pages/mine/about/index')
+    },
+    // 跳转我的车辆
+    handleToMyCar() {
+      this.$tab.navigateTo('/pages/mine/myCar/index')
+    },
+    // 跳转充电记录
+    handleToCharging() {
+      this.$tab.navigateTo('/pages/mine/charging/index')
+    },
+    // 跳转预约记录
+    handleToReservation() {
+      this.$tab.navigateTo('/pages/mine/reservation/index')
+    },
+    // 跳转消息通知
+    handleToMessages() {
+      this.$tab.navigateTo('/pages/mine/messages/index')
+    },
+    // 跳转在线客服
+    handleToService() {
+      this.$tab.navigateTo('/pages/mine/customer/index')
+    },
+    // 跳转意见反馈
+    handleToFeedback() {
+      this.$tab.navigateTo('/pages/mine/feedback/index')
+    },
+    // 跳转订单页面
+    handleToOrders() {
+      this.$tab.navigateTo('/pages/mine/orders/index')
+    },
+    // 跳转收藏页面
+    handleToFavorites() {
+      this.$tab.navigateTo('/pages/mine/favorites/index')
+    },
+    // 跳转优惠券页面
+    handleToCoupons() {
+      this.$tab.navigateTo('/pages/mine/coupons/index')
+    },
+    // 跳转钱包页面
+    handleToWallet() {
+      this.$tab.navigateTo('/pages/mine/wallet/index')
+    },
+    // 按状态查看订单
+    handleToOrderStatus(status) {
+      this.$tab.navigateTo(`/pages/mine/orders/index?status=${status}`)
+    },
+    // 退出登录
+    handleLogout() {
+      this.$modal.confirm('确定退出登录吗？').then(() => {
+        this.$store.dispatch('LogOut').then(() => {
+          this.$tab.reLaunch('/pages/login')
+        })
+      })
     }
   }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -447,9 +525,9 @@
     display: flex;
     justify-content: space-around;
     background-color: #fff;
-    margin-top: 24rpx;
-    padding: 30rpx 0;
-    border-radius: 16rpx;
+    margin-top: 12rpx;
+    padding: 16rpx 0;
+    border-radius: 12rpx;
     box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
     z-index: 1;
   }
@@ -462,26 +540,22 @@
   }
 
   .stat-icon {
-    width: 56rpx;
-    height: 56rpx;
+    width: 48rpx;
+    height: 48rpx;
     background-color: #e6f0ff;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-bottom: 12rpx;
-  }
-
-  .stat-icon .iconfont {
-    font-size: 28rpx;
-    color: #3c96f3;
+    margin-bottom: 8rpx;
+    position: relative;
   }
 
   .stat-value {
-    font-size: 32rpx;
+    font-size: 28rpx;
     font-weight: 600;
     color: #333;
-    margin-bottom: 8rpx;
+    margin-bottom: 4rpx;
   }
 
   .stat-label {
@@ -496,15 +570,15 @@
 
   /* 快捷功能入口 */
   .quick-actions {
-    padding: 20rpx 30rpx;
+    padding: 12rpx 30rpx;
   }
 
   .action-grid {
     display: flex;
     flex-wrap: wrap;
     background-color: #fff;
-    padding: 30rpx 0;
-    border-radius: 16rpx;
+    padding: 16rpx 0;
+    border-radius: 12rpx;
     box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
   }
 
@@ -514,17 +588,17 @@
     flex-direction: column;
     align-items: center;
     position: relative;
-    padding: 20rpx 0;
+    padding: 12rpx 0;
   }
 
   .action-icon-box {
-    width: 96rpx;
-    height: 96rpx;
-    border-radius: 24rpx;
+    width: 72rpx;
+    height: 72rpx;
+    border-radius: 20rpx;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-bottom: 16rpx;
+    margin-bottom: 8rpx;
   }
 
   .bg-gradient-blue {
@@ -551,31 +625,9 @@
     background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   }
 
-  .action-icon-box .iconfont {
-    font-size: 44rpx;
-    color: #fff;
-  }
-
   .action-text {
     font-size: 24rpx;
     color: #666;
-  }
-
-  .badge {
-    position: absolute;
-    top: 8rpx;
-    right: 50%;
-    transform: translateX(36rpx);
-    min-width: 32rpx;
-    height: 32rpx;
-    background-color: #ff4757;
-    border-radius: 16rpx;
-    font-size: 20rpx;
-    color: #fff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0 8rpx;
   }
 
   /* 订单区域 */
@@ -607,11 +659,6 @@
     color: #999;
   }
 
-  .section-more .iconfont {
-    font-size: 24rpx;
-    margin-left: 8rpx;
-  }
-
   .order-status {
     display: flex;
     justify-content: space-around;
@@ -632,13 +679,14 @@
     justify-content: center;
     align-items: center;
     margin-bottom: 12rpx;
+    position: relative;
   }
 
   .status-icon-box.bg-orange {
     background-color: #fff3e0;
   }
 
-  .status-icon-box.bg-orange .iconfont {
+  .status-icon-box.bg-orange uni-icons {
     color: #ff9800;
   }
 
@@ -646,7 +694,7 @@
     background-color: #e3f2fd;
   }
 
-  .status-icon-box.bg-blue .iconfont {
+  .status-icon-box.bg-blue uni-icons {
     color: #2196f3;
   }
 
@@ -654,7 +702,7 @@
     background-color: #e8f5e9;
   }
 
-  .status-icon-box.bg-green .iconfont {
+  .status-icon-box.bg-green uni-icons {
     color: #4caf50;
   }
 
@@ -662,33 +710,13 @@
     background-color: #f5f5f5;
   }
 
-  .status-icon-box.bg-gray .iconfont {
+  .status-icon-box.bg-gray uni-icons {
     color: #9e9e9e;
-  }
-
-  .status-icon-box .iconfont {
-    font-size: 32rpx;
   }
 
   .status-text {
     font-size: 22rpx;
     color: #666;
-  }
-
-  .status-badge {
-    position: absolute;
-    top: -8rpx;
-    right: -8rpx;
-    min-width: 32rpx;
-    height: 32rpx;
-    background-color: #ff4757;
-    border-radius: 16rpx;
-    font-size: 20rpx;
-    color: #fff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0 8rpx;
   }
 
   /* 碳积分模块 */
@@ -713,6 +741,12 @@
     justify-content: center;
     align-items: center;
     margin-right: 20rpx;
+  }
+
+  .carbon-c {
+    font-size: 44rpx;
+    font-weight: 800;
+    color: #fff;
   }
 
   .carbon-content {
@@ -836,20 +870,10 @@
     margin-right: 24rpx;
   }
 
-  .menu-icon {
-    font-size: 32rpx;
-    color: #3c96f3;
-  }
-
   .menu-text {
     flex: 1;
     font-size: 28rpx;
     color: #333;
-  }
-
-  .menu-arrow {
-    font-size: 24rpx;
-    color: #ccc;
   }
 
   /* 退出登录 */
@@ -870,6 +894,4 @@
   .logout-btn::after {
     border: none;
   }
-
-
 </style>

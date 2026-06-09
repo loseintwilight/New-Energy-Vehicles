@@ -53,6 +53,8 @@
 </template>
 
 <script>
+import { getReservationList, cancelReservation } from '@/api/mine/reservation'
+
 export default {
   data() {
     return {
@@ -63,33 +65,8 @@ export default {
         { label: '已完成', value: 'done' },
         { label: '已取消', value: 'cancelled' }
       ],
-      reservations: [
-        {
-          id: 1, shopName: '济南鑫维保-经十西路店', serviceName: '常规保养服务',
-          reserveDate: '2026-06-05', reserveTime: '09:00-11:00',
-          address: '济南市槐荫区经十西路288号', price: 299, status: 'upcoming', statusText: '即将开始'
-        },
-        {
-          id: 2, shopName: '旗舰维保中心', serviceName: '电池健康度检测',
-          reserveDate: '2026-06-08', reserveTime: '14:00-15:00',
-          address: '济南市历下区经十路100号', price: 99, status: 'upcoming', statusText: '即将开始'
-        },
-        {
-          id: 3, shopName: '济南鑫维保-工业北路店', serviceName: '空调系统清洗',
-          reserveDate: '2026-05-25', reserveTime: '10:00-11:30',
-          address: '济南市历城区工业北路168号', price: 268, status: 'done', statusText: '已完成'
-        },
-        {
-          id: 4, shopName: '新城服务站', serviceName: '钣金喷漆',
-          reserveDate: '2026-05-18', reserveTime: '08:30-17:00',
-          address: '济南市天桥区无影山路56号', price: 350, status: 'done', statusText: '已完成'
-        },
-        {
-          id: 5, shopName: '济南鑫维保-经十西路店', serviceName: '美容装饰',
-          reserveDate: '2026-05-10', reserveTime: '13:00-15:00',
-          address: '济南市槐荫区经十西路288号', price: 128, status: 'cancelled', statusText: '已取消'
-        }
-      ]
+      reservations: [],
+      loading: false
     }
   },
   computed: {
@@ -98,22 +75,78 @@ export default {
       return this.reservations.filter(r => r.status === this.activeTab)
     }
   },
+  onLoad() {
+    this.loadReservations()
+  },
+  onShow() {
+    this.loadReservations()
+  },
   methods: {
-    handleCancel(item) {
+    async loadReservations() {
+      this.loading = true
+      try {
+        const res = await getReservationList()
+        // 后端返回 {rows: [...]} 或直接数组
+        const data = res.data || res
+        this.reservations = (data.rows || data.list || data || []).map(item => this.formatReservation(item))
+      } catch (e) {
+        console.error('加载预约记录失败', e)
+      } finally {
+        this.loading = false
+      }
+    },
+    formatReservation(item) {
+      // 后端 StadMaintenanceOrder 字段:
+      // orderId, shopName, serviceItem, expectDate, expectTimeSlot, shopAddress,
+      // servicePrice, totalAmount, orderStatus('0'~'4'), createTime
+      const orderStatus = String(item.orderStatus ?? item.status ?? '')
+      const statusMap = {
+        '0': 'upcoming',
+        '1': 'upcoming',
+        '2': 'upcoming',
+        '3': 'done',
+        '4': 'cancelled'
+      }
+      const status = statusMap[orderStatus] || orderStatus || 'upcoming'
+      const statusTextMap = {
+        'upcoming': '即将开始',
+        'done': '已完成',
+        'cancelled': '已取消'
+      }
+      return {
+        id: item.orderId || item.id,
+        shopName: item.shopName || '',
+        serviceName: item.serviceItem || '',
+        reserveDate: item.expectDate || item.createTime || '',
+        reserveTime: item.expectTimeSlot || '',
+        address: item.shopAddress || '',
+        price: item.servicePrice || item.totalAmount || 0,
+        status: status,
+        statusText: statusTextMap[status] || '处理中'
+      }
+    },
+    async handleCancel(item) {
       uni.showModal({
         title: '取消预约',
         content: '确定要取消该预约吗？',
-        success: (res) => {
+        success: async (res) => {
           if (res.confirm) {
-            item.status = 'cancelled'
-            item.statusText = '已取消'
-            uni.showToast({ title: '预约已取消', icon: 'success' })
+            try {
+              await cancelReservation(item.id)
+              item.status = 'cancelled'
+              item.statusText = '已取消'
+              uni.showToast({ title: '预约已取消', icon: 'success' })
+            } catch (e) {
+              uni.showToast({ title: '取消失败', icon: 'none' })
+            }
           }
         }
       })
     },
     handleContact(item) {
-      uni.showToast({ title: '正在联系 ' + item.shopName, icon: 'none' })
+      uni.navigateTo({ 
+        url: `/pages/mine/contact/index?orderId=${item.id || ''}&type=reservation` 
+      })
     }
   }
 }

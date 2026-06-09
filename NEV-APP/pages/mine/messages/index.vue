@@ -52,6 +52,7 @@
 </template>
 
 <script>
+
 export default {
   data() {
     return {
@@ -64,84 +65,19 @@ export default {
         { label: '充电通知', value: 'charge' },
         { label: '维保通知', value: 'maintain' }
       ],
-      allMessages: [
-        {
-          id: 1, category: 'order',
-          title: '订单支付成功',
-          content: '您的常规保养服务订单已支付成功，门店将为您安排服务时间。',
-          icon: 'checkbox-filled', iconColor: '#27ae60',
-          time: '10:30', unread: true
-        },
-        {
-          id: 2, category: 'maintain',
-          title: '维保服务提醒',
-          content: '您的车辆电池检测服务将于明天上午9点开始，请按时前往济南鑫维保-经十西路店。',
-          icon: 'calendar-filled', iconColor: '#3c96f3',
-          time: '06-01 18:00', unread: true
-        },
-        {
-          id: 3, category: 'coupon',
-          title: '优惠券到期提醒',
-          content: '您有一张 ¥50 保养满减券将于3天后到期，请尽快使用。',
-          icon: 'ticket-filled', iconColor: '#ff9800',
-          time: '05-30 12:00', unread: false
-        },
-        {
-          id: 4, category: 'system',
-          title: '系统更新通知',
-          content: 'NEV Life 版本更新至 V2.1.0，新增充电地图功能，快来体验吧！',
-          icon: 'notification-filled', iconColor: '#9b59b6',
-          time: '05-28 09:00', unread: false
-        },
-        {
-          id: 5, category: 'maintain',
-          title: '维保完成通知',
-          content: '您的车辆（鲁A·12345）轮胎更换服务已完成，请及时取车。',
-          icon: 'checkmarkempty', iconColor: '#27ae60',
-          time: '05-28 15:30', unread: false
-        },
-        {
-          id: 6, category: 'system',
-          title: '积分到账通知',
-          content: '您通过充电签到获得 50 碳积分，累计碳积分 2680 分。',
-          icon: 'star-filled', iconColor: '#f1c40f',
-          time: '05-27 08:30', unread: false
-        },
-        {
-          id: 7, category: 'order',
-          title: '订单取消通知',
-          content: '您的美容装饰订单已取消成功，如有疑问请联系客服。',
-          icon: 'closeempty', iconColor: '#ff4757',
-          time: '05-25 16:20', unread: false
-        },
-        {
-          id: 8, category: 'charge',
-          title: '充电完成通知',
-          content: '您的车辆在星星充电站（槐荫区）充电已完成，充电量 42.5 kWh，费用 ¥38.25。',
-          icon: 'bolt', iconColor: '#2ecc71',
-          time: '06-01 19:20', unread: true
-        },
-        {
-          id: 9, category: 'charge',
-          title: '充电桩故障提醒',
-          content: '特来电充电站（历下区）2号充电桩出现故障，已暂停使用，请选择其他充电桩。',
-          icon: 'closeempty', iconColor: '#ff9800',
-          time: '05-31 14:00', unread: true
-        },
-        {
-          id: 10, category: 'charge',
-          title: '充电优惠活动',
-          content: '本周末星星充电站充电服务费5折优惠，快来参与吧！',
-          icon: 'star-filled', iconColor: '#f1c40f',
-          time: '05-29 10:00', unread: false
-        },
-        {
-          id: 11, category: 'coupon',
-          title: '新人优惠券到账',
-          content: '恭喜您获得新人专享 ¥100 优惠券，满500元可用，赶紧去使用吧！',
-          icon: 'gift-filled', iconColor: '#e74c3c',
-          time: '05-20 09:00', unread: false
-        }
+      allMessages: [],
+      loading: false,
+      // Mock 数据
+      mockMessages: [
+        { id: 1, category: 'system',   type: 'system',   title: '系统升级通知',         messageContent: 'v2.3.0 版本已发布，修复了若干问题并优化体验', createTime: '2026-06-09 10:30:00', unread: true },
+        { id: 2, category: 'order',    type: 'order',    title: '充电订单完成',         messageContent: '订单 CO202606081234 已完成，获得 50 碳积分奖励', createTime: '2026-06-08 15:20:00', unread: true },
+        { id: 3, category: 'coupon',   type: 'coupon',   title: '优惠券到账提醒',       messageContent: '您获得一张 8 折充电优惠券，有效期至 7 月 9 日', createTime: '2026-06-08 09:00:00', unread: true },
+        { id: 4, category: 'order',    type: 'order',    title: '维保订单提醒',         messageContent: '您的爱车保养预约定于 6 月 12 日 14:00，请准时到店', createTime: '2026-06-07 14:00:00', unread: false },
+        { id: 5, category: 'system',   type: 'system',   title: '碳积分活动通知',       messageContent: '每日签到可领取碳积分，连续签到 7 天额外奖励 50 积分', createTime: '2026-06-06 08:00:00', unread: true },
+        { id: 6, category: 'coupon',   type: 'coupon',   title: '限时优惠提醒',         messageContent: '618 充电狂欢周，充电享 8 折优惠，点击查看活动详情', createTime: '2026-06-05 18:00:00', unread: false },
+        { id: 7, category: 'charge',   type: 'charge',   title: '充电订单开始',         messageContent: '您已在星星充电站开始充电，充电桩编号 C-003', createTime: '2026-06-09 12:00:00', unread: true },
+        { id: 8, category: 'maintain', type: 'maintain', title: '维保服务评价提醒',     messageContent: '您的维保服务已完成，请对本次服务进行评价', createTime: '2026-06-08 16:30:00', unread: false },
+        { id: 9, category: 'system',   type: 'system',   title: '账户安全提醒',         messageContent: '检测到您在陌生设备登录，若非本人操作请及时修改密码', createTime: '2026-06-04 22:15:00', unread: true }
       ]
     }
   },
@@ -159,42 +95,91 @@ export default {
     if (options.tab) {
       this.activeTab = options.tab
     }
-    this.syncUnreadCount()
+    this.loadMessages()
   },
   methods: {
+    async loadMessages() {
+      this.loading = true
+      try {
+        // 使用 Mock 数据
+        setTimeout(() => {
+          this.allMessages = this.mockMessages.map(msg => this.formatMessage(msg))
+          this.syncUnreadCount()
+          this.syncCategoryUnreadCount()
+          this.loading = false
+        }, 200) // 模拟网络延迟
+      } catch (e) {
+        console.error('加载消息列表失败', e)
+        this.loading = false
+      }
+    },
+    formatMessage(msg) {
+      const iconMap = {
+        system: 'notification-filled',
+        order: 'checkbox-filled',
+        coupon: 'ticket-filled',
+        charge: 'bolt',
+        maintain: 'calendar-filled'
+      }
+      const colorMap = {
+        system: '#9b59b6',
+        order: '#27ae60',
+        coupon: '#ff9800',
+        charge: '#2ecc71',
+        maintain: '#3c96f3'
+      }
+      const category = msg.category || msg.type || 'system'
+      return {
+        id: msg.id || msg.messageId,
+        category: category,
+        title: msg.title || '',
+        content: msg.content || msg.messageContent || '',
+        icon: iconMap[category] || 'notification-filled',
+        iconColor: colorMap[category] || '#3c96f3',
+        time: msg.createTime ? msg.createTime.split(' ')[1] || msg.createTime.split(' ')[0] : '',
+        unread: msg.unread === 1 || msg.unread === true
+      }
+    },
     syncUnreadCount() {
       const app = getApp()
-      app.globalData.messageCount = this.allMessages.filter(m => m.unread).length
+      if (app && app.globalData) {
+        app.globalData.messageCount = this.allMessages.filter(m => m.unread).length
+      }
     },
     syncCategoryUnreadCount() {
       const app = getApp()
-      app.globalData.messageCategoryCounts = {
-        system: this.allMessages.filter(m => m.category === 'system' && m.unread).length,
-        order: this.allMessages.filter(m => m.category === 'order' && m.unread).length,
-        coupon: this.allMessages.filter(m => m.category === 'coupon' && m.unread).length,
-        charge: this.allMessages.filter(m => m.category === 'charge' && m.unread).length,
-        maintain: this.allMessages.filter(m => m.category === 'maintain' && m.unread).length
+      if (app && app.globalData) {
+        app.globalData.messageCategoryCounts = {
+          system: this.allMessages.filter(m => m.category === 'system' && m.unread).length,
+          order: this.allMessages.filter(m => m.category === 'order' && m.unread).length,
+          coupon: this.allMessages.filter(m => m.category === 'coupon' && m.unread).length,
+          charge: this.allMessages.filter(m => m.category === 'charge' && m.unread).length,
+          maintain: this.allMessages.filter(m => m.category === 'maintain' && m.unread).length
+        }
       }
     },
-    handleRead(msg) {
-      msg.unread = false
-      this.syncUnreadCount()
-      this.syncCategoryUnreadCount()
+    async handleRead(msg) {
+      if (msg.unread) {
+        msg.unread = false
+        this.syncUnreadCount()
+        this.syncCategoryUnreadCount()
+      }
       uni.showToast({ title: '查看消息详情', icon: 'none' })
     },
-    handleMarkAll() {
+    async handleMarkAll() {
       this.filteredMessages.forEach(m => (m.unread = false))
       this.syncUnreadCount()
       this.syncCategoryUnreadCount()
       uni.showToast({ title: '全部已读', icon: 'success' })
     },
-    handleClearAll() {
+    async handleClearAll() {
       uni.showModal({
         title: '清空消息',
         content: '确定要清空当前分类的所有消息吗？',
         success: (res) => {
           if (res.confirm) {
-            this.allMessages = this.allMessages.filter(m => m.category !== this.activeTab)
+            this.allMessages = this.activeTab === 'all'
+              ? [] : this.allMessages.filter(m => m.category !== this.activeTab)
             this.syncUnreadCount()
             this.syncCategoryUnreadCount()
             uni.showToast({ title: '已清空', icon: 'success' })

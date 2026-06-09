@@ -46,6 +46,8 @@
 </template>
 
 <script>
+import { getCouponList, receiveCoupon } from '@/api/mine/coupon'
+
 export default {
   data() {
     return {
@@ -55,32 +57,8 @@ export default {
         { label: '已使用', value: 'used' },
         { label: '已过期', value: 'expired' }
       ],
-      coupons: [
-        {
-          id: 1, name: '保养满减券', scope: '适用于常规保养服务', amount: 50,
-          condition: '满300元可用', validDate: '2026-06-30 前使用', status: 'available'
-        },
-        {
-          id: 2, name: '空调清洗优惠券', scope: '适用于空调系统清洗', amount: 30,
-          condition: '满200元可用', validDate: '2026-07-15 前使用', status: 'available'
-        },
-        {
-          id: 3, name: '新人专享券', scope: '不限服务类型', amount: 100,
-          condition: '满500元可用', validDate: '2026-08-01 前使用', status: 'available'
-        },
-        {
-          id: 4, name: '轮胎折扣券', scope: '适用于轮胎更换服务', amount: 80,
-          condition: '满1000元可用', validDate: '2026-06-10 前使用', status: 'available'
-        },
-        {
-          id: 5, name: '电池检测券', scope: '适用于电池健康检测', amount: 20,
-          condition: '无门槛', validDate: '2026-05-15 前使用', status: 'used'
-        },
-        {
-          id: 6, name: '美容装饰券', scope: '适用于车辆美容装饰', amount: 40,
-          condition: '满150元可用', validDate: '2026-04-30 前使用', status: 'expired'
-        }
-      ]
+      coupons: [],
+      loading: false
     }
   },
   computed: {
@@ -89,8 +67,39 @@ export default {
       return this.coupons.filter(c => c.status === this.activeTab)
     }
   },
+  onLoad() {
+    this.loadCoupons()
+  },
   methods: {
-    handleUse(coupon) {
+    async loadCoupons() {
+      this.loading = true
+      try {
+        const res = await getCouponList()
+        const data = res.data || res
+        this.coupons = (data.rows || data.list || data || []).map(coupon => this.formatCoupon(coupon))
+      } catch (e) {
+        console.error('加载优惠券列表失败', e)
+      } finally {
+        this.loading = false
+      }
+    },
+    formatCoupon(coupon) {
+      const statusMap = {
+        0: 'available',
+        1: 'used',
+        2: 'expired'
+      }
+      return {
+        id: coupon.id || coupon.couponId,
+        name: coupon.name || coupon.couponName || '',
+        scope: coupon.scope || coupon.useScope || '全场通用',
+        amount: coupon.amount || coupon.discount || 0,
+        condition: coupon.condition || coupon.useCondition || '无门槛',
+        validDate: coupon.validDate || coupon.endTime || '',
+        status: statusMap[coupon.status] || coupon.status || 'available'
+      }
+    },
+    async handleUse(coupon) {
       uni.showToast({ title: '跳转到使用优惠券页面', icon: 'none' })
     }
   }

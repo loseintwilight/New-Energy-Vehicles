@@ -26,7 +26,49 @@
 </template>
 
 <script>
+import { submitFeedback, getFeedbackList } from '@/api/mine/feedback'
+
 export default {
+  data() {
+    return {
+      content: '',
+      images: [],
+      contact: '',
+      feedbackType: 'suggest',
+      feedbackTypes: [
+        { label: '功能建议', value: 'suggest' },
+        { label: '问题反馈', value: 'problem' },
+        { label: '其他', value: 'other' }
+      ],
+      submitting: false
+    }
+  },
+  methods: {
+    async handleSubmit() {
+      if (!this.content.trim()) {
+        uni.showToast({ title: '请输入反馈内容', icon: 'none' })
+        return
+      }
+      
+      this.submitting = true
+      try {
+        await submitFeedback({
+          content: this.content,
+          type: this.feedbackType,
+          contact: this.contact,
+          images: this.images
+        })
+        uni.showToast({ title: '提交成功', icon: 'success' })
+        this.content = ''
+        this.images = []
+        this.contact = ''
+      } catch (e) {
+        uni.showToast({ title: '提交失败', icon: 'none' })
+      } finally {
+        this.submitting = false
+      }
+    }
+  }
 }
 </script>
 

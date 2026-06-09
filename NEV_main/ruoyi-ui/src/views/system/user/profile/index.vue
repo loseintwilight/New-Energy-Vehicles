@@ -63,6 +63,9 @@ import userAvatar from "./userAvatar"
 import userInfo from "./userInfo"
 import resetPwd from "./resetPwd"
 import { getUserProfile } from "@/api/system/user"
+import store from '@/store'
+import { isHttp, isEmpty } from "@/utils/validate"
+import defAva from '@/assets/images/profile.jpg'
 
 export default {
   name: "Profile",
@@ -88,6 +91,12 @@ export default {
         this.user = response.data
         this.roleGroup = response.roleGroup
         this.postGroup = response.postGroup
+        // 同步头像到 Vuex store，确保 userAvatar 组件刷新
+        let avatar = this.user.avatar || ""
+        if (!isHttp(avatar)) {
+          avatar = (isEmpty(avatar)) ? defAva : process.env.VUE_APP_BASE_API + avatar
+        }
+        store.commit('SET_AVATAR', avatar)
       })
     }
   }

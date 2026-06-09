@@ -1,62 +1,148 @@
 <template>
   <view class="page-container">
+    <!-- 标签栏 -->
     <view class="tab-bar">
-      <view
-        v-for="tab in tabs"
-        :key="tab.value"
-        class="tab-item"
-        :class="{ active: activeTab === tab.value }"
-        @click="activeTab = tab.value"
-      >
-        <text>{{ tab.label }}</text>
-        <view v-if="tab.value === activeTab" class="tab-line"></view>
-      </view>
+      <scroll-view scroll-x class="tab-scroll">
+        <view class="tab-inner">
+          <view
+            v-for="tab in tabs"
+            :key="tab.value"
+            class="tab-item"
+            :class="{ active: activeTab === tab.value }"
+            @click="switchTab(tab.value)"
+          >
+            <text class="tab-text">{{ tab.label }}</text>
+            <view v-if="tab.value === activeTab" class="tab-line"></view>
+          </view>
+        </view>
+      </scroll-view>
     </view>
 
-    <scroll-view scroll-y class="order-scroll">
+    <!-- 订单列表 -->
+    <scroll-view 
+      scroll-y 
+      class="order-scroll"
+      @scrolltolower="loadMore"
+      refresher-enabled
+      :refresher-triggered="refreshing"
+      @refresherrefresh="onRefresh"
+    >
       <view class="order-list" v-if="filteredOrders.length > 0">
-        <view v-for="order in filteredOrders" :key="order.id" class="order-card">
+        <view 
+          v-for="order in filteredOrders" 
+          :key="order.id" 
+          class="order-card"
+          :class="'card-' + order.bizType"
+          @click="handleOrderDetail(order)"
+        >
+          <!-- ======== 卡片头部：类型标签 + 商家 + 状态 ======== -->
           <view class="order-header">
-            <text class="order-shop">{{ order.shopName }}</text>
+            <view class="header-left">
+              <!-- 业务类型彩色标签 -->
+              <view class="biz-type-tag" :class="'tag-' + order.bizType">
+                <uni-icons :type="order.typeIcon" size="12" color="#fff"></uni-icons>
+                <text>{{ order.bizTypeLabel }}</text>
+              </view>
+              <text class="order-shop">{{ order.shopName }}</text>
+            </view>
             <view class="order-status" :class="'status-' + order.status">
-              {{ order.statusText }}
+              <view class="status-dot"></view>
+              <text>{{ order.statusText }}</text>
             </view>
           </view>
-          <view class="order-body" @click="handleOrderDetail(order)">
-            <image class="order-image" :src="order.image" mode="aspectFill"></image>
-            <view class="order-info">
+
+          <!-- ======== 卡片主体 ======== -->
+          <view class="order-body">
+            <!-- 主内容 -->
+            <view class="body-main">
               <text class="order-title">{{ order.title }}</text>
               <text class="order-desc">{{ order.desc }}</text>
-              <text class="order-date">{{ order.createTime }}</text>
+              
+              <!-- 类型专属信息 -->
+              <view class="type-info" v-if="order.bizType === 'charging'">
+                <text class="info-item" v-if="order.totalEnergy">
+                  <uni-icons type="circle" size="12" color="#10b981"></uni-icons>
+                  充电 {{ order.totalEnergy }} kWh
+                </text>
+                <text class="info-item" v-if="order.durationText">
+                  <uni-icons type="clock" size="12" color="#10b981"></uni-icons>
+                  时长 {{ order.durationText }}
+                </text>
+                <text class="info-item" v-if="order.carbonEarned > 0">
+                  <uni-icons type="star" size="12" color="#10b981"></uni-icons>
+                  +{{ order.carbonEarned }}碳积分
+                </text>
+              </view>
+              <view class="type-info" v-if="order.bizType === 'maintenance'">
+                <text class="info-item" v-if="order.expectDate">
+                  <uni-icons type="calendar" size="12" color="#f59e0b"></uni-icons>
+                  预约 {{ order.expectDate }} {{ order.expectTimeSlot === 'am' ? '上午' : '下午' }}
+                </text>
+                <text class="info-item" v-if="order.shopAddress">
+                  <uni-icons type="location" size="12" color="#f59e0b"></uni-icons>
+                  {{ order.shopAddress }}
+                </text>
+              </view>
+              <view class="type-info" v-if="order.bizType === 'unified'">
+                <text class="info-item" v-if="order.contactName">
+                  <uni-icons type="person" size="12" color="#3b82f6"></uni-icons>
+                  {{ order.contactName }} {{ order.contactPhone }}
+                </text>
+                <text class="info-item" v-if="order.paymentMethod">
+                  <uni-icons type="wallet" size="12" color="#3b82f6"></uni-icons>
+                  {{ order.paymentMethod }}
+                </text>
+              </view>
             </view>
-            <view class="order-price">
-              <text class="price-num">¥{{ order.price }}</text>
-              <text class="price-count">×{{ order.count }}</text>
+
+            <!-- 价格 -->
+            <view class="body-price">
+              <text class="price-symbol">¥</text>
+              <text class="price-num">{{ order.totalAmount || 0 }}</text>
             </view>
           </view>
+
+          <!-- ======== 卡片底部：时间 + 操作按钮 ======== -->
           <view class="order-footer">
-            <text class="order-total">合计：<text class="total-price">¥{{ order.total }}</text></text>
+            <text class="order-date">
+              <uni-icons type="calendar" size="14" color="#bbb"></uni-icons>
+              {{ order.createTime }}
+            </text>
             <view class="order-actions">
-              <view v-if="order.status === 'unpaid'" class="action-btn primary" @click="handlePay(order)">立即支付</view>
-              <view v-if="order.status === 'unpaid'" class="action-btn" @click="handleCancel(order)">取消订单</view>
-              <view v-if="order.status === 'pending'" class="action-btn primary" @click="handleContact(order)">联系商家</view>
-              <view v-if="order.status === 'completed'" class="action-btn" @click="handleComment(order)">评价</view>
-              <view v-if="order.status === 'completed'" class="action-btn primary" @click="handleRebuy(order)">再次购买</view>
+              <view v-if="order.status === 'unpaid'" class="action-btn" @click.stop="handleCancel(order)">
+                <text>取消订单</text>
+              </view>
+              <view v-if="order.status === 'cancelled' || order.status === 'completed'" class="action-btn danger" @click.stop="handleDelete(order)">
+                <uni-icons type="trash" size="16" color="#ff4757"></uni-icons>
+                <text>删除</text>
+              </view>
             </view>
           </view>
         </view>
       </view>
 
-      <view class="empty" v-else>
-        <uni-icons type="list" size="80" color="#ddd"></uni-icons>
-        <text class="empty-text">暂无相关订单</text>
-        <text class="empty-sub">去看看有什么好买的吧</text>
+      <!-- 空状态 -->
+      <view class="empty-state" v-else>
+        <view class="empty-icon-wrap">
+          <view class="empty-icon-bg"></view>
+          <uni-icons type="list" size="64" color="#ccc"></uni-icons>
+        </view>
+        <text class="empty-title">暂无相关订单</text>
+        <text class="empty-desc">快去选购心仪的商品吧</text>
+        <view class="empty-btn" @click="goHome">去逛逛</view>
+      </view>
+
+      <!-- 加载更多 -->
+      <view class="load-more" v-if="filteredOrders.length > 0">
+        <text class="load-text">{{ loadText }}</text>
       </view>
     </scroll-view>
   </view>
 </template>
 
 <script>
+import { getOrderList, cancelOrder, deleteOrder } from '@/api/mine/order'
+
 export default {
   data() {
     return {
@@ -68,96 +154,201 @@ export default {
         { label: '已完成', value: 'completed' },
         { label: '已取消', value: 'cancelled' }
       ],
-      orders: [
-        {
-          id: 1, shopName: '济南鑫维保-经十西路店', status: 'unpaid', statusText: '待支付',
-          image: '/static/images/service/service_header1.png', title: '常规保养服务', desc: '更换机油、机滤、空滤等',
-          createTime: '2026-06-02 10:30', price: 299, count: 1, total: 299
-        },
-        {
-          id: 2, shopName: '济南鑫维保-工业北路店', status: 'pending', statusText: '待服务',
-          image: '/static/images/service/service_header2.png', title: '电池检测 + 空调清洗', desc: '电池健康度全面检测及空调深度清洗',
-          createTime: '2026-06-01 14:20', price: 367, count: 1, total: 367
-        },
-        {
-          id: 3, shopName: '旗舰维保中心', status: 'completed', statusText: '已完成',
-          image: '/static/images/service/service_header3.png', title: '轮胎更换', desc: '四条轮胎磨损检测及更换',
-          createTime: '2026-05-28 09:15', price: 2320, count: 1, total: 2320
-        },
-        {
-          id: 4, shopName: '新城服务站', status: 'completed', statusText: '已完成',
-          image: '/static/images/service/service_header1.png', title: '钣金喷漆', desc: '车身左侧划痕修复喷漆',
-          createTime: '2026-05-20 16:00', price: 350, count: 1, total: 350
-        },
-        {
-          id: 5, shopName: '济南鑫维保-经十西路店', status: 'cancelled', statusText: '已取消',
-          image: '/static/images/service/service_header2.png', title: '美容装饰', desc: '车辆内外精洗美容',
-          createTime: '2026-05-18 11:45', price: 128, count: 1, total: 128
-        }
-      ]
+      orders: [],
+      loading: false,
+      refreshing: false,
+      hasMore: true,
+      page: 1
     }
   },
   computed: {
     filteredOrders() {
       if (this.activeTab === 'all') return this.orders
       return this.orders.filter(o => o.status === this.activeTab)
+    },
+    loadText() {
+      if (this.loading) return '加载中...'
+      if (!this.hasMore) return '没有更多了'
+      return '上拉加载更多'
     }
   },
   onLoad(options) {
     if (options.tab) {
       this.activeTab = options.tab
     }
-    this.syncOrderStatus()
+    this.loadOrders()
+  },
+  onShow() {
+    // 每次返回列表页时重置分页，确保重新加载完整数据
+    this.page = 1
+    this.hasMore = true
+    this.orders = []
+    this.loadOrders()
   },
   methods: {
-    syncOrderStatus() {
-      const app = getApp()
-      app.globalData.orderStatus = {
-        unpaid: this.orders.filter(o => o.status === 'unpaid').length,
-        pending: this.orders.filter(o => o.status === 'pending').length,
-        completed: this.orders.filter(o => o.status === 'completed').length,
-        cancelled: this.orders.filter(o => o.status === 'cancelled').length
+    goHome() {
+      uni.switchTab({ url: '/pages/index' })
+    },
+    switchTab(value) {
+      this.activeTab = value
+      // 切换标签时重置分页，重新从后端请求
+      this.page = 1
+      this.hasMore = true
+      this.orders = []
+      this.loadOrders()
+    },
+    async onRefresh() {
+      this.refreshing = true
+      this.page = 1
+      this.hasMore = true
+      await this.loadOrders()
+      this.refreshing = false
+    },
+    async loadMore() {
+      if (this.loading || !this.hasMore) return
+      this.page++
+      await this.loadOrders(true)
+    },
+    async loadOrders(append = false) {
+      this.loading = true
+      try {
+        const params = { pageNum: this.page, pageSize: 10 }
+        if (this.activeTab !== 'all') {
+          const statusMap = { unpaid: '0', pending: '1', completed: '2', cancelled: '3' }
+          params.status = statusMap[this.activeTab] || this.activeTab
+        }
+        const res = await getOrderList(params)
+        const data = res.data || res
+        let list = []
+        if (data.rows) {
+          list = data.rows.map(order => this.formatOrder(order))
+        } else if (Array.isArray(data)) {
+          list = data.map(order => this.formatOrder(order))
+        } else if (data.list) {
+          list = data.list.map(order => this.formatOrder(order))
+        }
+        
+        if (append) {
+          this.orders = [...this.orders, ...list]
+        } else {
+          this.orders = list
+        }
+        
+        this.hasMore = list.length >= 10
+      } catch (e) {
+        console.error('加载订单列表失败', e)
+        if (!append) this.orders = []
+      } finally {
+        this.loading = false
+      }
+    },
+    /** 后端 OrderListVO → 前端卡片数据 */
+    formatOrder(order) {
+      // 类型图标映射
+      const typeIconMap = {
+        charging: 'circle',
+        maintenance: 'tools',
+        unified: 'cart',
+        default: 'list'
+      }
+      // 后端数字状态 → 前端英文状态
+      const statusMap = { '0': 'unpaid', '1': 'pending', '2': 'completed', '3': 'cancelled' }
+      const status = statusMap[order.status] || order.status || 'pending'
+
+      return {
+        id: order.orderId || order.id,
+        orderNo: order.orderNo || '',
+        bizType: order.bizType || 'unified',
+        bizTypeLabel: order.bizTypeLabel || '订单',
+        typeIcon: typeIconMap[order.bizType] || typeIconMap.default,
+        status: status,
+        statusText: order.statusText || '处理中',
+        shopName: order.shopName || '官方店铺',
+        title: order.title || '订单',
+        desc: order.desc || '',
+        totalAmount: order.totalAmount || 0,
+        paidAmount: order.paidAmount || 0,
+        createTime: order.createTime || '',
+        // 充电订单字段
+        totalEnergy: order.totalEnergy,
+        durationText: order.durationText,
+        carbonEarned: order.carbonEarned,
+        startTime: order.startTime,
+        endTime: order.endTime,
+        // 维保订单字段
+        expectDate: order.expectDate,
+        expectTimeSlot: order.expectTimeSlot,
+        shopAddress: order.shopAddress,
+        serviceItem: order.serviceItem,
+        // 统一订单字段
+        contactName: order.contactName,
+        contactPhone: order.contactPhone,
+        paymentMethod: order.paymentMethod,
+        unifiedType: order.unifiedType
       }
     },
     handleOrderDetail(order) {
-      uni.showToast({ title: '查看订单详情：' + order.title, icon: 'none' })
+      uni.navigateTo({ url: `/pages/mine/orders/detail?id=${order.id}&bizType=${order.bizType}` })
     },
-    handlePay(order) {
+    async handlePay(order) {
       uni.showModal({
         title: '确认支付',
-        content: '确认支付 ¥' + order.total + '？',
-        success: (res) => {
+        content: '确认支付 ¥' + (order.totalAmount || 0) + '？',
+        success: async (res) => {
           if (res.confirm) {
-            order.status = 'pending'
-            order.statusText = '待服务'
-            this.syncOrderStatus()
-            uni.showToast({ title: '支付成功', icon: 'success' })
+            uni.showToast({ title: '支付功能开发中', icon: 'none' })
           }
         }
       })
     },
-    handleCancel(order) {
+    async handleCancel(order) {
       uni.showModal({
         title: '取消订单',
         content: '确定要取消该订单吗？',
-        success: (res) => {
+        success: async (res) => {
           if (res.confirm) {
-            order.status = 'cancelled'
-            order.statusText = '已取消'
-            this.syncOrderStatus()
-            uni.showToast({ title: '订单已取消', icon: 'success' })
+            try {
+              await cancelOrder(order.id)
+              order.status = 'cancelled'
+              order.statusText = '已取消'
+              uni.showToast({ title: '订单已取消', icon: 'success' })
+            } catch (e) {
+              uni.showToast({ title: '取消失败', icon: 'none' })
+            }
           }
         }
       })
     },
     handleContact(order) {
-      uni.showToast({ title: '正在联系 ' + order.shopName, icon: 'none' })
+      uni.navigateTo({ 
+        url: `/pages/mine/contact/index?orderId=${order.id}&shopName=${encodeURIComponent(order.shopName)}` 
+      })
     },
     handleComment(order) {
       uni.showToast({ title: '评价功能开发中', icon: 'none' })
     },
     handleRebuy(order) {
       uni.showToast({ title: '已加入购物车', icon: 'success' })
+    },
+    async handleDelete(order) {
+      uni.showModal({
+        title: '删除订单',
+        content: '确定要删除该订单吗？删除后将无法恢复。',
+        success: async (res) => {
+          if (res.confirm) {
+            try {
+              await deleteOrder(order.id)
+              const index = this.orders.findIndex(o => o.id === order.id)
+              if (index > -1) {
+                this.orders.splice(index, 1)
+              }
+              uni.showToast({ title: '删除成功', icon: 'success' })
+            } catch (e) {
+              uni.showToast({ title: '删除失败', icon: 'none' })
+            }
+          }
+        }
+      })
     }
   }
 }
@@ -169,171 +360,245 @@ page {
   min-height: 100vh;
 }
 
+// ==================== 顶部标签栏 ====================
 .tab-bar {
-  display: flex;
   background-color: #fff;
-  padding: 0 10rpx;
+  padding: 10rpx 0;
   position: sticky;
   top: 0;
   z-index: 10;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
+}
+
+.tab-scroll { white-space: nowrap; }
+
+.tab-inner {
+  display: inline-flex;
+  padding: 0 20rpx;
 }
 
 .tab-item {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 24rpx 0;
-  font-size: 28rpx;
-  color: #666;
+  padding: 16rpx 32rpx;
   position: relative;
 }
 
-.tab-item.active {
-  color: #3c96f3;
+.tab-text {
+  font-size: 28rpx;
+  color: #666;
+  transition: all 0.3s;
+}
+
+.tab-item.active .tab-text {
+  color: #2563eb;
   font-weight: 600;
 }
 
 .tab-line {
   position: absolute;
   bottom: 0;
-  width: 40rpx;
-  height: 4rpx;
-  background-color: #3c96f3;
-  border-radius: 2rpx;
+  width: 32rpx;
+  height: 6rpx;
+  background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
+  border-radius: 3rpx;
 }
 
+// ==================== 列表容器 ====================
 .order-scroll {
-  height: calc(100vh - 88rpx);
+  height: calc(100vh - 180rpx);
 }
 
 .order-list {
-  padding: 20rpx 30rpx;
+  padding: 20rpx 24rpx;
 }
 
+// ==================== 订单卡片 ====================
 .order-card {
   background-color: #fff;
-  border-radius: 16rpx;
-  padding: 24rpx;
-  margin-bottom: 20rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+  border-radius: 20rpx;
+  margin-bottom: 24rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  position: relative;
 }
 
+// 不同类型卡片左侧彩色装饰条
+.order-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 6rpx;
+  height: 100%;
+  border-radius: 3rpx 0 0 3rpx;
+}
+
+.card-charging::before  { background: linear-gradient(180deg, #10b981, #34d399); }
+.card-maintenance::before { background: linear-gradient(180deg, #f59e0b, #fbbf24); }
+.card-unified::before   { background: linear-gradient(180deg, #3b82f6, #60a5fa); }
+
+// ==================== 卡片头部 ====================
 .order-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 20rpx;
-  border-bottom: 1rpx solid #f5f5f5;
+  padding: 24rpx 24rpx 16rpx;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+// ==================== 业务类型彩色标签 ====================
+.biz-type-tag {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 20rpx;
+  font-size: 20rpx;
+  font-weight: 500;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.tag-charging    { background: linear-gradient(135deg, #10b981, #34d399); }
+.tag-maintenance { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+.tag-unified {
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  // 子类型不同颜色在卡片内处理
 }
 
 .order-shop {
   font-size: 26rpx;
   color: #333;
   font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+// ==================== 状态小标签 ====================
 .order-status {
-  font-size: 24rpx;
-  padding: 4rpx 16rpx;
-  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 6rpx 18rpx;
+  border-radius: 24rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.status-dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background-color: rgba(255,255,255,0.9);
 }
 
 .status-unpaid {
-  color: #ff9800;
-  background-color: #fff3e0;
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
 }
-
 .status-pending {
-  color: #2196f3;
-  background-color: #e3f2fd;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
 }
-
 .status-completed {
-  color: #4caf50;
-  background-color: #e8f5e9;
+  background: linear-gradient(135deg, #10b981, #34d399);
 }
-
 .status-cancelled {
-  color: #9e9e9e;
-  background-color: #f5f5f5;
+  background: linear-gradient(135deg, #9ca3af, #b0b8c4);
 }
 
+// ==================== 卡片主体 ====================
 .order-body {
   display: flex;
-  padding: 20rpx 0;
+  padding: 0 24rpx 16rpx;
+  gap: 20rpx;
 }
 
-.order-image {
-  width: 140rpx;
-  height: 140rpx;
-  border-radius: 12rpx;
-  flex-shrink: 0;
-}
-
-.order-info {
+.body-main {
   flex: 1;
-  margin-left: 20rpx;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  min-width: 0;
 }
 
 .order-title {
   font-size: 28rpx;
   font-weight: 500;
   color: #333;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .order-desc {
   font-size: 24rpx;
   color: #999;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin-top: 4rpx;
+}
+
+// 类型专属信息区
+.type-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 12rpx;
+}
+
+.info-item {
+  font-size: 22rpx;
+  color: #888;
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  background-color: #f8f9fa;
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+}
+
+.body-price {
+  display: flex;
+  align-items: baseline;
+  flex-shrink: 0;
+  padding-top: 4rpx;
+}
+
+.price-symbol {
+  font-size: 24rpx;
+  color: #ff4757;
+  font-weight: 500;
+}
+
+.price-num {
+  font-size: 32rpx;
+  color: #ff4757;
+  font-weight: 700;
+}
+
+// ==================== 卡片底部 ====================
+.order-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 24rpx;
+  border-top: 1rpx solid #f5f5f5;
+  background-color: #fafafa;
 }
 
 .order-date {
   font-size: 22rpx;
   color: #bbb;
-}
-
-.order-price {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: space-between;
-  flex-shrink: 0;
-}
-
-.price-num {
-  font-size: 28rpx;
-  color: #333;
-  font-weight: 500;
-}
-
-.price-count {
-  font-size: 22rpx;
-  color: #999;
-}
-
-.order-footer {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding-top: 20rpx;
-  border-top: 1rpx solid #f5f5f5;
-}
-
-.order-total {
-  font-size: 24rpx;
-  color: #666;
-}
-
-.total-price {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #ff4757;
+  gap: 6rpx;
 }
 
 .order-actions {
@@ -342,35 +607,88 @@ page {
 }
 
 .action-btn {
-  padding: 10rpx 28rpx;
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 14rpx 24rpx;
   font-size: 24rpx;
   color: #666;
-  border: 1rpx solid #ddd;
-  border-radius: 30rpx;
+  background-color: #fff;
+  border: 1rpx solid #e5e5e5;
+  border-radius: 32rpx;
+  transition: all 0.3s;
 }
+
+.action-btn:active { transform: scale(0.96); }
 
 .action-btn.primary {
   color: #fff;
-  background-color: #3c96f3;
-  border-color: #3c96f3;
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  border: none;
+  box-shadow: 0 4rpx 12rpx rgba(37, 99, 235, 0.3);
 }
 
-.empty {
+.action-btn.danger {
+  color: #ff4757;
+  border-color: #ff4757;
+  background-color: #fff;
+}
+
+// ==================== 空状态 ====================
+.empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 200rpx;
+  padding: 120rpx 40rpx;
 }
 
-.empty-text {
-  font-size: 28rpx;
+.empty-icon-wrap {
+  position: relative;
+  width: 160rpx;
+  height: 160rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-icon-bg {
+  position: absolute;
+  width: 120rpx;
+  height: 120rpx;
+  background-color: #f5f5f5;
+  border-radius: 50%;
+}
+
+.empty-title {
+  font-size: 30rpx;
+  color: #666;
+  font-weight: 500;
+  margin-top: 32rpx;
+}
+
+.empty-desc {
+  font-size: 26rpx;
   color: #999;
-  margin-top: 20rpx;
+  margin-top: 12rpx;
 }
 
-.empty-sub {
+.empty-btn {
+  margin-top: 40rpx;
+  padding: 20rpx 60rpx;
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  color: #fff;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  box-shadow: 0 4rpx 16rpx rgba(37, 99, 235, 0.3);
+}
+
+.load-more {
+  padding: 30rpx;
+  text-align: center;
+}
+
+.load-text {
   font-size: 24rpx;
-  color: #bbb;
-  margin-top: 8rpx;
+  color: #999;
 }
 </style>

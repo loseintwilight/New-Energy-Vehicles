@@ -10,10 +10,11 @@ export function getOrderList(params) {
 }
 
 // 获取订单详情
-export function getOrderDetail(id) {
+export function getOrderDetail(id, bizType) {
   return request({
     url: `/app/order/${id}`,
-    method: 'get'
+    method: 'get',
+    params: { bizType }
   })
 }
 

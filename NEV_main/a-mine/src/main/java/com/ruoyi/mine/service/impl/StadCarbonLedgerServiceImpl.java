@@ -68,12 +68,16 @@ public class StadCarbonLedgerServiceImpl implements IStadCarbonLedgerService {
             overview.put("points", profile.getBalance());
             overview.put("totalEarned", profile.getTotalEarned());
             overview.put("totalSpent", profile.getTotalSpent());
+            overview.put("earnedPoints", profile.getTotalEarned());
+            overview.put("spentPoints", profile.getTotalSpent());
             overview.put("redeemedPoints", 0);
             overview.put("totalReduction", profile.getBalance() * 0.05);
         } else {
             overview.put("points", 0);
             overview.put("totalEarned", 0);
             overview.put("totalSpent", 0);
+            overview.put("earnedPoints", 0);
+            overview.put("spentPoints", 0);
             overview.put("redeemedPoints", 0);
             overview.put("totalReduction", 0);
         }

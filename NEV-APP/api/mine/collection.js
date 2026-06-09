@@ -26,6 +26,24 @@ export function cancelCollection(id) {
   })
 }
 
+// 按目标类型+目标ID取消收藏
+export function cancelCollectionByTarget(targetType, targetId) {
+  return request({
+    url: `/app/collection/target`,
+    method: 'delete',
+    params: { targetType, targetId }
+  })
+}
+
+// 查询指定目标的收藏状态
+export function getFavoriteStatus(targetType, targetId) {
+  return request({
+    url: '/app/collection/status',
+    method: 'get',
+    params: { targetType, targetId }
+  })
+}
+
 // 获取收藏数量
 export function getCollectionCount() {
   return request({

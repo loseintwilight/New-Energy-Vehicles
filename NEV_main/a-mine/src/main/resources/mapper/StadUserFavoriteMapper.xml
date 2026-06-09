@@ -19,6 +19,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="targetPiles" column="target_piles" />
         <result property="targetAvailablePiles" column="target_available_piles" />
         <result property="targetVehicleType" column="target_vehicle_type" />
+        <result property="targetRange" column="target_range" />
+        <result property="targetBattery" column="target_battery" />
+        <result property="targetParkingFee" column="target_parking_fee" />
+        <result property="targetFacilities" column="target_facilities" />
+        <result property="targetStationPrice" column="target_station_price" />
         <result property="createTime" column="create_time"  />
     </resultMap>
 
@@ -26,13 +31,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select f.favorite_id, f.user_id, u.nick_name, f.target_type, f.target_id, f.create_time,
                case 
                    when f.target_type = 'vehicle' then v.model_name
-                   when f.target_type = 'station' then s.station_name
+                   when f.target_type in ('station', 'charging_station') then s.station_name
                    when f.target_type = 'article' then concat('文章ID:', f.target_id)
                    else '未知类型'
                end as target_name,
                case 
                    when f.target_type = 'vehicle' then v.title
-                   when f.target_type = 'station' then s.address
+                   when f.target_type in ('station', 'charging_station') then s.address
                    when f.target_type = 'article' then '文章内容预览'
                    else ''
                end as target_address,
@@ -46,13 +51,21 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                s.available_piles as target_available_piles,
                case 
                    when f.target_type = 'vehicle' then v.status
-                   when f.target_type = 'station' then s.station_status
+                   when f.target_type in ('station', 'charging_station') then s.station_status
                    else '1'
-               end as target_status
+               end as target_status,
+               vs.range_km as target_range,
+               vs.battery_capacity as target_battery,
+               s.parking_fee as target_parking_fee,
+               s.facilities_info as target_facilities,
+               (select min(rp.total_price) from stad_charging_rate_period rp 
+                inner join stad_charging_rate r on rp.rate_id = r.rate_id 
+                where r.station_id = s.station_id) as target_station_price
         from stad_user_favorite f
         left join sys_user u on f.user_id = u.user_id
         left join stad_vehicle v on f.target_type = 'vehicle' and f.target_id = v.vehicle_id
-        left join stad_charging_station s on f.target_type = 'station' and f.target_id = s.station_id
+        left join stad_vehicle_spec vs on f.target_type = 'vehicle' and f.target_id = vs.vehicle_id
+        left join stad_charging_station s on (f.target_type in ('station', 'charging_station')) and f.target_id = s.station_id
     </sql>
 
     <select id="selectStadUserFavoriteById" parameterType="Long" resultMap="StadUserFavoriteResult">

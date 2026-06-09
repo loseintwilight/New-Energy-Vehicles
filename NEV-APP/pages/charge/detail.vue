@@ -9,7 +9,7 @@
       <text class="nav-title">站点详情</text>
       <view class="nav-right-btns">
         <view class="nav-icon-btn" @click="toggleFavorite">
-          <u-icon name="star" size="36" :color="isFavorite ? '#ffc107' : '#333'"></u-icon>
+          <uni-icons :type="isFavorite ? 'star-filled' : 'star'" size="28" :color="isFavorite ? '#ffc107' : '#999'"></uni-icons>
         </view>
         <view class="nav-icon-btn" @click="shareStation">
           <u-icon name="share" size="36" color="#333"></u-icon>
@@ -41,18 +41,8 @@
         </view>
 
         <view class="sh-gallery-row">
-          <view class="gallery-card map-preview" @click="goNavi">
-            <image class="gallery-img" src="/static/images/tabbar/停车充电服务.png" mode="aspectFill"></image>
-            <view class="gallery-overlay">
-              <u-icon name="map" size="28" color="#07c160"></u-icon>
-              <text class="overlay-label">高德地图</text>
-            </view>
-          </view>
-          <view class="gallery-card photo-preview">
-            <image class="gallery-img" src="/static/images/tabbar/停车充电服务.png" mode="aspectFill"></image>
-            <view class="gallery-overlay photo-overlay">
-              <text class="overlay-label">找桩指引 ></text>
-            </view>
+          <view class="gallery-card" v-for="(img, gi) in stationImages" :key="gi">
+            <image class="gallery-img" :src="img" mode="aspectFill"></image>
           </view>
         </view>
 
@@ -416,7 +406,8 @@
 </template>
 
 <script>
-import { getStationDetail, getPileList, toggleFavorite, getFavoriteStatus } from '@/api/charge/station.js'
+import { getStationDetail, getPileList } from '@/api/charge/station.js'
+import { addCollection, getFavoriteStatus, cancelCollectionByTarget } from '@/api/mine/collection'
 import safeAreaMixin from '@/mixins/safe-area.js'
 import amap from '@/utils/amap.js'
 import ChargeHeader from '@/components/charge-header/charge-header.vue'
@@ -446,6 +437,7 @@ export default {
       freePiles: 5,
       totalPiles: 8,
       pileList: [],
+      stationImages: [],
       currentSOC: 20,
       targetSOC: 80,
       batteryCapacity: 60,
@@ -527,6 +519,10 @@ export default {
         if (data.lng) this.lng = Number(data.lng)
         if (data.distance) this.distanceVal = data.distance
         if (data.tags) this.tagList = data.tags
+        // 解析逗号分隔的充电站图片
+        if (data.images) {
+          this.stationImages = data.images.split(',').map(s => s.trim()).filter(Boolean)
+        }
         if (data.timePrices && data.timePrices.length > 0) {
           this.timePrices = data.timePrices.map(p => ({
             timeRange: p.timeRange || (p.startTime + '-' + p.endTime),
@@ -553,6 +549,7 @@ export default {
       } catch (e) {
         console.log('[DEBUG fetchDetail] API失败，使用兜底数据:', e)
         this.loadMockDetail()
+        this.loadFavoriteStatus()
       }
     },
 
@@ -634,7 +631,7 @@ export default {
 
     async loadFavoriteStatus() {
       try {
-        const res = await getFavoriteStatus(this.stationId)
+        const res = await getFavoriteStatus('station', this.stationId)
         this.isFavorite = res.data === true
       } catch (e) {
         this.isFavorite = false
@@ -646,6 +643,10 @@ export default {
       this.openTime = '24小时营业'
       this.freeParkTime = 2
       this.stationScore = 4.8
+      this.stationImages = [
+        '/static/images/chargeStation/5f9f5475a6cb848c0476e859b7930c2f.jpg',
+        '/static/images/chargeStation/OIP-C.webp'
+      ]
       this.tagList = [
         { text: '新人券可用', type: 'blue' },
         { text: '免费停车2小时', type: 'orange' }
@@ -988,13 +989,19 @@ export default {
     },
 
     toggleFavorite() {
-      toggleFavorite(this.stationId).then(res => {
-        const action = res.data
-        this.isFavorite = action === 'favorite'
-        uni.showToast({ title: action === 'favorite' ? '已收藏' : '已取消收藏', icon: 'none' })
-      }).catch(() => {
-        uni.showToast({ title: '操作失败', icon: 'none' })
-      })
+      if (this.isFavorite) {
+        cancelCollectionByTarget('station', this.stationId).then(() => {
+          this.isFavorite = false
+        }).catch(() => {
+          console.error('取消收藏失败')
+        })
+      } else {
+        addCollection({ targetType: 'station', targetId: this.stationId }).then(() => {
+          this.isFavorite = true
+        }).catch(() => {
+          console.error('收藏失败')
+        })
+      }
     },
 
     showCert() {

@@ -157,6 +157,9 @@
           {{ totalPrice }}<text class="footer-unit">万</text>
         </text>
       </view>
+      <view class="footer-fav-btn" :class="{ on: isFavorited }" @click="toggleFavorite">
+        <uni-icons type="star-filled" size="28" :color="isFavorited ? '#ffc107' : '#999'"></uni-icons>
+      </view>
       <view class="footer-btn" @click="submitOrder">提交订单</view>
     </view>
   </view>
@@ -164,6 +167,7 @@
 
 <script>
 import { createCarOrder, getFinancePlans } from '@/api/car/car'
+import { addCollection, getFavoriteStatus, cancelCollectionByTarget } from '@/api/mine/collection'
 
 export default {
   data() {
@@ -202,7 +206,8 @@ export default {
         { name: '基础保障', desc: '交强险+三者200万', price: 5800 },
         { name: '全面保障', desc: '交强险+三者300万+车损险', price: 9800 },
         { name: '尊享保障', desc: '交强险+三者500万+车损险+划痕险', price: 13800 }
-      ]
+      ],
+      isFavorited: false
     }
   },
 
@@ -240,6 +245,9 @@ export default {
       }
       this.fetchFinancePlans()
     }
+    this.$nextTick(() => {
+      this.loadFavoriteStatus()
+    })
   },
 
   methods: {
@@ -306,6 +314,35 @@ export default {
           }
         }
       })
+    },
+
+    async loadFavoriteStatus() {
+      try {
+        const vehicleId = this.car.vehicleId
+        if (!vehicleId) return
+        const res = await getFavoriteStatus('vehicle', vehicleId)
+        this.isFavorited = res.data === true
+      } catch (e) {
+        this.isFavorited = false
+      }
+    },
+
+    async toggleFavorite() {
+      try {
+        const vehicleId = this.car.vehicleId
+        if (!vehicleId) {
+          return
+        }
+        if (this.isFavorited) {
+          await cancelCollectionByTarget('vehicle', vehicleId)
+          this.isFavorited = false
+        } else {
+          await addCollection({ targetType: 'vehicle', targetId: vehicleId })
+          this.isFavorited = true
+        }
+      } catch (e) {
+        console.error('收藏操作失败', e)
+      }
     }
   }
 }
@@ -624,7 +661,21 @@ page {
   padding: 20rpx 30rpx;
   background: #fff;
   border-top: 1rpx solid #eee;
-  gap: 20rpx;
+  gap: 16rpx;
+}
+.footer-fav-btn {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 12rpx;
+  border: 2rpx solid #eee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.footer-fav-btn.on {
+  border-color: #ffc107;
+  background: #fffbe6;
 }
 .footer-summary {
   flex: 1;

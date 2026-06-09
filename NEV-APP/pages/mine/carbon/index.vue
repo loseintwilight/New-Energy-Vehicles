@@ -20,7 +20,7 @@
 			  <view class="balance-desc">累计减少 {{ totalReduction }} kg CO₂ 排放</view>
 			</view>
 			<view class="balance-icon">
-			  <uni-icons type="tree" size="64" color="#fff"></uni-icons>
+			  <text class="balance-icon-text">C</text>
 			</view>
 		  </view>
 
@@ -52,7 +52,7 @@
 			<view class="earn-grid">
 			  <view class="earn-item" v-for="item in earnWays" :key="item.type">
 				<view class="earn-icon" :class="item.bgClass">
-				  <uni-icons :type="item.icon" size="36" color="#fff"></uni-icons>
+				  <image class="earn-icon-img" :src="item.iconImg || item.iconText" mode="aspectFit" />
 				</view>
 				<view class="earn-name">{{ item.name }}</view>
 				<view class="earn-points">+{{ item.points }} 积分</view>
@@ -91,7 +91,7 @@
 			<view class="record-list">
 			  <view class="record-item" v-for="record in filteredRecords" :key="record.ledger_id">
 				<view class="record-icon" :class="record._iconClass">
-				  <uni-icons :type="record._icon" size="28" color="#fff"></uni-icons>
+				  <text class="iconfont record-icon-text">{{ record._iconText || record._icon }}</text>
 				</view>
 				<view class="record-info">
 				  <view class="record-title">{{ record._title }}</view>
@@ -102,7 +102,7 @@
 				</view>
 			  </view>
 			  <view v-if="filteredRecords.length === 0" class="empty-state">
-				<uni-icons type="info" size="64" color="#ccc"></uni-icons>
+				<text class="empty-icon">•</text>
 				<text class="empty-text">暂无记录</text>
 			  </view>
 			</view>
@@ -137,57 +137,117 @@
 	</template>
 
 	<script>
+	import { getCarbonOverview, getCarbonRecords, getCarbonEarnWays } from '@/api/mine/carbon'
+
 	export default {
 	  data() {
 		return {
 		  currentFilter: 'all',
-		  totalPoints: 2680,
-		  totalReduction: 134,
-		  earnedPoints: 3200,
-		  spentPoints: 320,
-		  redeemedPoints: 200,
-		  earnWays: [
-			{ type: 'charge', name: '充电', icon: 'lightbulb', points: 50, desc: '每次充电获得', bgClass: 'bg-green' },
-			{ type: 'purchase', name: '购车', icon: 'car', points: 1000, desc: '购买新能源汽车', bgClass: 'bg-blue' },
-			{ type: 'read', name: '阅读', icon: 'bookmark', points: 10, desc: '阅读环保文章', bgClass: 'bg-orange' },
-			{ type: 'checkin', name: '签到', icon: 'calendar', points: 10, desc: '每日签到', bgClass: 'bg-purple' }
-		  ],
-		  records: [
-			{ ledger_id: 1, record_type: 0, points: 50, balance_after: 2680, source_type: 0, remark: '充电获得积分', create_time: '2024-01-15 14:30:00' },
-			{ ledger_id: 2, record_type: 0, points: 10, balance_after: 2630, source_type: 3, remark: '每日签到', create_time: '2024-01-15 08:00:00' },
-			{ ledger_id: 3, record_type: 2, points: -200, balance_after: 2620, source_type: 4, remark: '兑换50元优惠券', create_time: '2024-01-14 16:20:00' },
-			{ ledger_id: 4, record_type: 0, points: 10, balance_after: 2820, source_type: 2, remark: '阅读环保知识文章', create_time: '2024-01-14 10:15:00' },
-			{ ledger_id: 5, record_type: 0, points: 50, balance_after: 2810, source_type: 0, remark: '充电获得积分', create_time: '2024-01-13 18:45:00' },
-			{ ledger_id: 6, record_type: 0, points: 10, balance_after: 2760, source_type: 3, remark: '每日签到', create_time: '2024-01-13 07:30:00' },
-			{ ledger_id: 7, record_type: 1, points: -320, balance_after: 2750, source_type: 5, remark: '积分抵扣消费', create_time: '2024-01-12 20:00:00' },
-			{ ledger_id: 8, record_type: 0, points: 1000, balance_after: 3070, source_type: 1, remark: '购买新能源汽车奖励', create_time: '2024-01-10 15:00:00' }
-		  ]
+		  totalPoints: 0,
+		  totalReduction: 0,
+		  earnedPoints: 0,
+		  spentPoints: 0,
+		  redeemedPoints: 0,
+		  earnWays: [],
+		  records: []
 		}
 	  },
 	  computed: {
 		filteredRecords() {
-		  const typeMap = {
-			earn: 0,
-			spend: 1,
-			exchange: 2
-		  }
-		  const list = this.currentFilter === 'all'
-			? this.records
-			: this.records.filter(r => r.record_type === typeMap[this.currentFilter])
-		  const iconMap = { 0: 'plus', 1: 'minus', 2: 'gift', 3: 'eye' }
-		  const iconClassMap = { 0: 'icon-earn', 1: 'icon-spend', 2: 'icon-exchange', 3: 'icon-read' }
-		  const sourceTitles = { 0: '充电获得', 1: '购车奖励', 2: '阅读获得', 3: '签到获得', 4: '积分兑换', 5: '系统操作' }
-		  return list.map(r => ({
-			...r,
-			_icon: iconMap[r.record_type] || 'info',
-			_iconClass: iconClassMap[r.record_type] || 'icon-default',
-			_pointsClass: r.record_type === 0 ? 'points-earn' : 'points-spend',
-			_title: r.remark || sourceTitles[r.source_type] || '积分变动',
-			_time: (r.create_time || '').split(' ')[0]
-		  }))
-		}
+      const typeMap = {
+        earn: 0,
+        spend: 1,
+        exchange: 2
+      }
+      const list = this.currentFilter === 'all'
+        ? this.records
+        : this.records.filter(r => r.record_type === typeMap[this.currentFilter])
+      const iconMap = { 0: '\ue699', 1: '\ue7ae', 2: '\ue741', 3: '\ue604' }
+      const iconClassMap = { 0: 'icon-earn', 1: 'icon-spend', 2: 'icon-exchange', 3: 'icon-read' }
+      const sourceTitles = { 0: '充电获得', 1: '购车奖励', 2: '阅读获得', 3: '签到获得', 4: '积分兑换', 5: '系统操作' }
+      return list.map(r => ({
+        ...r,
+        _iconText: iconMap[r.record_type] || '\ue601',
+        _iconClass: iconClassMap[r.record_type] || 'icon-default',
+        _pointsClass: r.record_type === 0 ? 'points-earn' : 'points-spend',
+        _title: r.remark || sourceTitles[r.source_type] || '积分变动',
+        _time: (r.create_time || '').split(' ')[0]
+      }))
+    }
+	  },
+	  onLoad() {
+		this.loadData()
 	  },
 	  methods: {
+		async loadData() {
+      try {
+        // 并行请求概览和记录
+        const [overviewRes, recordsRes, waysRes] = await Promise.allSettled([
+          getCarbonOverview(),
+          getCarbonRecords(),
+          getCarbonEarnWays()
+        ])
+
+        // 处理概览数据
+        if (overviewRes.status === 'fulfilled' && overviewRes.value) {
+          const data = overviewRes.value.data || overviewRes.value
+          this.totalPoints = data.points || 0
+          this.totalReduction = data.totalReduction || 0
+          this.earnedPoints = data.earnedPoints || data.totalEarned || 0
+          this.spentPoints = data.spentPoints || data.totalSpent || 0
+          this.redeemedPoints = data.redeemedPoints || data.totalRedeemed || 0
+        }
+
+        // 处理积分记录
+        if (recordsRes.status === 'fulfilled' && recordsRes.value) {
+          const recordsData = recordsRes.value.data || recordsRes.value
+          this.records = Array.isArray(recordsData) ? recordsData : (recordsData.rows || [])
+        }
+
+        // 处理获取方式
+        if (waysRes.status === 'fulfilled' && waysRes.value) {
+          const waysData = waysRes.value.data || waysRes.value
+          const ways = Array.isArray(waysData) ? waysData : (waysData.list || [])
+          this.earnWays = ways.map(item => ({
+            type: item.type || item.actionType,
+            name: item.name || item.actionName,
+            iconImg: this.getIconForType(item.type || item.actionType),
+            points: item.points || item.pointsValue,
+            desc: item.desc || item.actionDesc,
+            bgClass: this.getBgClassForType(item.type || item.actionType)
+          }))
+        }
+      } catch (e) {
+        console.error('加载碳积分数据失败', e)
+        // 使用默认获取方式
+        if (this.earnWays.length === 0) {
+          this.earnWays = [
+            { type: 'charge', name: '充电', iconImg: '/static/images/index/charging.png', points: 10, desc: '每次充电获得', bgClass: 'bg-green' },
+            { type: 'checkin', name: '签到', iconImg: '/static/images/index/work.png', points: 5, desc: '每日签到获得', bgClass: 'bg-purple' },
+            { type: 'purchase', name: '购车', iconImg: '/static/images/index/car.png', points: 500, desc: '购买新能源车获得', bgClass: 'bg-blue' },
+            { type: 'read', name: '阅读', iconImg: '/static/images/index/CO2.png', points: 2, desc: '阅读环保文章获得', bgClass: 'bg-orange' }
+          ]
+        }
+      }
+    },
+		getIconForType(type) {
+		  const iconMap = {
+			charge: '/static/images/index/charging.png',
+			purchase: '/static/images/index/car.png',
+			read: '/static/images/index/CO2.png',
+			checkin: '/static/images/index/work.png'
+		  }
+		  return iconMap[type] || '/static/images/index/car.png'
+		},
+		getBgClassForType(type) {
+		  const bgMap = {
+			charge: 'bg-green',
+			purchase: 'bg-blue',
+			read: 'bg-orange',
+			checkin: 'bg-purple'
+		  }
+		  return bgMap[type] || 'bg-green'
+		},
 		handleBack() {
 		  uni.navigateBack()
 		}
@@ -313,6 +373,28 @@
 	  opacity: 0.2;
 	}
 
+	.balance-icon-text {
+	  font-size: 80rpx;
+	  font-weight: 800;
+	  color: #fff;
+	}
+
+	.earn-icon-img {
+	  width: 45rpx;
+	  height: 45rpx;
+	}
+
+	.record-icon-text {
+	  font-size: 28rpx;
+	  font-weight: 700;
+	  color: #fff;
+	}
+
+	.empty-icon {
+	  font-size: 80rpx;
+	  color: #ccc;
+	}
+
 	/* 统计数据 */
 	.stats-section {
 	  margin-bottom: 30rpx;
@@ -382,9 +464,9 @@
 	}
 
 	.earn-icon {
-	  width: 72rpx;
-	  height: 72rpx;
-	  border-radius: 16rpx;
+	  width: 80rpx;
+	  height: 80rpx;
+	  border-radius: 50%;
 	  display: flex;
 	  align-items: center;
 	  justify-content: center;
@@ -392,19 +474,19 @@
 	}
 
 	.earn-icon.bg-green {
-	  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+	  background-color: #e8f5e9;
 	}
 
 	.earn-icon.bg-blue {
-	  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+	  background-color: #e3f2fd;
 	}
 
 	.earn-icon.bg-orange {
-	  background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+	  background-color: #fff3e0;
 	}
 
 	.earn-icon.bg-purple {
-	  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+	  background-color: #f3e5f5;
 	}
 
 	.earn-name {

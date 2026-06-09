@@ -209,6 +209,11 @@
       "navigationBarTitleText": "我的订单"
     }
   }, {
+    "path": "pages/mine/orders/detail",
+    "style": {
+      "navigationBarTitleText": "订单详情"
+    }
+  }, {
     "path": "pages/mine/favorites/index",
     "style": {
       "navigationBarTitleText": "我的收藏"

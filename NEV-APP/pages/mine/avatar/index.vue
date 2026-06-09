@@ -70,8 +70,7 @@
 </template>
 
 <script>
-  import { uploadAvatar } from "@/api/system/user"
-  import config from '@/config'
+  import { uploadAvatar } from '@/api/system/user'
 
   export default {
     data() {
@@ -128,23 +127,26 @@
           return
         }
 
-        this.$modal.loading('上传中...')
+        // 判断是否是已存在的头像URL（未修改），直接返回
+        const storeAvatar = this.$store.state.user.avatar || ''
+        if (this.avatarUrl === storeAvatar) {
+          this.$tab.navigateBack()
+          return
+        }
 
-        uploadAvatar({
-          filePath: this.avatarUrl,
-          name: 'avatarfile'
-        }).then(response => {
+        this.$modal.loading('上传中...')
+        uploadAvatar({ filePath: this.avatarUrl }).then(response => {
           this.$modal.closeLoading()
-          this.$modal.msgSuccess('头像上传成功')
-          // 后端返回 imgUrl （相对路径），拼接 baseUrl 得到完整访问地址
-          const newAvatar = response.imgUrl ? (config.baseUrl + response.imgUrl) : (response.data || response.url || this.avatarUrl)
+          const newAvatar = response.data || response.img || response.url || this.avatarUrl
+          // 更新 Vuex 和本地存储
           this.$store.commit('SET_AVATAR', newAvatar)
+          this.$modal.msgSuccess('头像上传成功')
           setTimeout(() => {
             this.$tab.navigateBack()
-          }, 1500)
+          }, 1000)
         }).catch(() => {
           this.$modal.closeLoading()
-          this.$modal.msgError('头像上传失败，请重试')
+          this.$modal.msgError('上传失败，请重试')
         })
       }
     }

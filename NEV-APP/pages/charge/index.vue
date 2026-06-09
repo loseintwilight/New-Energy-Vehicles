@@ -667,8 +667,16 @@ export default {
       this.loading = false
     },
 
-    /** 根据 fastCount/slowCount 自动计算 speedType/speedTypeKey */
+    /** 根据 fastCount/slowCount 自动计算 speedType/speedTypeKey，并解析逗号分隔的图片 */
     normalizeStation(station) {
+      // 解析 images 字段（逗号分隔的多张图片），取第一张作为列表封面图
+      if (station.imageUrl) {
+        const imgs = station.imageUrl.split(',').map(s => s.trim()).filter(Boolean)
+        if (imgs.length > 0) {
+          station.imageUrl = imgs[0]
+          station.imageList = imgs
+        }
+      }
       const fast = station.fastCount || 0
       const slow = station.slowCount || 0
       const total = station.totalPiles || 0
@@ -770,6 +778,7 @@ export default {
       const mockStations = [
         {
           stationId: 1001, name: '文常山公园充电站',
+          imageUrl: '/static/images/chargeStation/5f9f5475a6cb848c0476e859b7930c2f.jpg,/static/images/chargeStation/OIP-C.webp',
           distance: '3.7', price: '0.51', speedType: '快慢充', speedTypeKey: 'both',
           totalPiles: 17, freePiles: 12, statusText: '闲12/17',
           lastChargeTime: '1天前有人充电',
@@ -801,6 +810,7 @@ export default {
         },
         {
           stationId: 1002, name: '西站公共充电站',
+          imageUrl: '/static/images/chargeStation/OIP-C (1).webp,/static/images/chargeStation/OIP-C (10).webp',
           distance: '6.7', price: '0.88', speedType: '快', speedTypeKey: 'fast',
           totalPiles: 12, freePiles: 8, statusText: '闲8/12',
           lastChargeTime: '10分钟前有人充电',
@@ -814,6 +824,7 @@ export default {
         },
         {
           stationId: 1003, name: '软件园充电站',
+          imageUrl: '/static/images/chargeStation/OIP-C (11).webp,/static/images/chargeStation/OIP-C (12).webp',
           distance: '5.1', price: '0.72', speedType: '慢', speedTypeKey: 'slow',
           totalPiles: 16, freePiles: 12, statusText: '闲12/16',
           lastChargeTime: '5分钟前有人充电',
@@ -827,6 +838,7 @@ export default {
         },
         {
           stationId: 1004, name: '奥体中心地下停车场充电站',
+          imageUrl: '/static/images/chargeStation/OIP-C (13).webp,/static/images/chargeStation/OIP-C (14).webp',
           distance: '8.2', price: '0.95', speedType: '快', speedTypeKey: 'fast',
           totalPiles: 20, freePiles: 14, statusText: '闲14/20',
           lastChargeTime: '刚刚有人充电',
@@ -866,6 +878,7 @@ export default {
         },
         {
           stationId: 1007, name: '东站充电站',
+          imageUrl: '/static/images/chargeStation/OIP-C (19).webp,/static/images/chargeStation/OIP-C (2).webp',
           distance: '15.6', price: '0.92', speedType: '快', speedTypeKey: 'fast',
           totalPiles: 24, freePiles: 18, statusText: '闲18/24',
           lastChargeTime: '刚刚有人充电',

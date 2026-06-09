@@ -134,6 +134,9 @@
 
 <script>
   import { getUserProfile } from "@/api/system/user"
+  import config from '@/config'
+  import { isHttp, isEmpty } from "@/utils/validate"
+  import defAva from '@/static/images/profile.jpg'
 
   export default {
     data() {
@@ -160,13 +163,20 @@
       this.getUser()
     },
     onShow() {
-      // 从编辑页返回后刷新数据
+      // 每次页面显示时刷新（如从修改头像页返回）
       this.getUser()
     },
     methods: {
       getUser() {
         getUserProfile().then(response => {
-          this.user = response.data
+          const data = response.data
+          // 处理头像路径：相对路径拼接 baseUrl
+          let avatar = data.avatar || ""
+          if (!isHttp(avatar)) {
+            avatar = isEmpty(avatar) ? defAva : config.baseUrl + avatar
+          }
+          data.avatar = avatar
+          this.user = data
           this.roleGroup = response.roleGroup
           this.postGroup = response.postGroup
         }).catch(() => {
@@ -180,7 +190,8 @@
             birthday: '1990-01-01',
             address: '北京市朝阳区',
             createTime: '2024-01-15 10:30:00',
-            status: '0'
+            status: '0',
+            avatar: defAva
           }
           this.roleGroup = '普通用户'
           this.postGroup = '用户'

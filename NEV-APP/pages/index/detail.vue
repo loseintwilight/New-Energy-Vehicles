@@ -138,9 +138,9 @@
 						<image class="action-icon-img" :src="isLiked ? '/static/images/index/upvote2.png' : '/static/images/index/upvote1.png'" mode="aspectFit"></image>
 						<text class="action-text">赞</text>
 					</view>
-					<view class="bottom-action" @click="handleRecommend">
-						<image class="action-icon-img" :src="isRecommended ? '/static/images/index/recommend2.png' : '/static/images/index/recommend1.png'" mode="aspectFit"></image>
-						<text class="action-text">推荐</text>
+					<view class="bottom-action" @click="toggleFavorite">
+						<uni-icons type="star-filled" size="24" :color="isFavorited ? '#ffc107' : '#999'"></uni-icons>
+						<text class="action-text">收藏</text>
 					</view>
 				</view>
 			</view>
@@ -149,7 +149,8 @@
 </template>
 
 <script>
-	// 原有JS代码完整保留
+import { addCollection, getFavoriteStatus, cancelCollectionByTarget } from '@/api/mine/collection'
+// 原有JS代码完整保留
 	export default {
 		data() {
 			return {
@@ -162,7 +163,7 @@
 				likeCount: 0,
 				commentCount: 0,
 				isLiked: false,
-				isRecommended: false,
+				isFavorited: false,
 				commentText: '',
 				commentFocused: false,
 				scienceList: [
@@ -211,6 +212,9 @@
 			this.readCount = Math.floor(Math.random() * 500) + 168;
 			this.likeCount = Math.floor(Math.random() * 100) + 30;
 			this.commentCount = Math.floor(Math.random() * 50) + 10;
+			this.$nextTick(() => {
+				this.loadFavoriteStatus();
+			});
 		},
 		methods: {
 			loadDetail() {
@@ -236,9 +240,37 @@
 				this.isLiked = !this.isLiked;
 				this.likeCount += this.isLiked ? 1 : -1;
 			},
-			handleRecommend() {
-				this.isRecommended = !this.isRecommended;
-				uni.showToast({ title: this.isRecommended ? '已推荐' : '取消推荐', icon: 'none' });
+			getTargetInfo() {
+				if (this.type === 'science' || this.type === 'policy') {
+					return { targetType: 'article', targetId: this.id };
+				}
+				if (this.type === 'car') {
+					return { targetType: 'vehicle', targetId: this.id };
+				}
+				return { targetType: 'article', targetId: this.id };
+			},
+			async loadFavoriteStatus() {
+				try {
+					const { targetType, targetId } = this.getTargetInfo();
+					const res = await getFavoriteStatus(targetType, targetId);
+					this.isFavorited = res.data === true;
+				} catch (e) {
+					this.isFavorited = false;
+				}
+			},
+			async toggleFavorite() {
+				try {
+					const { targetType, targetId } = this.getTargetInfo();
+					if (this.isFavorited) {
+						await cancelCollectionByTarget(targetType, targetId);
+						this.isFavorited = false;
+					} else {
+						await addCollection({ targetType, targetId });
+						this.isFavorited = true;
+					}
+				} catch (e) {
+					console.error('收藏操作失败', e);
+				}
 			},
 			handleComment() {
 				this.commentFocused = true;
@@ -481,6 +513,7 @@
 	.bottom-action .action-icon-img {
 		width: 40rpx;
 		height: 40rpx;
+		filter: grayscale(1);
 	}
 	.bottom-action .action-text {
 		font-size: 20rpx;

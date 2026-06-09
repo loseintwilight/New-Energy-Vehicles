@@ -33,6 +33,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updateTime"     column="update_time"     />
         <result property="stationName"    column="station_name"    />
         <result property="nickName"       column="nick_name"       />
+        <result property="address"        column="address"         />
     </resultMap>
 
     <sql id="selectOrderVo">
@@ -43,7 +44,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                o.energy_price, o.service_price, o.discount_amount, o.total_amount,
                o.rate_detail, o.order_status, o.pay_status, o.payment_method,
                o.transaction_id, o.carbon_earned, o.create_time, o.update_time,
-               s.station_name, u.nick_name
+               s.station_name, s.address, u.nick_name
         from stad_charging_order o
         left join stad_charging_station s on o.station_id = s.station_id
         left join sys_user u on o.user_id = u.user_id
@@ -176,5 +177,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{orderId}
         </foreach>
     </delete>
+
+    <!-- 按用户统计充电次数、总电量、总金额 -->
+    <select id="selectChargingStatisticsByUserId" parameterType="Long" resultType="java.util.Map">
+        select
+            count(1) as totalCount,
+            ifnull(sum(total_energy), 0) as totalEnergy,
+            ifnull(sum(total_amount), 0) as totalAmount
+        from stad_charging_order
+        where user_id = #{userId}
+            and order_status in ('1', '2')
+    </select>
 
 </mapper>

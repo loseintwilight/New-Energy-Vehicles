@@ -23,6 +23,21 @@ public class MineStadUserFavorite extends BaseEntity {
     private Integer targetPiles;
     private Integer targetAvailablePiles;
     private String targetVehicleType;
+    
+    /** 车辆续航(km) - 来自 stad_vehicle_spec */
+    private Integer targetRange;
+    
+    /** 电池容量(kWh) - 来自 stad_vehicle_spec */
+    private java.math.BigDecimal targetBattery;
+    
+    /** 充电站停车费说明 */
+    private String targetParkingFee;
+    
+    /** 充电站配套设施说明 */
+    private String targetFacilities;
+    
+    /** 充电站最低费率(元/度) */
+    private java.math.BigDecimal targetStationPrice;
 
     public Long getFavoriteId() { return favoriteId; }
     public void setFavoriteId(Long favoriteId) { this.favoriteId = favoriteId; }
@@ -65,6 +80,21 @@ public class MineStadUserFavorite extends BaseEntity {
 
     public String getTargetVehicleType() { return targetVehicleType; }
     public void setTargetVehicleType(String targetVehicleType) { this.targetVehicleType = targetVehicleType; }
+
+    public Integer getTargetRange() { return targetRange; }
+    public void setTargetRange(Integer targetRange) { this.targetRange = targetRange; }
+
+    public java.math.BigDecimal getTargetBattery() { return targetBattery; }
+    public void setTargetBattery(java.math.BigDecimal targetBattery) { this.targetBattery = targetBattery; }
+
+    public String getTargetParkingFee() { return targetParkingFee; }
+    public void setTargetParkingFee(String targetParkingFee) { this.targetParkingFee = targetParkingFee; }
+
+    public String getTargetFacilities() { return targetFacilities; }
+    public void setTargetFacilities(String targetFacilities) { this.targetFacilities = targetFacilities; }
+
+    public java.math.BigDecimal getTargetStationPrice() { return targetStationPrice; }
+    public void setTargetStationPrice(java.math.BigDecimal targetStationPrice) { this.targetStationPrice = targetStationPrice; }
 
     @Override
     public String toString() {

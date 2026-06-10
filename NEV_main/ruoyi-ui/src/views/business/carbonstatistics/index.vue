@@ -30,24 +30,28 @@
       </el-table-column>
     </el-table>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
-    <el-dialog :title="title" :visible.sync="open" width="750px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="850px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="统计日期" prop="statDate"><el-date-picker v-model="form.statDate" type="date" placeholder="选择日期" style="width:100%" value-format="yyyy-MM-dd" /></el-form-item>
         <el-row><el-col :span="12"><el-form-item label="城市" prop="city"><el-input v-model="form.city" /></el-form-item></el-col><el-col :span="12"><el-form-item label="区县" prop="district"><el-input v-model="form.district" /></el-form-item></el-col></el-row>
         <el-row>
-          <el-col :span="8"><el-form-item label="充电站数" prop="totalChargeStations"><el-input-number v-model="form.totalChargeStations" :min="0" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="充电桩数" prop="totalChargePiles"><el-input-number v-model="form.totalChargePiles" :min="0" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="订单数" prop="totalChargeOrders"><el-input-number v-model="form.totalChargeOrders" :min="0" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="充电站数" prop="totalChargeStations"><el-input-number v-model="form.totalChargeStations" :min="0" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="充电桩数" prop="totalChargePiles"><el-input-number v-model="form.totalChargePiles" :min="0" style="width:100%" /></el-form-item></el-col>
         </el-row>
         <el-row>
-          <el-col :span="8"><el-form-item label="总电量" prop="totalEnergy"><el-input-number v-model="form.totalEnergy" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="碳减排" prop="carbonReduction"><el-input-number v-model="form.carbonReduction" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="等效树木" prop="equivalentTrees"><el-input-number v-model="form.equivalentTrees" :min="0" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="订单数" prop="totalChargeOrders"><el-input-number v-model="form.totalChargeOrders" :min="0" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="总电量" prop="totalEnergy"><el-input-number v-model="form.totalEnergy" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
         </el-row>
         <el-row>
-          <el-col :span="8"><el-form-item label="累计新能源车" prop="totalNevCount"><el-input-number v-model="form.totalNevCount" :min="0" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="新增新能源车" prop="newNevCount"><el-input-number v-model="form.newNevCount" :min="0" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="发放积分" prop="totalPointsIssued"><el-input-number v-model="form.totalPointsIssued" :min="0" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="碳减排" prop="carbonReduction"><el-input-number v-model="form.carbonReduction" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="等效树木" prop="equivalentTrees"><el-input-number v-model="form.equivalentTrees" :min="0" style="width:100%" /></el-form-item></el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="12"><el-form-item label="累计新能源车" prop="totalNevCount"><el-input-number v-model="form.totalNevCount" :min="0" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="新增新能源车" prop="newNevCount"><el-input-number v-model="form.newNevCount" :min="0" style="width:100%" /></el-form-item></el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="12"><el-form-item label="发放积分" prop="totalPointsIssued"><el-input-number v-model="form.totalPointsIssued" :min="0" style="width:100%" /></el-form-item></el-col>
         </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>

@@ -145,3 +145,14 @@ xss:
   excludes: /system/notice
   # 匹配链接
   urlPatterns: /system/*,/monitor/*,/tool/*
+
+# MinIO 对象存储配置
+minio:
+  # 服务地址
+  endpoint: http://localhost:9000
+  # 访问密钥
+  accessKey: minioadmin
+  # 秘密密钥
+  secretKey: minioadmin
+  # 桶名称
+  bucketName: newenergy

@@ -56,6 +56,8 @@
       <el-table-column label="编号" align="center" prop="orderId" />
       <el-table-column label="订单号" align="center" prop="orderNo" show-overflow-tooltip width="200" />
       <el-table-column label="用户" align="center" prop="nickName" />
+      <el-table-column label="联系人" align="center" prop="contactName" />
+      <el-table-column label="联系电话" align="center" prop="contactPhone" width="130" />
       <el-table-column label="充电站" align="center" prop="stationName" show-overflow-tooltip />
       <el-table-column label="充电桩" align="center" prop="pileCode" />
       <el-table-column label="充电度数" align="center" prop="totalEnergy" />
@@ -107,7 +109,7 @@
       @pagination="getList"
     />
 
-    <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="850px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="订单号" prop="orderNo">
           <el-input v-model="form.orderNo" placeholder="请输入订单号" :disabled="true" />
@@ -137,34 +139,36 @@
           </el-col>
         </el-row>
         <el-row>
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="开始电量" prop="startSoc">
               <el-input-number v-model="form.startSoc" :precision="1" :min="0" :max="100" style="width: 100%" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="结束电量" prop="endSoc">
               <el-input-number v-model="form.endSoc" :precision="1" :min="0" :max="100" style="width: 100%" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+        </el-row>
+        <el-row>
+          <el-col :span="12">
             <el-form-item label="充电度数" prop="totalEnergy">
               <el-input-number v-model="form.totalEnergy" :precision="2" :min="0" style="width: 100%" />
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row>
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="电费单价" prop="energyPrice">
               <el-input-number v-model="form.energyPrice" :precision="4" :min="0" style="width: 100%" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+        </el-row>
+        <el-row>
+          <el-col :span="12">
             <el-form-item label="服务费" prop="servicePrice">
               <el-input-number v-model="form.servicePrice" :precision="4" :min="0" style="width: 100%" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="12">
             <el-form-item label="总金额" prop="totalAmount">
               <el-input-number v-model="form.totalAmount" :precision="2" :min="0" style="width: 100%" />
             </el-form-item>

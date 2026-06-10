@@ -28,19 +28,21 @@
       </el-table-column>
     </el-table>
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
-    <el-dialog :title="title" :visible.sync="open" width="650px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="统计日期" prop="statDate"><el-date-picker v-model="form.statDate" type="date" placeholder="选择日期" style="width:100%" value-format="yyyy-MM-dd" /></el-form-item>
         <el-row><el-col :span="12"><el-form-item label="城市" prop="city"><el-input v-model="form.city" /></el-form-item></el-col><el-col :span="12"><el-form-item label="区县" prop="district"><el-input v-model="form.district" /></el-form-item></el-col></el-row>
         <el-row>
-          <el-col :span="8"><el-form-item label="新登记" prop="newRegistrations"><el-input-number v-model="form.newRegistrations" :min="0" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="累计" prop="totalVehicles"><el-input-number v-model="form.totalVehicles" :min="0" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="纯电" prop="evCount"><el-input-number v-model="form.evCount" :min="0" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="新登记" prop="newRegistrations"><el-input-number v-model="form.newRegistrations" :min="0" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="累计" prop="totalVehicles"><el-input-number v-model="form.totalVehicles" :min="0" style="width:100%" /></el-form-item></el-col>
         </el-row>
         <el-row>
-          <el-col :span="8"><el-form-item label="插混" prop="phevCount"><el-input-number v-model="form.phevCount" :min="0" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="氢燃料" prop="fcevCount"><el-input-number v-model="form.fcevCount" :min="0" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="数据来源" prop="dataSource"><el-input v-model="form.dataSource" placeholder="数据来源" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="纯电" prop="evCount"><el-input-number v-model="form.evCount" :min="0" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="插混" prop="phevCount"><el-input-number v-model="form.phevCount" :min="0" style="width:100%" /></el-form-item></el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="12"><el-form-item label="氢燃料" prop="fcevCount"><el-input-number v-model="form.fcevCount" :min="0" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="数据来源" prop="dataSource"><el-input v-model="form.dataSource" placeholder="数据来源" /></el-form-item></el-col>
         </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer"><el-button type="primary" @click="submitForm">确 定</el-button><el-button @click="cancel">取 消</el-button></div>

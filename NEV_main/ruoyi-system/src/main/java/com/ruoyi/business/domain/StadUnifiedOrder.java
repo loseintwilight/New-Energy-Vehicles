@@ -6,6 +6,8 @@ import com.ruoyi.common.core.domain.BaseEntity;
 import java.math.BigDecimal;
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 public class StadUnifiedOrder extends BaseEntity {
     private static final long serialVersionUID = 1L;
 
@@ -23,6 +25,7 @@ public class StadUnifiedOrder extends BaseEntity {
     private BigDecimal paidAmount;
     private String paymentMethod;
     private String insuranceInfo;
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private Date expectDate;
     private String expectTimeSlot;
     private Long oldVehicleId;

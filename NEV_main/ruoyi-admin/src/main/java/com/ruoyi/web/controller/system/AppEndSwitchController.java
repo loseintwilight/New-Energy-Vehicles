@@ -113,19 +113,72 @@ public class AppEndSwitchController extends BaseController {
         String merchantName = null;
         if ("maintenance".equals(endType)) {
             merchantName = (String) params.get("shopName");
+            if (merchantName == null) merchantName = (String) params.get("shop_name");
         } else if ("charging".equals(endType)) {
             merchantName = (String) params.get("stationName");
+            if (merchantName == null) merchantName = (String) params.get("station_name");
         } else if ("business".equals(endType)) {
             merchantName = (String) params.get("businessName");
+            if (merchantName == null) merchantName = (String) params.get("business_name");
         }
         merchant.setMerchantName(merchantName);
 
-        // 设置联系方式
-        merchant.setContactName((String) params.get("contactName"));
-        merchant.setContactPhone((String) params.get("contactPhone"));
-        merchant.setProvince((String) params.get("province"));
-        merchant.setCity((String) params.get("city"));
-        merchant.setAddress((String) params.get("address"));
+        // ----- 校验所有必填字段（对照数据库 stad_merchant NOT NULL 列） -----
+
+        if (StringUtils.isEmpty(merchant.getMerchantName())) {
+            System.err.println("=== AppEndSwitchController.apply() 收到的参数: " + params);
+            return error("商户名称不能为空");
+        }
+
+        // 营业执照 URL（必填）
+        String businessLicense = (String) params.get("businessLicense");
+        if (StringUtils.isEmpty(businessLicense)) {
+            return error("营业执照不能为空，请先上传营业执照图片");
+        }
+        merchant.setBusinessLicense(businessLicense);
+
+        // 联系方式（兼容 snake_case 和 camelCase）
+        String contactName = (String) params.get("contactName");
+        if (contactName == null) contactName = (String) params.get("contact_name");
+        merchant.setContactName(contactName);
+        if (StringUtils.isEmpty(merchant.getContactName())) {
+            return error("联系人不能为空");
+        }
+
+        String contactPhone = (String) params.get("contactPhone");
+        if (contactPhone == null) contactPhone = (String) params.get("contact_phone");
+        merchant.setContactPhone(contactPhone);
+        if (StringUtils.isEmpty(merchant.getContactPhone())) {
+            return error("联系电话不能为空");
+        }
+
+        // 地址
+        String province = (String) params.get("province");
+        String city = (String) params.get("city");
+        String address = (String) params.get("address");
+        merchant.setProvince(province);
+        merchant.setCity(city);
+        merchant.setAddress(address);
+        if (StringUtils.isEmpty(province) || StringUtils.isEmpty(city) || StringUtils.isEmpty(address)) {
+            return error("省市区/地址不能为空");
+        }
+
+        // ----- 商户表额外必填字段 -----
+        // 法人：表单没有单独传时，复用联系人名称
+        String legalPerson = (String) params.get("legalPerson");
+        if (legalPerson == null) legalPerson = (String) params.get("legal_person");
+        if (StringUtils.isEmpty(legalPerson)) {
+            legalPerson = merchant.getContactName();
+        }
+        merchant.setLegalPerson(legalPerson);
+
+        // 法人身份证：表单没有传时，设为临时占位（PC管理端审核时可要求补充）
+        String idCard = (String) params.get("idCard");
+        if (idCard == null) idCard = (String) params.get("id_card");
+        if (StringUtils.isEmpty(idCard)) {
+            idCard = "待补充";
+        }
+        merchant.setIdCard(idCard);
 
         if (merchant.getMerchantId() == null) {
             stadMerchantService.insertStadMerchant(merchant);

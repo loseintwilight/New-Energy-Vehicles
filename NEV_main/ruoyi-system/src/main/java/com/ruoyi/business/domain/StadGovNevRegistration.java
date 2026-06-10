@@ -5,10 +5,13 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import com.ruoyi.common.core.domain.BaseEntity;
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 public class StadGovNevRegistration extends BaseEntity {
     private static final long serialVersionUID = 1L;
 
     private Long regId;
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private Date statDate;
     private String city;
     private String district;

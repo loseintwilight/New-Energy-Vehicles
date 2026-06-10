@@ -49,7 +49,7 @@
 
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="费率ID" prop="rateId">
           <el-input v-model="form.rateId" placeholder="请输入费率ID" />
@@ -62,12 +62,14 @@
           <el-col :span="12"><el-form-item label="结束时间" prop="endTime"><el-time-picker v-model="form.endTime" placeholder="选择时间" style="width:100%" value-format="HH:mm:ss" /></el-form-item></el-col>
         </el-row>
         <el-row>
-          <el-col :span="8"><el-form-item label="电费" prop="energyPrice"><el-input-number v-model="form.energyPrice" :min="0" :precision="4" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="服务费" prop="serviceFee"><el-input-number v-model="form.serviceFee" :min="0" :precision="4" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="总价" prop="totalPrice"><el-input-number v-model="form.totalPrice" :min="0" :precision="4" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="电费" prop="energyPrice"><el-input-number v-model="form.energyPrice" :min="0" :precision="4" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="服务费" prop="serviceFee"><el-input-number v-model="form.serviceFee" :min="0" :precision="4" style="width:100%" /></el-form-item></el-col>
         </el-row>
         <el-row>
+          <el-col :span="12"><el-form-item label="总价" prop="totalPrice"><el-input-number v-model="form.totalPrice" :min="0" :precision="4" style="width:100%" /></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="折扣率" prop="discountRate"><el-input-number v-model="form.discountRate" :min="0" :max="1" :precision="2" :step="0.05" style="width:100%" /></el-form-item></el-col>
+        </el-row>
+        <el-row>
           <el-col :span="12"><el-form-item label="排序" prop="sortOrder"><el-input-number v-model="form.sortOrder" :min="0" style="width:100%" /></el-form-item></el-col>
         </el-row>
       </el-form>

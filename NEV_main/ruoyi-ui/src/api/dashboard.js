@@ -10,3 +10,10 @@ export function getDashboardStatistics(month, carbonMonth) {
     params
   })
 }
+
+export function getScreenData() {
+  return request({
+    url: '/dashboard/screen',
+    method: 'get'
+  })
+}

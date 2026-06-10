@@ -292,9 +292,19 @@ public class AppOrderController extends BaseController {
         vo.setCarbonEarned(o.getCarbonEarned());
         vo.setStartTime(formatDate(o.getStartTime()));
         vo.setEndTime(formatDate(o.getEndTime()));
-        if (o.getDuration() != null) {
-            vo.setDuration(o.getDuration());
-            vo.setDurationText(formatDuration(o.getDuration()));
+        Integer duration = o.getDuration();
+        if (duration == null || duration == 0) {
+            // 从开始结束时间计算时长
+            if (o.getStartTime() != null && o.getEndTime() != null) {
+                long diff = o.getEndTime().getTime() - o.getStartTime().getTime();
+                if (diff > 0) {
+                    duration = (int) (diff / 1000);
+                }
+            }
+        }
+        if (duration != null && duration > 0) {
+            vo.setDuration(duration);
+            vo.setDurationText(formatDuration(duration));
         }
         return vo;
     }
@@ -333,13 +343,17 @@ public class AppOrderController extends BaseController {
         return date != null ? DateUtils.parseDateToStr(DateUtils.YYYY_MM_DD_HH_MM_SS, date) : "";
     }
 
-    /** 格式化充电时长：秒 → "X时X分" */
+    /** 格式化充电时长：秒 → "X时X分X秒" */
     private String formatDuration(Integer seconds) {
         if (seconds == null || seconds <= 0) return "";
         int h = seconds / 3600;
         int m = (seconds % 3600) / 60;
-        if (h > 0) return h + "时" + m + "分";
-        return m + "分";
+        int s = seconds % 60;
+        StringBuilder sb = new StringBuilder();
+        if (h > 0) sb.append(h).append("时");
+        if (m > 0) sb.append(m).append("分");
+        sb.append(s).append("秒");
+        return sb.toString();
     }
 
     /**

@@ -6,10 +6,13 @@ import com.ruoyi.common.core.domain.BaseEntity;
 import java.math.BigDecimal;
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 public class StadCarbonStatistics extends BaseEntity {
     private static final long serialVersionUID = 1L;
 
     private Long statId;
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private Date statDate;
     private String city;
     private String district;

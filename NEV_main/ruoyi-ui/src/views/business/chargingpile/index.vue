@@ -6,8 +6,8 @@
       </el-form-item>
       <el-form-item label="类型" prop="pileType">
         <el-select v-model="queryParams.pileType" placeholder="请选择" clearable>
-          <el-option label="直流快充" value="DC" />
-          <el-option label="交流慢充" value="AC" />
+          <el-option label="直流快充" value="dc" />
+          <el-option label="交流慢充" value="ac" />
         </el-select>
       </el-form-item>
       <el-form-item label="状态" prop="pileStatus">
@@ -41,7 +41,11 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="pileId" />
       <el-table-column label="桩编号" align="center" prop="pileCode" />
-      <el-table-column label="类型" align="center" prop="pileType" />
+      <el-table-column label="类型" align="center" prop="pileType">
+        <template slot-scope="scope">
+          <span>{{ pileTypeMap[scope.row.pileType] || scope.row.pileType }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="功率(kW)" align="center" prop="powerKw" />
       <el-table-column label="接口" align="center" prop="connectorType" />
       <el-table-column label="状态" align="center" prop="pileStatus">
@@ -71,10 +75,10 @@
         </el-form-item>
         <el-row>
           <el-col :span="12"><el-form-item label="桩编号" prop="pileCode"><el-input v-model="form.pileCode" placeholder="桩编号" /></el-form-item></el-col>
-          <el-col :span="12"><el-form-item label="类型" prop="pileType"><el-select v-model="form.pileType" placeholder="请选择" style="width:100%"><el-option label="直流快充" value="DC" /><el-option label="交流慢充" value="AC" /></el-select></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="类型" prop="pileType"><el-select v-model="form.pileType" placeholder="请选择" style="width:100%"><el-option label="直流快充" value="dc" /><el-option label="交流慢充" value="ac" /></el-select></el-form-item></el-col>
         </el-row>
         <el-row>
-          <el-col :span="12"><el-form-item label="接入类型" prop="accessType"><el-select v-model="form.accessType" placeholder="请选择" style="width:100%"><el-option label="直流" value="DC" /><el-option label="交流" value="AC" /></el-select></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="接入类型" prop="accessType"><el-select v-model="form.accessType" placeholder="请选择" style="width:100%"><el-option label="直流" value="dc" /><el-option label="交流" value="ac" /><el-option label="公共" value="public" /></el-select></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="功率(kW)" prop="powerKw"><el-input-number v-model="form.powerKw" :min="0" :precision="1" style="width:100%" /></el-form-item></el-col>
         </el-row>
         <el-form-item label="接口类型" prop="connectorType">
@@ -109,6 +113,8 @@ export default {
     return {
       loading: true, ids: [], single: true, multiple: true, showSearch: true, total: 0,
       pileList: [], title: "", open: false,
+      pileTypeMap: { "dc": "直流快充", "ac": "交流慢充" },
+      connectorTypeMap: { "GB/T": "国标GB/T", "CCS": "欧标CCS", "CHAdeMO": "日标CHAdeMO", "TYPE2": "欧标Type2" },
       queryParams: { pageNum: 1, pageSize: 10, stationId: undefined, pileType: undefined, pileStatus: undefined },
       form: {},
       rules: {

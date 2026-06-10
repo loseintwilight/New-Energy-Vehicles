@@ -46,25 +46,29 @@
 
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
-    <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="车辆ID" prop="vehicleId">
           <el-input v-model="form.vehicleId" placeholder="请输入车辆ID" />
         </el-form-item>
         <el-row>
-          <el-col :span="8"><el-form-item label="上牌年份" prop="licenseYear"><el-input-number v-model="form.licenseYear" :min="2000" :max="2030" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="上牌月份" prop="licenseMonth"><el-input-number v-model="form.licenseMonth" :min="1" :max="12" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="城市" prop="licenseCity"><el-input v-model="form.licenseCity" placeholder="城市" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="上牌年份" prop="licenseYear"><el-input-number v-model="form.licenseYear" :min="2000" :max="2030" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="上牌月份" prop="licenseMonth"><el-input-number v-model="form.licenseMonth" :min="1" :max="12" style="width:100%" /></el-form-item></el-col>
         </el-row>
         <el-row>
-          <el-col :span="8"><el-form-item label="里程(万km)" prop="mileage"><el-input-number v-model="form.mileage" :min="0" :precision="1" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="过户次数" prop="transferCount"><el-input-number v-model="form.transferCount" :min="0" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="电池SOH(%)" prop="batterySoh"><el-input-number v-model="form.batterySoh" :min="0" :max="100" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="城市" prop="licenseCity"><el-input v-model="form.licenseCity" placeholder="城市" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="里程(万km)" prop="mileage"><el-input-number v-model="form.mileage" :min="0" :precision="1" style="width:100%" /></el-form-item></el-col>
         </el-row>
         <el-row>
-          <el-col :span="8"><el-form-item label="电池循环" prop="batteryCycles"><el-input-number v-model="form.batteryCycles" :min="0" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="电池诊断" prop="batteryDiagnosis"><el-input v-model="form.batteryDiagnosis" placeholder="诊断结果" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="估价(万)" prop="valuationPrice"><el-input-number v-model="form.valuationPrice" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="过户次数" prop="transferCount"><el-input-number v-model="form.transferCount" :min="0" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="电池SOH(%)" prop="batterySoh"><el-input-number v-model="form.batterySoh" :min="0" :max="100" style="width:100%" /></el-form-item></el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="12"><el-form-item label="电池循环" prop="batteryCycles"><el-input-number v-model="form.batteryCycles" :min="0" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="电池诊断" prop="batteryDiagnosis"><el-input v-model="form.batteryDiagnosis" placeholder="诊断结果" /></el-form-item></el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="12"><el-form-item label="估价(万)" prop="valuationPrice"><el-input-number v-model="form.valuationPrice" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
         </el-row>
         <el-form-item label="电池报告" prop="batteryReport">
           <el-input v-model="form.batteryReport" placeholder="电池检测报告URL" />

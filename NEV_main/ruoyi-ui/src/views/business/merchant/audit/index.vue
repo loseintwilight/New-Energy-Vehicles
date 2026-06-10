@@ -47,7 +47,20 @@
       <el-table-column label="联系人" align="center" prop="contactName" width="100" />
       <el-table-column label="联系电话" align="center" prop="contactPhone" width="130" />
       <el-table-column label="所在城市" align="center" prop="city" width="100" />
-      <el-table-column label="营业执照" align="center" prop="businessLicense" width="160" show-overflow-tooltip />
+      <el-table-column label="营业执照" align="center" prop="businessLicense" width="100">
+        <template slot-scope="scope">
+          <el-image
+            v-if="scope.row.businessLicense"
+            :src="scope.row.businessLicense"
+            fit="contain"
+            style="width: 60px; height: 60px; cursor: pointer; border-radius: 4px;"
+            :preview-src-list="[scope.row.businessLicense]"
+            preview-teleported
+          >
+            <div slot="error" style="display:flex;align-items:center;justify-content:center;width:60px;height:60px;background:#f5f7fa;font-size:12px;color:#999;border-radius:4px;">无</div>
+          </el-image>
+        </template>
+      </el-table-column>
       <el-table-column label="法人代表" align="center" prop="legalPerson" width="100" />
       <el-table-column label="状态" align="center" prop="status" width="90">
           <template slot-scope="scope">
@@ -108,7 +121,19 @@
         <el-descriptions-item label="所在省份">{{ detailForm.province }}</el-descriptions-item>
         <el-descriptions-item label="所在城市">{{ detailForm.city }}</el-descriptions-item>
         <el-descriptions-item label="详细地址" :span="2">{{ detailForm.address }}</el-descriptions-item>
-        <el-descriptions-item label="营业执照">{{ detailForm.businessLicense }}</el-descriptions-item>
+        <el-descriptions-item label="营业执照" :span="2">
+          <el-image
+            v-if="detailForm.businessLicense"
+            :src="detailForm.businessLicense"
+            fit="contain"
+            style="max-width: 300px; max-height: 200px; cursor: pointer; border-radius: 4px; border: 1px solid #ebeef5;"
+            :preview-src-list="[detailForm.businessLicense]"
+            preview-teleported
+          >
+            <div slot="error" style="color:#999;">图片加载失败</div>
+          </el-image>
+          <span v-else>-</span>
+        </el-descriptions-item>
         <el-descriptions-item label="法人代表">{{ detailForm.legalPerson }}</el-descriptions-item>
         <el-descriptions-item label="身份证号">{{ detailForm.idCard }}</el-descriptions-item>
         <el-descriptions-item label="开户银行">{{ detailForm.bankName }}</el-descriptions-item>

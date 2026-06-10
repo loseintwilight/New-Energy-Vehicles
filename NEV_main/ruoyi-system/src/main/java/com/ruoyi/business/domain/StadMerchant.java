@@ -18,8 +18,8 @@ public class StadMerchant extends BaseEntity {
     private String province;
     private String city;
     private String address;
-    private Date openTime;
-    private Date closeTime;
+    private String openTime;
+    private String closeTime;
     private String businessLicense;
     private String legalPerson;
     private String idCard;
@@ -60,11 +60,11 @@ public class StadMerchant extends BaseEntity {
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
 
-    public Date getOpenTime() { return openTime; }
-    public void setOpenTime(Date openTime) { this.openTime = openTime; }
+    public String getOpenTime() { return openTime; }
+    public void setOpenTime(String openTime) { this.openTime = openTime; }
 
-    public Date getCloseTime() { return closeTime; }
-    public void setCloseTime(Date closeTime) { this.closeTime = closeTime; }
+    public String getCloseTime() { return closeTime; }
+    public void setCloseTime(String closeTime) { this.closeTime = closeTime; }
 
     public String getBusinessLicense() { return businessLicense; }
     public void setBusinessLicense(String businessLicense) { this.businessLicense = businessLicense; }

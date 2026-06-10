@@ -47,6 +47,8 @@
       <el-table-column label="编号" align="center" prop="orderId" />
       <el-table-column label="订单号" align="center" prop="orderNo" show-overflow-tooltip width="200" />
       <el-table-column label="用户" align="center" prop="nickName" />
+      <el-table-column label="联系人" align="center" prop="contactName" />
+      <el-table-column label="联系电话" align="center" prop="contactPhone" width="130" />
       <el-table-column label="门店" align="center" prop="shopName" show-overflow-tooltip />
       <el-table-column label="服务项目" align="center" prop="serviceItem" />
       <el-table-column label="金额" align="center" prop="totalAmount" />
@@ -78,7 +80,7 @@
 
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
-    <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="订单号" prop="orderNo">
           <el-input v-model="form.orderNo" placeholder="请输入订单号" />
@@ -94,9 +96,11 @@
           <el-input v-model="form.serviceItem" placeholder="请输入服务项目" />
         </el-form-item>
         <el-row>
-          <el-col :span="8"><el-form-item label="服务价格" prop="servicePrice"><el-input-number v-model="form.servicePrice" :precision="2" :min="0" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="总金额" prop="totalAmount"><el-input-number v-model="form.totalAmount" :precision="2" :min="0" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="已付金额" prop="paidAmount"><el-input-number v-model="form.paidAmount" :precision="2" :min="0" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="服务价格" prop="servicePrice"><el-input-number v-model="form.servicePrice" :precision="2" :min="0" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="总金额" prop="totalAmount"><el-input-number v-model="form.totalAmount" :precision="2" :min="0" style="width:100%" /></el-form-item></el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="12"><el-form-item label="已付金额" prop="paidAmount"><el-input-number v-model="form.paidAmount" :precision="2" :min="0" style="width:100%" /></el-form-item></el-col>
         </el-row>
         <el-row>
           <el-col :span="12"><el-form-item label="期望日期" prop="expectDate"><el-date-picker v-model="form.expectDate" type="date" placeholder="期望日期" value-format="yyyy-MM-dd" style="width:100%" /></el-form-item></el-col>

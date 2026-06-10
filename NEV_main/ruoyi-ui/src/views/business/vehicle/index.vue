@@ -1,11 +1,10 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="车型" prop="vehicleType">
-        <el-select v-model="queryParams.vehicleType" placeholder="请选择车型" clearable>
-          <el-option label="纯电动" value="纯电动" />
-          <el-option label="混动" value="混动" />
-          <el-option label="燃油" value="燃油" />
+      <el-form-item label="车辆类别" prop="vehicleType">
+        <el-select v-model="queryParams.vehicleType" placeholder="请选择车辆类别" clearable>
+          <el-option label="新车" value="new" />
+          <el-option label="二手车" value="used" />
         </el-select>
       </el-form-item>
       <el-form-item label="型号名称" prop="modelName">
@@ -77,11 +76,18 @@
     <el-table v-loading="loading" :data="vehicleList" @selection-change="handleSelectionChange" :default-sort="{prop: 'createTime', order: 'descending'}">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="vehicleId" />
-      <el-table-column label="车型" align="center" prop="vehicleType" />
+      <el-table-column label="车辆类别" align="center" prop="vehicleType">
+        <template slot-scope="scope">
+          <span>{{ {'new':'新车','used':'二手车'}[scope.row.vehicleType] || scope.row.vehicleType }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="型号名称" align="center" prop="modelName" />
       <el-table-column label="标题" align="center" prop="title" show-overflow-tooltip />
       <el-table-column label="指导价" align="center" prop="guidePrice" />
       <el-table-column label="颜色" align="center" prop="color" />
+      <el-table-column label="续航(km)" align="center" prop="rangeKm" width="100" />
+      <el-table-column label="电池容量" align="center" prop="batteryCapacity" width="100" />
+      <el-table-column label="年款" align="center" prop="modelYear" width="80" />
       <el-table-column label="库存" align="center" prop="stock" />
       <el-table-column label="所属商户" align="center" prop="merchantName" />
       <el-table-column label="状态" align="center" prop="status">
@@ -113,50 +119,97 @@
       @pagination="getList"
     />
 
-    <el-dialog :title="title" :visible.sync="open" width="600px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="车型" prop="vehicleType">
-          <el-select v-model="form.vehicleType" placeholder="请选择车型">
-            <el-option label="纯电动" value="纯电动" />
-            <el-option label="混动" value="混动" />
-            <el-option label="燃油" value="燃油" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="型号名称" prop="modelName">
-          <el-input v-model="form.modelName" placeholder="请输入型号名称" />
-        </el-form-item>
-        <el-form-item label="标题" prop="title">
-          <el-input v-model="form.title" placeholder="请输入标题" />
-        </el-form-item>
-        <el-form-item label="指导价" prop="guidePrice">
-          <el-input-number v-model="form.guidePrice" :min="0" :precision="2" :step="1000" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="原价" prop="originalPrice">
-          <el-input-number v-model="form.originalPrice" :min="0" :precision="2" :step="1000" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="颜色" prop="color">
-          <el-input v-model="form.color" placeholder="请输入颜色" />
-        </el-form-item>
-        <el-form-item label="库存" prop="stock">
-          <el-input-number v-model="form.stock" :min="0" controls-position="right" />
-        </el-form-item>
-        <el-form-item label="所属商户" prop="merchantId">
-          <el-input v-model="form.merchantId" placeholder="请输入商户ID" />
-        </el-form-item>
+    <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body>
+      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="车辆类别" prop="vehicleType">
+              <el-select v-model="form.vehicleType" placeholder="请选择车辆类别">
+                <el-option label="新车" value="new" />
+                <el-option label="二手车" value="used" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="型号名称" prop="modelName">
+              <el-input v-model="form.modelName" placeholder="请输入型号名称" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="标题" prop="title">
+              <el-input v-model="form.title" placeholder="请输入标题" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="颜色" prop="color">
+              <el-input v-model="form.color" placeholder="请输入颜色" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="指导价" prop="guidePrice">
+              <el-input-number v-model="form.guidePrice" :min="0" :precision="2" :step="1000" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="原价" prop="originalPrice">
+              <el-input-number v-model="form.originalPrice" :min="0" :precision="2" :step="1000" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="库存" prop="stock">
+              <el-input-number v-model="form.stock" :min="0" controls-position="right" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="所属商户" prop="merchantId">
+              <el-input v-model="form.merchantId" placeholder="请输入商户ID" />
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-form-item label="标签" prop="tags">
           <el-input v-model="form.tags" placeholder="请输入标签，多个用逗号分隔" />
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio label="0">待审核</el-radio>
-            <el-radio label="1">在售</el-radio>
-            <el-radio label="2">已售</el-radio>
-            <el-radio label="3">下架</el-radio>
-          </el-radio-group>
         </el-form-item>
         <el-form-item label="描述" prop="description">
           <el-input v-model="form.description" type="textarea" placeholder="请输入描述" />
         </el-form-item>
+        <el-divider content-position="left">车辆规格</el-divider>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="续航(km)" prop="rangeKm">
+              <el-input-number v-model="form.rangeKm" :min="0" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="电池容量(kWh)" prop="batteryCapacity">
+              <el-input-number v-model="form.batteryCapacity" :min="0" :precision="2" :step="10" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="年款" prop="modelYear">
+              <el-input-number v-model="form.modelYear" :min="2000" :max="2030" :step="1" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="快充时间(h)" prop="chargeTimeFast">
+              <el-input-number v-model="form.chargeTimeFast" :min="0" :precision="2" :step="0.5" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="慢充时间(h)" prop="chargeTimeSlow">
+              <el-input-number v-model="form.chargeTimeSlow" :min="0" :precision="2" :step="0.5" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
@@ -170,7 +223,7 @@
           <el-form ref="detailForm" :model="detailData" label-width="100px">
             <el-row>
               <el-col :span="12"><el-form-item label="编号">{{ detailData.vehicleId }}</el-form-item></el-col>
-              <el-col :span="12"><el-form-item label="车型">{{ detailData.vehicleType }}</el-form-item></el-col>
+              <el-col :span="12"><el-form-item label="车辆类别">{{ {'new':'新车','used':'二手车'}[detailData.vehicleType] || detailData.vehicleType }}</el-form-item></el-col>
             </el-row>
             <el-row>
               <el-col :span="12"><el-form-item label="型号名称">{{ detailData.modelName }}</el-form-item></el-col>
@@ -187,6 +240,15 @@
             <el-row>
               <el-col :span="12"><el-form-item label="商户">{{ detailData.merchantName }}</el-form-item></el-col>
               <el-col :span="12"><el-form-item label="标签">{{ detailData.tags }}</el-form-item></el-col>
+            </el-row>
+            <el-row>
+              <el-col :span="8"><el-form-item label="续航(km)">{{ detailData.rangeKm }}</el-form-item></el-col>
+              <el-col :span="8"><el-form-item label="电池容量(kWh)">{{ detailData.batteryCapacity }}</el-form-item></el-col>
+              <el-col :span="8"><el-form-item label="年款">{{ detailData.modelYear }}</el-form-item></el-col>
+            </el-row>
+            <el-row>
+              <el-col :span="12"><el-form-item label="快充时间(h)">{{ detailData.chargeTimeFast }}</el-form-item></el-col>
+              <el-col :span="12"><el-form-item label="慢充时间(h)">{{ detailData.chargeTimeSlow }}</el-form-item></el-col>
             </el-row>
             <el-form-item label="描述">{{ detailData.description }}</el-form-item>
           </el-form>
@@ -282,7 +344,7 @@ export default {
     reset() {
       this.form = {
         vehicleId: undefined,
-        vehicleType: "纯电动",
+        vehicleType: "new",
         modelName: undefined,
         title: undefined,
         guidePrice: 0,
@@ -292,7 +354,12 @@ export default {
         merchantId: undefined,
         description: undefined,
         tags: undefined,
-        status: "1"
+        status: "1",
+        rangeKm: undefined,
+        batteryCapacity: undefined,
+        chargeTimeFast: undefined,
+        chargeTimeSlow: undefined,
+        modelYear: undefined
       }
       this.resetForm("form")
     },
@@ -317,8 +384,29 @@ export default {
     handleUpdate(row) {
       this.reset()
       const vehicleId = row.vehicleId || this.ids
-      getVehicle(vehicleId).then(response => {
-        this.form = response.data
+      getVehicleDetail(vehicleId).then(response => {
+        const data = response.data
+        // 合并基础信息
+        this.form = {
+          vehicleId: data.vehicleId,
+          vehicleType: data.vehicleType,
+          modelName: data.modelName,
+          title: data.title,
+          guidePrice: data.guidePrice,
+          originalPrice: data.originalPrice,
+          color: data.color,
+          stock: data.stock,
+          merchantId: data.merchantId,
+          description: data.description,
+          tags: data.tags,
+          status: data.status,
+          // 合并规格信息
+          rangeKm: data.vehicleSpec ? data.vehicleSpec.rangeKm : undefined,
+          batteryCapacity: data.vehicleSpec ? data.vehicleSpec.batteryCapacity : undefined,
+          chargeTimeFast: data.vehicleSpec ? data.vehicleSpec.chargeTimeFast : undefined,
+          chargeTimeSlow: data.vehicleSpec ? data.vehicleSpec.chargeTimeSlow : undefined,
+          modelYear: data.vehicleSpec ? data.vehicleSpec.modelYear : undefined
+        }
         this.open = true
         this.title = "修改车辆"
       })

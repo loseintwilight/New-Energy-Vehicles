@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.carbon.mapper.ScreenMapper">
+
+    <!-- 各区县碳减排数据（取最新统计日期） -->
+    <select id="selectScreenCarbonData" resultType="java.util.Map">
+        SELECT s.district AS name, ROUND(COALESCE(s.carbon_reduction, 0), 0) AS `value`
+          FROM stad_carbon_statistics s
+          INNER JOIN (
+              SELECT district, MAX(stat_date) AS max_date
+                FROM stad_carbon_statistics
+               GROUP BY district
+          ) latest ON s.district = latest.district AND s.stat_date = latest.max_date
+         ORDER BY s.district
+    </select>
+
+    <!-- 各区县新能源车保有量（取最新统计日期） -->
+    <select id="selectScreenEVData" resultType="java.util.Map">
+        SELECT s.district AS name, COALESCE(s.total_nev_count, 0) AS `value`
+          FROM stad_carbon_statistics s
+          INNER JOIN (
+              SELECT district, MAX(stat_date) AS max_date
+                FROM stad_carbon_statistics
+               GROUP BY district
+          ) latest ON s.district = latest.district AND s.stat_date = latest.max_date
+         ORDER BY s.district
+    </select>
+
+    <!-- 各区县充电桩数量（从业务表统计，按充电站区县分组） -->
+    <select id="selectScreenPileData" resultType="java.util.Map">
+        SELECT st.district AS name, COUNT(*) AS `value`
+          FROM stad_charging_pile p
+          LEFT JOIN stad_charging_station st ON p.station_id = st.station_id
+         WHERE st.district IS NOT NULL
+         GROUP BY st.district
+         ORDER BY st.district
+    </select>
+
+    <!-- 充电桩总数 -->
+    <select id="countPiles" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM stad_charging_pile
+    </select>
+
+    <!-- 新能源车保有量汇总（取最新） -->
+    <select id="sumEV" resultType="java.lang.Long">
+        SELECT COALESCE(SUM(s.total_nev_count), 0)
+          FROM stad_carbon_statistics s
+          INNER JOIN (
+              SELECT district, MAX(stat_date) AS max_date
+                FROM stad_carbon_statistics
+               GROUP BY district
+          ) latest ON s.district = latest.district AND s.stat_date = latest.max_date
+    </select>
+
+    <!-- 碳减排汇总（取最新） -->
+    <select id="sumCarbonReduction" resultType="java.lang.Double">
+        SELECT COALESCE(SUM(s.carbon_reduction), 0)
+          FROM stad_carbon_statistics s
+          INNER JOIN (
+              SELECT district, MAX(stat_date) AS max_date
+                FROM stad_carbon_statistics
+               GROUP BY district
+          ) latest ON s.district = latest.district AND s.stat_date = latest.max_date
+    </select>
+
+</mapper>

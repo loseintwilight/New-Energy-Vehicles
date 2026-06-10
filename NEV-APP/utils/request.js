@@ -14,6 +14,10 @@ const request = config => {
   if (getToken() && !isToken) {
     config.header['Authorization'] = 'Bearer ' + getToken()
   }
+  // 默认 content-type 为 JSON
+  if (!config.header['Content-Type']) {
+    config.header['Content-Type'] = 'application/json'
+  }
   // get请求映射params参数
   if (config.params) {
     let url = config.url + '?' + tansParams(config.params)

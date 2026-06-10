@@ -33,6 +33,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updateTime"     column="update_time"     />
         <result property="stationName"    column="station_name"    />
         <result property="nickName"       column="nick_name"       />
+        <result property="contactName"    column="contact_name"    />
+        <result property="contactPhone"   column="contact_phone"   />
     </resultMap>
 
     <sql id="selectOrderVo">
@@ -43,7 +45,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                o.energy_price, o.service_price, o.discount_amount, o.total_amount,
                o.rate_detail, o.order_status, o.pay_status, o.payment_method,
                o.transaction_id, o.carbon_earned, o.create_time, o.update_time,
-               s.station_name, u.nick_name
+               s.station_name, u.nick_name,
+               u.user_name as contact_name, u.phonenumber as contact_phone
         from stad_charging_order o
         left join stad_charging_station s on o.station_id = s.station_id
         left join sys_user u on o.user_id = u.user_id

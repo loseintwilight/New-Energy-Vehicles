@@ -54,6 +54,7 @@
       <el-table-column label="总金额" align="center" prop="totalAmount" />
       <el-table-column label="已付" align="center" prop="paidAmount" />
       <el-table-column label="联系人" align="center" prop="contactName" />
+      <el-table-column label="联系电话" align="center" prop="contactPhone" width="130" />
       <el-table-column label="状态" align="center" prop="status">
         <template slot-scope="scope">
           <el-tag :type="scope.row.status === '2' ? 'success' : scope.row.status === '3' ? 'danger' : scope.row.status === '1' ? 'primary' : 'info'">
@@ -74,7 +75,7 @@
 
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
-    <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="订单号" prop="orderNo">
           <el-input v-model="form.orderNo" placeholder="请输入订单号" />
@@ -99,9 +100,11 @@
           <el-col :span="12"><el-form-item label="联系电话" prop="contactPhone"><el-input v-model="form.contactPhone" placeholder="联系电话" /></el-form-item></el-col>
         </el-row>
         <el-row>
-          <el-col :span="8"><el-form-item label="车辆价格" prop="vehiclePrice"><el-input-number v-model="form.vehiclePrice" :precision="2" :min="0" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="总金额" prop="totalAmount"><el-input-number v-model="form.totalAmount" :precision="2" :min="0" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="已付金额" prop="paidAmount"><el-input-number v-model="form.paidAmount" :precision="2" :min="0" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="车辆价格" prop="vehiclePrice"><el-input-number v-model="form.vehiclePrice" :precision="2" :min="0" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="总金额" prop="totalAmount"><el-input-number v-model="form.totalAmount" :precision="2" :min="0" style="width:100%" /></el-form-item></el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="12"><el-form-item label="已付金额" prop="paidAmount"><el-input-number v-model="form.paidAmount" :precision="2" :min="0" style="width:100%" /></el-form-item></el-col>
         </el-row>
         <el-form-item label="支付方式" prop="paymentMethod">
           <el-input v-model="form.paymentMethod" placeholder="支付方式" />

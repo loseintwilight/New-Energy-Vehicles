@@ -281,6 +281,27 @@
 <script>
 import { getOrderDetail, cancelOrder, deleteOrder } from '@/api/mine/order'
 
+/** 前端格式化充电时长：秒 → X时X分X秒 */
+function formatDuration(duration, startTime, endTime) {
+  let seconds = 0
+  if (duration != null && duration > 0) {
+    seconds = duration
+  } else if (startTime && endTime) {
+    const s = new Date(startTime).getTime()
+    const e = new Date(endTime).getTime()
+    if (e > s) seconds = Math.floor((e - s) / 1000)
+  }
+  if (seconds <= 0) return ''
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = seconds % 60
+  let text = ''
+  if (h > 0) text += h + '时'
+  if (m > 0) text += m + '分'
+  text += s + '秒'
+  return text
+}
+
 export default {
   data() {
     return {
@@ -397,7 +418,7 @@ export default {
 
         // 充电订单字段
         totalEnergy: order.totalEnergy,
-        durationText: order.durationText,
+        durationText: order.durationText || formatDuration(order.duration, order.startTime, order.endTime),
         carbonEarned: order.carbonEarned,
         startTime: order.startTime,
         endTime: order.endTime,

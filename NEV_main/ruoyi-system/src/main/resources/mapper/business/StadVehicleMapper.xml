@@ -21,6 +21,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="createTime"   column="create_time"   />
         <result property="updateTime"   column="update_time"   />
         <result property="merchantName" column="merchant_name" />
+        <!-- 车辆规格字段 -->
+        <result property="rangeKm"          column="range_km"          />
+        <result property="batteryCapacity"  column="battery_capacity"  />
+        <result property="chargeTimeFast"   column="charge_time_fast"  />
+        <result property="chargeTimeSlow"   column="charge_time_slow"  />
+        <result property="modelYear"        column="model_year"        />
     </resultMap>
 
     <resultMap type="StadVehicle" id="StadVehicleDetailResult" extends="StadVehicleResult">
@@ -32,9 +38,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select v.vehicle_id, v.vehicle_type, v.model_name, v.title, v.guide_price,
                v.original_price, v.color, v.stock, v.merchant_id, v.description,
                v.tags, v.view_count, v.status, v.create_time, v.update_time,
-               m.merchant_name
+               m.merchant_name,
+               s.range_km, s.battery_capacity, s.charge_time_fast,
+               s.charge_time_slow, s.model_year
         from stad_vehicle v
         left join stad_merchant m on v.merchant_id = m.merchant_id
+        left join stad_vehicle_spec s on v.vehicle_id = s.vehicle_id
     </sql>
 
     <select id="selectStadVehicleById" parameterType="Long" resultMap="StadVehicleResult">
@@ -62,6 +71,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         left join stad_vehicle_spec s on v.vehicle_id = s.vehicle_id
         left join stad_vehicle_finance_plan fp on v.vehicle_id = fp.vehicle_id
         where v.vehicle_id = #{vehicleId}
+        order by fp.sort_order, fp.plan_id
     </select>
 
     <select id="selectStadVehicleList" parameterType="StadVehicle" resultMap="StadVehicleResult">

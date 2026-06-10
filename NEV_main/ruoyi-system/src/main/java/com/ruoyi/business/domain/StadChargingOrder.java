@@ -36,6 +36,8 @@ public class StadChargingOrder extends BaseEntity {
 
     private String stationName;
     private String nickName;
+    private String contactName;
+    private String contactPhone;
 
     public Long getOrderId() { return orderId; }
     public void setOrderId(Long orderId) { this.orderId = orderId; }
@@ -114,6 +116,12 @@ public class StadChargingOrder extends BaseEntity {
 
     public String getNickName() { return nickName; }
     public void setNickName(String nickName) { this.nickName = nickName; }
+
+    public String getContactName() { return contactName; }
+    public void setContactName(String contactName) { this.contactName = contactName; }
+
+    public String getContactPhone() { return contactPhone; }
+    public void setContactPhone(String contactPhone) { this.contactPhone = contactPhone; }
 
     @Override
     public String toString() {

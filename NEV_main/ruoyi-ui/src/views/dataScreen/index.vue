@@ -68,7 +68,7 @@
               <span class="card-label">碳减排总量</span>
               <span class="card-value">
                 <count-to :start-val="0" :end-val="totalReduction" :duration="2500" separator="," />
-                <small>万吨</small>
+                <small>吨</small>
               </span>
               <span class="card-trend up">同比 +12.5%</span>
             </div>
@@ -221,6 +221,7 @@
 import * as echarts from 'echarts'
 import CountTo from 'vue-count-to'
 import screenfull from 'screenfull'
+import { getScreenData } from '@/api/dashboard'
 
 const SHANDONG_GEOJSON_URL = 'https://geo.datav.aliyun.com/areas_v3/bound/370000_full.json'
 
@@ -412,24 +413,31 @@ export default {
       })
     },
     leftCityData() {
-      return [...this.cityData]
-        .sort((a, b) => b.metric1 - a.metric1)
+      // 碳减排排行 TOP 10：从 carbonReductionData 取真实值
+      return [...this.carbonReductionData]
+        .sort((a, b) => b.value - a.value)
         .slice(0, 10)
         .map(d => ({
-          ...d,
-          trees: Math.round(d.metric1 * 12)
+          city: d.name,
+          metric1: d.value,
+          trees: Math.round(d.value * 12)
         }))
     },
     rightCityData() {
-      return [...this.cityData]
-        .sort((a, b) => (b.metric2 + b.metric3) - (a.metric2 + a.metric3))
+      // 新能源车 & 充电桩排行 TOP 10：从 evData & pilesData 取真实值
+      const evMap = {}
+      this.evData.forEach(d => { evMap[d.name] = d.value })
+      const pileMap = {}
+      this.pilesData.forEach(d => { pileMap[d.name] = d.value })
+      const districts = this.carbonReductionData.map(d => ({
+        city: d.name,
+        ev: evMap[d.name] || 0,
+        piles: pileMap[d.name] || 0
+      }))
+      return districts
+        .sort((a, b) => (b.ev + b.piles) - (a.ev + a.piles))
         .slice(0, 10)
-        .map(d => ({
-          ...d,
-          ev: Math.round(d.metric2 * 10),
-          piles: Math.round(d.metric3 * 10)
-        }))
-    }
+    },
   },
   mounted() {
     this.initFullscreen()
@@ -446,9 +454,47 @@ export default {
     this.$store.dispatch('app/toggleSideBarHide', false)
   },
   methods: {
+    /** 从后端加载真实汇总数据，替换模拟数据 */
+    async loadScreenData() {
+      try {
+        const res = await getScreenData()
+        if (res && res.code === 200 && res.data) {
+          const { carbonReductionData: dbCarbon, evData: dbEV, pilesData: dbPiles, totalStats } = res.data
+
+          // 用 DB 数据替换模拟数据中对应 district 的 value，不存在的 district 置为 0
+          const replaceData = (mockList, dbList) => {
+            const dbMap = {}
+            ;(dbList || []).forEach(d => { if (d.name) dbMap[d.name] = Number(d.value) || 0 })
+            mockList.forEach(item => {
+              item.value = dbMap[item.name] !== undefined ? dbMap[item.name] : 0
+            })
+          }
+          if (dbCarbon && dbCarbon.length > 0) replaceData(this.carbonReductionData, dbCarbon)
+          if (dbEV && dbEV.length > 0) replaceData(this.evData, dbEV)
+          if (dbPiles && dbPiles.length > 0) replaceData(this.pilesData, dbPiles)
+
+          // 总览卡片用后端返回的真实汇总数据
+          if (totalStats) {
+            if (totalStats.totalReduction != null) this.totalReduction = Math.round(totalStats.totalReduction)
+            if (totalStats.totalEV != null) this.totalEV = totalStats.totalEV
+            if (totalStats.totalPiles != null) this.totalPiles = totalStats.totalPiles
+          }
+        }
+      } catch (err) {
+        // 请求失败时从 mock 数组计算兜底
+        console.warn('数据大屏后端数据加载失败，使用模拟数据：', err)
+        this.computeTotals()
+      }
+    },
+
     async initScreen() {
       try {
-        this.computeTotals()
+        this.updateLoading('正在加载数据...', 5)
+        // 先加载后端真实数据（合并到模拟数据中）
+        await this.loadScreenData()
+        // 注意：不再调用 computeTotals()，以免覆盖后端返回的真实汇总 totalStats
+        // loadScreenData 内部已处理好：有 totalStats 直接用，没有则 computeTotals 兜底
+
         this.updateLoading('正在加载山东地图数据...', 20)
 
         const geoJson = await this.fetchShandongGeoJSON()

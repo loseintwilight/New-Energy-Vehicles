@@ -116,14 +116,26 @@
         <view v-if="selectedEnd === 'maintenance'" class="form-section">
           <view class="section-title">维保门店登录信息</view>
 
+          <!-- 营业执照上传 -->
+          <view class="form-item">
+            <view class="form-label">营业执照 <text class="required">*</text></view>
+            <view class="license-upload" @click="handleUploadLicense('maintenance')">
+              <image v-if="form.maintenance.businessLicense" :src="form.maintenance.businessLicense" mode="aspectFit" class="license-img"></image>
+              <view v-else class="license-placeholder">
+                <uni-icons type="plus-empty" size="40" color="#999"></uni-icons>
+                <text class="license-text">点击上传营业执照</text>
+              </view>
+            </view>
+          </view>
+
           <view class="form-item">
             <view class="form-label">门店名称 <text class="required">*</text></view>
             <input class="form-input" v-model="form.maintenance.shop_name" placeholder="请输入门店名称" placeholder-class="placeholder" />
           </view>
 
           <view class="form-item">
-            <view class="form-label">商户ID <text class="required">*</text></view>
-            <input class="form-input" v-model="form.maintenance.merchant_id" type="number" placeholder="请输入商户ID" placeholder-class="placeholder" />
+            <view class="form-label">法人代表 <text class="required">*</text></view>
+            <input class="form-input" v-model="form.maintenance.legal_person" placeholder="请输入法人代表姓名" placeholder-class="placeholder" />
           </view>
 
           <view class="form-item">
@@ -164,19 +176,31 @@
         <view v-if="selectedEnd === 'charging'" class="form-section">
           <view class="section-title">充电站登录信息</view>
 
+          <!-- 营业执照上传 -->
+          <view class="form-item">
+            <view class="form-label">营业执照 <text class="required">*</text></view>
+            <view class="license-upload" @click="handleUploadLicense('charging')">
+              <image v-if="form.charging.businessLicense" :src="form.charging.businessLicense" mode="aspectFit" class="license-img"></image>
+              <view v-else class="license-placeholder">
+                <uni-icons type="plus-empty" size="40" color="#999"></uni-icons>
+                <text class="license-text">点击上传营业执照</text>
+              </view>
+            </view>
+          </view>
+
           <view class="form-item">
             <view class="form-label">充电站名称 <text class="required">*</text></view>
             <input class="form-input" v-model="form.charging.station_name" placeholder="请输入充电站名称" placeholder-class="placeholder" />
           </view>
 
           <view class="form-item">
-            <view class="form-label">编码 <text class="required">*</text></view>
-            <input class="form-input" v-model="form.charging.station_code" placeholder="请输入编码" placeholder-class="placeholder" />
+            <view class="form-label">法人代表 <text class="required">*</text></view>
+            <input class="form-input" v-model="form.charging.legal_person" placeholder="请输入法人代表姓名" placeholder-class="placeholder" />
           </view>
 
           <view class="form-item">
-            <view class="form-label">商户ID <text class="required">*</text></view>
-            <input class="form-input" v-model="form.charging.merchant_id" type="number" placeholder="请输入商户ID" placeholder-class="placeholder" />
+            <view class="form-label">编码 <text class="required">*</text></view>
+            <input class="form-input" v-model="form.charging.station_code" placeholder="请输入编码" placeholder-class="placeholder" />
           </view>
 
           <view class="form-item">
@@ -217,14 +241,26 @@
         <view v-if="selectedEnd === 'business'" class="form-section">
           <view class="section-title">商家登录信息</view>
 
+          <!-- 营业执照上传 -->
+          <view class="form-item">
+            <view class="form-label">营业执照 <text class="required">*</text></view>
+            <view class="license-upload" @click="handleUploadLicense('business')">
+              <image v-if="form.business.businessLicense" :src="form.business.businessLicense" mode="aspectFit" class="license-img"></image>
+              <view v-else class="license-placeholder">
+                <uni-icons type="plus-empty" size="40" color="#999"></uni-icons>
+                <text class="license-text">点击上传营业执照</text>
+              </view>
+            </view>
+          </view>
+
           <view class="form-item">
             <view class="form-label">商家名称 <text class="required">*</text></view>
             <input class="form-input" v-model="form.business.business_name" placeholder="请输入商家名称" placeholder-class="placeholder" />
           </view>
 
           <view class="form-item">
-            <view class="form-label">商户ID <text class="required">*</text></view>
-            <input class="form-input" v-model="form.business.merchant_id" type="number" placeholder="请输入商户ID" placeholder-class="placeholder" />
+            <view class="form-label">法人代表 <text class="required">*</text></view>
+            <input class="form-input" v-model="form.business.legal_person" placeholder="请输入法人代表姓名" placeholder-class="placeholder" />
           </view>
 
           <view class="form-item">
@@ -263,7 +299,7 @@
 
         <!-- 提交按钮 -->
         <view class="submit-section">
-          <button class="submit-btn" @click="handleSubmit" :disabled="!canSubmit || submitting">
+          <button class="submit-btn" @click="handleSubmit">
             <text class="submit-text">{{ submitting ? '提交中...' : '提交申请' }}</text>
           </button>
           <view class="submit-tip">提交后将发送给管理员审核，审核通过后即可切换</view>
@@ -377,6 +413,8 @@
 
 <script>
 import { getMerchantIdentity, submitEndSwitchApply, cancelEndSwitchApply, getEndSwitchStatus } from '@/api/system/endSwitch'
+import config from '@/config'
+import upload from '@/utils/upload'
 
 export default {
   data() {
@@ -396,11 +434,44 @@ export default {
       checkingIdentity: true,
       hasMaintenanceMerchant: false,
       provinces: ['北京市', '天津市', '河北省', '山西省', '内蒙古自治区', '辽宁省', '吉林省', '黑龙江省', '上海市', '江苏省', '浙江省', '安徽省', '福建省', '江西省', '山东省', '河南省', '湖北省', '湖南省', '广东省', '广西壮族自治区', '海南省', '重庆市', '四川省', '贵州省', '云南省', '西藏自治区', '陕西省', '甘肃省', '青海省', '宁夏回族自治区', '新疆维吾尔自治区'],
-      cities: ['东城区', '西城区', '朝阳区', '海淀区', '丰台区', '石景山区', '通州区', '顺义区', '昌平区', '大兴区', '房山区', '门头沟区', '怀柔区', '平谷区', '密云区', '延庆区'],
+      cityMap: {
+        '北京市': ['东城区', '西城区', '朝阳区', '海淀区', '丰台区', '石景山区', '通州区', '顺义区', '昌平区', '大兴区', '房山区', '门头沟区', '怀柔区', '平谷区', '密云区', '延庆区'],
+        '天津市': ['和平区', '河东区', '河西区', '南开区', '河北区', '红桥区', '东丽区', '西青区', '津南区', '北辰区', '武清区', '宝坻区', '滨海新区', '宁河区', '静海区', '蓟州区'],
+        '河北省': ['石家庄市', '唐山市', '秦皇岛市', '邯郸市', '邢台市', '保定市', '张家口市', '承德市', '沧州市', '廊坊市', '衡水市'],
+        '山西省': ['太原市', '大同市', '阳泉市', '长治市', '晋城市', '朔州市', '晋中市', '运城市', '忻州市', '临汾市', '吕梁市'],
+        '内蒙古自治区': ['呼和浩特市', '包头市', '乌海市', '赤峰市', '通辽市', '鄂尔多斯市', '呼伦贝尔市', '巴彦淖尔市', '乌兰察布市', '兴安盟', '锡林郭勒盟', '阿拉善盟'],
+        '辽宁省': ['沈阳市', '大连市', '鞍山市', '抚顺市', '本溪市', '丹东市', '锦州市', '营口市', '阜新市', '辽阳市', '盘锦市', '铁岭市', '朝阳市', '葫芦岛市'],
+        '吉林省': ['长春市', '吉林市', '四平市', '辽源市', '通化市', '白山市', '松原市', '白城市', '延边朝鲜族自治州'],
+        '黑龙江省': ['哈尔滨市', '齐齐哈尔市', '鸡西市', '鹤岗市', '双鸭山市', '大庆市', '伊春市', '佳木斯市', '七台河市', '牡丹江市', '黑河市', '绥化市', '大兴安岭地区'],
+        '上海市': ['黄浦区', '徐汇区', '长宁区', '静安区', '普陀区', '虹口区', '杨浦区', '闵行区', '宝山区', '嘉定区', '浦东新区', '金山区', '松江区', '青浦区', '奉贤区', '崇明区'],
+        '江苏省': ['南京市', '无锡市', '徐州市', '常州市', '苏州市', '南通市', '连云港市', '淮安市', '盐城市', '扬州市', '镇江市', '泰州市', '宿迁市'],
+        '浙江省': ['杭州市', '宁波市', '温州市', '嘉兴市', '湖州市', '绍兴市', '金华市', '衢州市', '舟山市', '台州市', '丽水市'],
+        '安徽省': ['合肥市', '芜湖市', '蚌埠市', '淮南市', '马鞍山市', '淮北市', '铜陵市', '安庆市', '黄山市', '滁州市', '阜阳市', '宿州市', '六安市', '亳州市', '池州市', '宣城市'],
+        '福建省': ['福州市', '厦门市', '莆田市', '三明市', '泉州市', '漳州市', '南平市', '龙岩市', '宁德市'],
+        '江西省': ['南昌市', '景德镇市', '萍乡市', '九江市', '新余市', '鹰潭市', '赣州市', '吉安市', '宜春市', '抚州市', '上饶市'],
+        '山东省': ['济南市', '青岛市', '淄博市', '枣庄市', '东营市', '烟台市', '潍坊市', '济宁市', '泰安市', '威海市', '日照市', '临沂市', '德州市', '聊城市', '滨州市', '菏泽市'],
+        '河南省': ['郑州市', '开封市', '洛阳市', '平顶山市', '安阳市', '鹤壁市', '新乡市', '焦作市', '濮阳市', '许昌市', '漯河市', '三门峡市', '南阳市', '商丘市', '信阳市', '周口市', '驻马店市'],
+        '湖北省': ['武汉市', '黄石市', '十堰市', '宜昌市', '襄阳市', '鄂州市', '荆门市', '孝感市', '荆州市', '黄冈市', '咸宁市', '随州市', '恩施土家族苗族自治州'],
+        '湖南省': ['长沙市', '株洲市', '湘潭市', '衡阳市', '邵阳市', '岳阳市', '常德市', '张家界市', '益阳市', '郴州市', '永州市', '怀化市', '娄底市', '湘西土家族苗族自治州'],
+        '广东省': ['广州市', '韶关市', '深圳市', '珠海市', '汕头市', '佛山市', '江门市', '湛江市', '茂名市', '肇庆市', '惠州市', '梅州市', '汕尾市', '河源市', '阳江市', '清远市', '东莞市', '中山市', '潮州市', '揭阳市', '云浮市'],
+        '广西壮族自治区': ['南宁市', '柳州市', '桂林市', '梧州市', '北海市', '防城港市', '钦州市', '贵港市', '玉林市', '百色市', '贺州市', '河池市', '来宾市', '崇左市'],
+        '海南省': ['海口市', '三亚市', '三沙市', '儋州市'],
+        '重庆市': ['渝中区', '江北区', '沙坪坝区', '九龙坡区', '南岸区', '北碚区', '綦江区', '大足区', '渝北区', '巴南区', '长寿区', '江津区', '合川区', '永川区', '南川区', '璧山区', '铜梁区', '潼南区', '荣昌区', '开州区', '梁平区', '武隆区'],
+        '四川省': ['成都市', '自贡市', '攀枝花市', '泸州市', '德阳市', '绵阳市', '广元市', '遂宁市', '内江市', '乐山市', '南充市', '眉山市', '宜宾市', '广安市', '达州市', '雅安市', '巴中市', '资阳市', '阿坝藏族羌族自治州', '甘孜藏族自治州', '凉山彝族自治州'],
+        '贵州省': ['贵阳市', '六盘水市', '遵义市', '安顺市', '毕节市', '铜仁市', '黔西南布依族苗族自治州', '黔东南苗族侗族自治州', '黔南布依族苗族自治州'],
+        '云南省': ['昆明市', '曲靖市', '玉溪市', '保山市', '昭通市', '丽江市', '普洱市', '临沧市', '楚雄彝族自治州', '红河哈尼族彝族自治州', '文山壮族苗族自治州', '西双版纳傣族自治州', '大理白族自治州', '德宏傣族景颇族自治州', '怒江傈僳族自治州', '迪庆藏族自治州'],
+        '西藏自治区': ['拉萨市', '日喀则市', '昌都市', '林芝市', '山南市', '那曲市', '阿里地区'],
+        '陕西省': ['西安市', '铜川市', '宝鸡市', '咸阳市', '渭南市', '延安市', '汉中市', '榆林市', '安康市', '商洛市'],
+        '甘肃省': ['兰州市', '嘉峪关市', '金昌市', '白银市', '天水市', '武威市', '张掖市', '平凉市', '酒泉市', '庆阳市', '定西市', '陇南市', '临夏回族自治州', '甘南藏族自治州'],
+        '青海省': ['西宁市', '海东市', '海北藏族自治州', '黄南藏族自治州', '海南藏族自治州', '果洛藏族自治州', '玉树藏族自治州', '海西蒙古族藏族自治州'],
+        '宁夏回族自治区': ['银川市', '石嘴山市', '吴忠市', '固原市', '中卫市'],
+        '新疆维吾尔自治区': ['乌鲁木齐市', '克拉玛依市', '吐鲁番市', '哈密市', '昌吉回族自治州', '博尔塔拉蒙古自治州', '巴音郭楞蒙古自治州', '阿克苏地区', '克孜勒苏柯尔克孜自治州', '喀什地区', '和田地区', '伊犁哈萨克自治州', '塔城地区', '阿勒泰地区']
+      },
       form: {
         maintenance: {
+          businessLicense: '',
           shop_name: '',
-          merchant_id: '',
+          legal_person: '',
           province: '',
           city: '',
           address: '',
@@ -408,9 +479,10 @@ export default {
           contact_phone: ''
         },
         charging: {
+          businessLicense: '',
           station_name: '',
           station_code: '',
-          merchant_id: '',
+          legal_person: '',
           province: '',
           city: '',
           address: '',
@@ -418,8 +490,9 @@ export default {
           contact_phone: ''
         },
         business: {
+          businessLicense: '',
           business_name: '',
-          merchant_id: '',
+          legal_person: '',
           province: '',
           city: '',
           address: '',
@@ -451,6 +524,10 @@ export default {
       }
       return labels[this.selectedEnd] || ''
     },
+    // 根据当前选中的省份动态获取城市列表
+    cities() {
+      return this.cityMap[this.currentProvince] || []
+    },
     isMaintenanceUser() {
       return this.hasMaintenanceMerchant || this.userEndType === 'maintenance'
     },
@@ -472,13 +549,13 @@ export default {
 
       if (this.selectedEnd === 'maintenance') {
         const m = this.form.maintenance
-        return m.shop_name && m.merchant_id && m.province && m.city && m.address && m.contact_name && m.contact_phone
+        return m.businessLicense && m.shop_name && m.legal_person && m.province && m.city && m.address && m.contact_name && m.contact_phone
       } else if (this.selectedEnd === 'charging') {
         const c = this.form.charging
-        return c.station_name && c.station_code && c.merchant_id && c.province && c.city && c.address && c.contact_name && c.contact_phone
+        return c.businessLicense && c.station_name && c.station_code && c.legal_person && c.province && c.city && c.address && c.contact_name && c.contact_phone
       } else if (this.selectedEnd === 'business') {
         const b = this.form.business
-        return b.business_name && b.merchant_id && b.province && b.city && b.address && b.contact_name && b.contact_phone
+        return b.businessLicense && b.business_name && b.legal_person && b.province && b.city && b.address && b.contact_name && b.contact_phone
       }
       return false
     }
@@ -500,12 +577,17 @@ export default {
       this.selectedEnd = end
     },
     handleConfirmProvince() {
+      // 切换省份时重置已选城市
+      this.currentCity = ''
       if (this.selectedEnd === 'maintenance') {
         this.form.maintenance.province = this.currentProvince
+        this.form.maintenance.city = ''
       } else if (this.selectedEnd === 'charging') {
         this.form.charging.province = this.currentProvince
+        this.form.charging.city = ''
       } else if (this.selectedEnd === 'business') {
         this.form.business.province = this.currentProvince
+        this.form.business.city = ''
       }
       this.showProvincePicker = false
     },
@@ -528,13 +610,41 @@ export default {
       this.submitting = true
       uni.showLoading({ title: '提交中...' })
 
-      // 构建提交数据
+      // 构建提交数据（同时发送 snake_case 和 camelCase，确保后端能正确匹配）
+      const formData = this.form[this.selectedEnd]
+
       const submitData = {
+        // 公共字段
         userId: this.$store.state.user.id,
         username: this.$store.state.user.name,
         endType: this.selectedEnd,
         endName: this.selectedEndLabel,
-        ...this.form[this.selectedEnd]
+
+        // 商户名称（同时传两种格式）
+        shop_name: formData.shop_name,
+        shopName: formData.shop_name,
+        station_name: formData.station_name,
+        stationName: formData.station_name,
+        business_name: formData.business_name,
+        businessName: formData.business_name,
+
+        // 营业执照
+        businessLicense: formData.businessLicense,
+
+        // 法人代表（同时传两种格式）
+        legal_person: formData.legal_person,
+        legalPerson: formData.legal_person,
+
+        // 联系方式（同时传两种格式）
+        contact_name: formData.contact_name,
+        contactName: formData.contact_name,
+        contact_phone: formData.contact_phone,
+        contactPhone: formData.contact_phone,
+
+        // 公共字段
+        province: formData.province,
+        city: formData.city,
+        address: formData.address
       }
 
       // 调用 API 提交给 PC 管理端审核
@@ -549,11 +659,34 @@ export default {
       }).catch(err => {
         uni.hideLoading()
         this.submitting = false
-        // API 不可用时降级为本地模拟
-        uni.showToast({ title: '提交成功，等待管理员审核', icon: 'success' })
-        this.submitted = true
-        this.auditStatus = 'pending'
-        this.submitTime = this.getNowTime()
+        // 如果请求工具已弹出了错误提示，这里不再重复弹
+        console.error('提交失败:', err)
+      })
+    },
+    // 上传营业执照图片
+    handleUploadLicense(type) {
+      uni.chooseImage({
+        count: 1,
+        sizeType: ['compressed'],
+        sourceType: ['album', 'camera'],
+        success: (res) => {
+          const tempPath = res.tempFilePaths[0]
+          uni.showLoading({ title: '上传中...' })
+
+          // 使用封装好的 upload 工具（自动携带 token，上传到 MinIO）
+          upload({
+            url: '/common/upload/minio',
+            filePath: tempPath,
+            name: 'file'
+          }).then(data => {
+            uni.hideLoading()
+            this.form[type].businessLicense = data.url
+            uni.showToast({ title: '上传成功', icon: 'success' })
+          }).catch(err => {
+            uni.hideLoading()
+            uni.showToast({ title: '上传失败，请重试', icon: 'none' })
+          })
+        }
       })
     },
     // 查询后端审核状态
@@ -719,6 +852,42 @@ page {
 
 .required {
   color: #ff4757;
+}
+
+.separator {
+  height: 20rpx;
+}
+
+// ====== 营业执照上传 ======
+.license-upload {
+  width: 100%;
+  min-height: 180rpx;
+  border: 2rpx dashed #d1d5db;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #fafafa;
+}
+.license-upload:active {
+  background: #f0f0f0;
+}
+.license-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  padding: 30rpx 0;
+}
+.license-text {
+  font-size: 24rpx;
+  color: #999;
+}
+.license-img {
+  width: 100%;
+  max-height: 300rpx;
+  border-radius: 12rpx;
 }
 
 /* 审核状态提示 */

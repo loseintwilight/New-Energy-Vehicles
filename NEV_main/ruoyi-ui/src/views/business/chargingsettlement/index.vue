@@ -58,7 +58,7 @@
 
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
-    <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="850px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="商户ID" prop="merchantId">
           <el-input v-model="form.merchantId" placeholder="请输入商户ID" />
@@ -67,19 +67,38 @@
           <el-date-picker v-model="form.settleDate" type="date" placeholder="选择日期" style="width:100%" value-format="yyyy-MM-dd" />
         </el-form-item>
         <el-row>
-          <el-col :span="8"><el-form-item label="订单数" prop="totalOrders"><el-input-number v-model="form.totalOrders" :min="0" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="总电量" prop="totalEnergy"><el-input-number v-model="form.totalEnergy" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="总金额" prop="totalAmount"><el-input-number v-model="form.totalAmount" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="订单数" prop="totalOrders"><el-input-number v-model="form.totalOrders" :min="0" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="总电量" prop="totalEnergy"><el-input-number v-model="form.totalEnergy" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
         </el-row>
         <el-row>
+          <el-col :span="12"><el-form-item label="总金额" prop="totalAmount"><el-input-number v-model="form.totalAmount" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="平台佣金" prop="platformCommission"><el-input-number v-model="form.platformCommission" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="12"><el-form-item label="结算金额" prop="settleAmount"><el-input-number v-model="form.settleAmount" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
         </el-row>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
             <el-radio label="0">待结算</el-radio>
             <el-radio label="1">已结算</el-radio>
           </el-radio-group>
+        </el-form-item>
+        <el-divider content-position="left">结算信息</el-divider>
+        <el-form-item label="结算时间" prop="settleTime">
+          <el-date-picker v-model="form.settleTime" type="datetime" placeholder="选择结算时间" style="width:100%" value-format="yyyy-MM-dd HH:mm:ss" />
+        </el-form-item>
+        <el-form-item label="提现单号" prop="withdrawNo">
+          <el-input v-model="form.withdrawNo" placeholder="请输入提现单号" />
+        </el-form-item>
+        <el-row>
+          <el-col :span="12"><el-form-item label="提现金额" prop="withdrawAmount"><el-input-number v-model="form.withdrawAmount" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="提现状态" prop="withdrawStatus">
+            <el-select v-model="form.withdrawStatus" placeholder="请选择提现状态" clearable>
+              <el-option label="待提现" value="0" />
+              <el-option label="提现中" value="1" />
+              <el-option label="已到账" value="2" />
+            </el-select>
+          </el-form-item></el-col>
+        </el-row>
+        <el-form-item label="提现时间" prop="withdrawTime">
+          <el-date-picker v-model="form.withdrawTime" type="datetime" placeholder="选择提现时间" style="width:100%" value-format="yyyy-MM-dd HH:mm:ss" />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -110,7 +129,7 @@ export default {
   methods: {
     getList() { this.loading = true; listChargingSettlement(this.queryParams).then(response => { this.settlementList = response.rows; this.total = response.total; this.loading = false }) },
     cancel() { this.open = false; this.reset() },
-    reset() { this.form = { merchantId: undefined, settleDate: undefined, totalOrders: 0, totalEnergy: undefined, totalAmount: undefined, platformCommission: undefined, settleAmount: undefined, status: "0" }; this.resetForm("form") },
+    reset() { this.form = { merchantId: undefined, settleDate: undefined, totalOrders: 0, totalEnergy: undefined, totalAmount: undefined, platformCommission: undefined, settleAmount: undefined, status: "0", settleTime: undefined, withdrawNo: undefined, withdrawAmount: undefined, withdrawStatus: undefined, withdrawTime: undefined }; this.resetForm("form") },
     handleQuery() { this.queryParams.pageNum = 1; this.getList() },
     resetQuery() { this.resetForm("queryForm"); this.handleQuery() },
     handleSelectionChange(selection) { this.ids = selection.map(item => item.settlementId); this.single = selection.length != 1; this.multiple = !selection.length },

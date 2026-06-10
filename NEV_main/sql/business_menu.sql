@@ -188,3 +188,10 @@ WHERE r.role_key = 'admin'
     SELECT 1 FROM sys_role_menu rm
     WHERE rm.role_id = r.role_id AND rm.menu_id = m.menu_id
   );
+
+-- ============================================================
+-- 车辆规格菜单合并到车辆信息，隐藏车辆规格菜单（visible=1）
+-- menu_id 2311-2315 的 visible 改为 '1'（隐藏）
+-- 规格数据已在车辆信息页面中直接编辑
+-- ============================================================
+UPDATE sys_menu SET visible = '1' WHERE menu_id IN (2311, 2312, 2313, 2314, 2315);

@@ -25,6 +25,13 @@ public class StadVehicle extends BaseEntity {
     private StadVehicleSpec vehicleSpec;
     private java.util.List<StadVehicleFinancePlan> financePlans;
 
+    /** 车辆规格字段（合并到车辆表单） */
+    private Integer rangeKm;
+    private java.math.BigDecimal batteryCapacity;
+    private java.math.BigDecimal chargeTimeFast;
+    private java.math.BigDecimal chargeTimeSlow;
+    private Integer modelYear;
+
     public Long getVehicleId() { return vehicleId; }
     public void setVehicleId(Long vehicleId) { this.vehicleId = vehicleId; }
 
@@ -72,6 +79,17 @@ public class StadVehicle extends BaseEntity {
 
     public java.util.List<StadVehicleFinancePlan> getFinancePlans() { return financePlans; }
     public void setFinancePlans(java.util.List<StadVehicleFinancePlan> financePlans) { this.financePlans = financePlans; }
+
+    public Integer getRangeKm() { return rangeKm; }
+    public void setRangeKm(Integer rangeKm) { this.rangeKm = rangeKm; }
+    public java.math.BigDecimal getBatteryCapacity() { return batteryCapacity; }
+    public void setBatteryCapacity(java.math.BigDecimal batteryCapacity) { this.batteryCapacity = batteryCapacity; }
+    public java.math.BigDecimal getChargeTimeFast() { return chargeTimeFast; }
+    public void setChargeTimeFast(java.math.BigDecimal chargeTimeFast) { this.chargeTimeFast = chargeTimeFast; }
+    public java.math.BigDecimal getChargeTimeSlow() { return chargeTimeSlow; }
+    public void setChargeTimeSlow(java.math.BigDecimal chargeTimeSlow) { this.chargeTimeSlow = chargeTimeSlow; }
+    public Integer getModelYear() { return modelYear; }
+    public void setModelYear(Integer modelYear) { this.modelYear = modelYear; }
 
     @Override
     public String toString() {

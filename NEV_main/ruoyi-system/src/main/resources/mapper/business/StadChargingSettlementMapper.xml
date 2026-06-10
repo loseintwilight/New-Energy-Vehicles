@@ -55,6 +55,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="merchantId != null">#{merchantId},</if>
+            <if test="contactName != null">#{contactName},</if>
+            <if test="contactPhone != null">#{contactPhone},</if>
             <if test="settleDate != null">#{settleDate},</if>
             <if test="totalOrders != null">#{totalOrders},</if>
             <if test="totalEnergy != null">#{totalEnergy},</if>

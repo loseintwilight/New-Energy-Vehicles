@@ -618,7 +618,7 @@ export default {
 
         setTimeout(() => {
           uni.redirectTo({
-            url: `/pages/charge/order?orderId=${this.orderNo}&amount=${this.payData.total}`
+            url: '/pages/mine/orders/index'
           })
         }, 1000)
       } catch (e) {

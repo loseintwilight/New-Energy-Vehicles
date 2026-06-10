@@ -82,6 +82,8 @@
       <el-table-column label="联系人" align="center" prop="contactName" />
       <el-table-column label="联系电话" align="center" prop="contactPhone" width="130" />
       <el-table-column label="所在城市" align="center" prop="city" />
+      <el-table-column label="营业时间" align="center" prop="openTime" width="100" />
+      <el-table-column label="结束时间" align="center" prop="closeTime" width="100" />
       <el-table-column label="状态" align="center" prop="status">
           <template slot-scope="scope">
             <el-tag :type="scope.row.status === '1' ? 'success' : scope.row.status === '0' ? 'warning' : 'danger'">
@@ -94,8 +96,30 @@
           <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="320">
         <template slot-scope="scope">
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-view"
+            @click="handleDetail(scope.row)"
+          >详情</el-button>
+          <el-button
+            v-if="scope.row.status === '0'"
+            size="mini"
+            type="text"
+            icon="el-icon-circle-check"
+            style="color: #67c23a"
+            @click="handleApprove(scope.row)"
+          >通过</el-button>
+          <el-button
+            v-if="scope.row.status === '0'"
+            size="mini"
+            type="text"
+            icon="el-icon-circle-close"
+            style="color: #f56c6c"
+            @click="handleReject(scope.row)"
+          >拒绝</el-button>
           <el-button
             size="mini"
             type="text"
@@ -212,11 +236,72 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+
+    <!-- 商户详情对话框 -->
+    <el-dialog title="商户详情" :visible.sync="detailOpen" width="750px" append-to-body>
+      <el-descriptions :column="2" border size="medium" v-if="detailForm.merchantId">
+        <el-descriptions-item label="商户名称">{{ detailForm.merchantName }}</el-descriptions-item>
+        <el-descriptions-item label="商户类型">
+          <el-tag :type="detailForm.merchantType === '企业' ? 'primary' : 'success'" size="small">{{ detailForm.merchantType }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="联系人">{{ detailForm.contactName }}</el-descriptions-item>
+        <el-descriptions-item label="联系电话">{{ detailForm.contactPhone }}</el-descriptions-item>
+        <el-descriptions-item label="所在省份">{{ detailForm.province }}</el-descriptions-item>
+        <el-descriptions-item label="所在城市">{{ detailForm.city }}</el-descriptions-item>
+        <el-descriptions-item label="详细地址" :span="2">{{ detailForm.address }}</el-descriptions-item>
+        <el-descriptions-item label="营业执照">
+          <img v-if="detailForm.businessLicense && detailForm.businessLicense.startsWith('http')" :src="detailForm.businessLicense" style="max-width:200px;max-height:120px;border-radius:4px;cursor:pointer" @click="previewImg(detailForm.businessLicense)" />
+          <span v-else>{{ detailForm.businessLicense || '-' }}</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="法人代表">{{ detailForm.legalPerson }}</el-descriptions-item>
+        <el-descriptions-item label="身份证号">{{ detailForm.idCard }}</el-descriptions-item>
+        <el-descriptions-item label="开户银行">{{ detailForm.bankName }}</el-descriptions-item>
+        <el-descriptions-item label="银行账号">{{ detailForm.bankAccount }}</el-descriptions-item>
+        <el-descriptions-item label="状态">
+          <el-tag :type="detailForm.status === '1' ? 'success' : detailForm.status === '0' ? 'warning' : 'danger'" size="small">
+            {{ {'0':'待审核','1':'已入驻','2':'已停用'}[detailForm.status] || detailForm.status }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="审核备注" :span="2">{{ detailForm.auditRemark || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="审核时间">{{ detailForm.auditTime ? parseTime(detailForm.auditTime) : '-' }}</el-descriptions-item>
+        <el-descriptions-item label="提交时间">{{ parseTime(detailForm.createTime) }}</el-descriptions-item>
+      </el-descriptions>
+      <div slot="footer" class="dialog-footer" v-if="detailForm.status === '0'">
+        <el-button type="success" @click="handleApproveFromDetail">通 过</el-button>
+        <el-button type="danger" @click="handleRejectFromDetail">拒 绝</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 审核对话框 -->
+    <el-dialog :title="auditTitle" :visible.sync="auditOpen" width="500px" append-to-body>
+      <el-form ref="auditForm" :model="auditForm" :rules="auditRules" label-width="100px">
+        <el-form-item label="商户名称">
+          <el-input v-model="auditForm.merchantName" disabled />
+        </el-form-item>
+        <el-form-item label="审核结果">
+          <el-tag :type="auditForm.status === '1' ? 'success' : 'danger'" size="medium">
+            {{ {'0':'待审核','1':'已入驻','2':'已停用'}[auditForm.status] || auditForm.status }}
+          </el-tag>
+        </el-form-item>
+        <el-form-item label="审核备注" prop="auditRemark">
+          <el-input
+            v-model="auditForm.auditRemark"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入审核备注"
+          />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitAudit">确 定</el-button>
+        <el-button @click="auditOpen = false">取 消</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { listMerchant, getMerchant, delMerchant, addMerchant, updateMerchant } from "@/api/business/merchant"
+import { listMerchant, getMerchant, delMerchant, addMerchant, updateMerchant, auditMerchant } from "@/api/business/merchant"
 
 export default {
   name: "Merchant",
@@ -231,6 +316,17 @@ export default {
       merchantList: [],
       title: "",
       open: false,
+      detailOpen: false,
+      detailForm: {},
+      auditOpen: false,
+      auditTitle: "",
+      auditForm: {
+        merchantId: undefined,
+        merchantName: "",
+        status: "",
+        auditRemark: ""
+      },
+      auditRules: {},
       queryParams: {
         pageNum: 1,
         pageSize: 10,
@@ -335,6 +431,74 @@ export default {
           }
         }
       })
+    },
+    // 查看详情
+    handleDetail(row) {
+      getMerchant(row.merchantId).then(response => {
+        this.detailForm = response.data
+        this.detailOpen = true
+      })
+    },
+    // 审核通过
+    handleApprove(row) {
+      this.auditForm = {
+        merchantId: row.merchantId,
+        merchantName: row.merchantName,
+        status: "1",
+        auditRemark: ""
+      }
+      this.auditTitle = "审核通过"
+      this.auditOpen = true
+    },
+    // 审核拒绝
+    handleReject(row) {
+      this.auditForm = {
+        merchantId: row.merchantId,
+        merchantName: row.merchantName,
+        status: "2",
+        auditRemark: ""
+      }
+      this.auditTitle = "审核拒绝"
+      this.auditOpen = true
+    },
+    // 从详情弹窗中审核通过
+    handleApproveFromDetail() {
+      this.detailOpen = false
+      this.auditForm = {
+        merchantId: this.detailForm.merchantId,
+        merchantName: this.detailForm.merchantName,
+        status: "1",
+        auditRemark: ""
+      }
+      this.auditTitle = "审核通过"
+      this.auditOpen = true
+    },
+    // 从详情弹窗中审核拒绝
+    handleRejectFromDetail() {
+      this.detailOpen = false
+      this.auditForm = {
+        merchantId: this.detailForm.merchantId,
+        merchantName: this.detailForm.merchantName,
+        status: "2",
+        auditRemark: ""
+      }
+      this.auditTitle = "审核拒绝"
+      this.auditOpen = true
+    },
+    // 提交审核
+    submitAudit() {
+      auditMerchant(this.auditForm.merchantId, {
+        status: this.auditForm.status,
+        auditRemark: this.auditForm.auditRemark
+      }).then(() => {
+        this.$modal.msgSuccess("审核完成")
+        this.auditOpen = false
+        this.getList()
+      })
+    },
+    // 预览图片
+    previewImg(url) {
+      window.open(url, '_blank')
     },
     handleDelete(row) {
       const merchantIds = row.merchantId || this.ids

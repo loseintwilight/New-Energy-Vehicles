@@ -98,8 +98,19 @@ public class StadChargingOrderServiceImpl implements IStadChargingOrderService {
         vo.setEndTime(item.getEndTime());
         vo.setDuration(item.getDuration());
         // 格式化时长：秒 -> 时:分:秒
-        if (item.getDuration() != null) {
-            int seconds = item.getDuration();
+        Integer duration = item.getDuration();
+        if (duration == null || duration == 0) {
+            // 如果库中duration为0或null，用开始结束时间计算
+            if (item.getStartTime() != null && item.getEndTime() != null) {
+                long diff = item.getEndTime().getTime() - item.getStartTime().getTime();
+                if (diff > 0) {
+                    duration = (int) (diff / 1000);
+                    vo.setDuration(duration);
+                }
+            }
+        }
+        if (duration != null && duration > 0) {
+            int seconds = duration;
             int h = seconds / 3600;
             int m = (seconds % 3600) / 60;
             int s = seconds % 60;

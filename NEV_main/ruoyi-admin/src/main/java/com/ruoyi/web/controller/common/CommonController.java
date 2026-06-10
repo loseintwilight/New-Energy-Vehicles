@@ -18,6 +18,7 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.file.FileUploadUtils;
 import com.ruoyi.common.utils.file.FileUtils;
+import com.ruoyi.common.utils.file.MinioUtils;
 import com.ruoyi.framework.config.ServerConfig;
 
 /**
@@ -33,6 +34,9 @@ public class CommonController
 
     @Autowired
     private ServerConfig serverConfig;
+
+    @Autowired
+    private MinioUtils minioUtils;
 
     private static final String FILE_DELIMITER = ",";
 
@@ -91,6 +95,36 @@ public class CommonController
         catch (Exception e)
         {
             return AjaxResult.error(e.getMessage());
+        }
+    }
+
+    /**
+     * MinIO 对象存储上传请求（单个，自动回退到本地）
+     */
+    @PostMapping("/upload/minio")
+    public AjaxResult uploadFileToMinio(MultipartFile file) throws Exception
+    {
+        try
+        {
+            String url = minioUtils.uploadFile(file);
+            AjaxResult ajax = AjaxResult.success();
+            ajax.put("url", url);
+            ajax.put("fileName", file.getOriginalFilename());
+            ajax.put("originalFilename", file.getOriginalFilename());
+            return ajax;
+        }
+        catch (Exception e)
+        {
+            log.warn("MinIO 不可用，回退到本地文件存储: {}", e.getMessage());
+            // 回退到本地存储
+            String filePath = RuoYiConfig.getUploadPath();
+            String fileName = FileUploadUtils.upload(filePath, file);
+            String url = serverConfig.getUrl() + fileName;
+            AjaxResult ajax = AjaxResult.success();
+            ajax.put("url", url);
+            ajax.put("fileName", fileName);
+            ajax.put("originalFilename", file.getOriginalFilename());
+            return ajax;
         }
     }
 

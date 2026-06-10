@@ -67,6 +67,12 @@
         </dependency>
         <dependency>
             <groupId>com.ruoyi</groupId>
+            <artifactId>a-carbonStatistics</artifactId>
+            <version>3.9.2</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.ruoyi</groupId>
             <artifactId>a-vehicle</artifactId>
             <version>3.9.2</version>
             <scope>compile</scope>

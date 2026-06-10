@@ -27,7 +27,7 @@
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="planList" @selection-change="handleSelectionChange" :default-sort="{prop: 'planId', order: 'ascending'}">
+    <el-table v-loading="loading" :data="planList" @selection-change="handleSelectionChange" :default-sort="{prop: 'sortOrder', order: 'ascending'}">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="编号" align="center" prop="planId" />
       <el-table-column label="车辆名称" align="center" prop="vehicleName" show-overflow-tooltip />
@@ -61,21 +61,23 @@
 
     <pagination v-show="total>0" :total="total" :page.sync="queryParams.pageNum" :limit.sync="queryParams.pageSize" @pagination="getList" />
 
-    <el-dialog :title="title" :visible.sync="open" width="700px" append-to-body>
+    <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="110px">
         <el-row>
           <el-col :span="12"><el-form-item label="方案名称" prop="planName"><el-input v-model="form.planName" placeholder="方案名称" /></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="方案类型" prop="planType"><el-select v-model="form.planType" placeholder="请选择" style="width:100%"><el-option label="贷款" value="loan" /><el-option label="租赁" value="lease" /><el-option label="分期" value="installment" /></el-select></el-form-item></el-col>
         </el-row>
         <el-row>
-          <el-col :span="8"><el-form-item label="总价(万)" prop="totalPrice"><el-input-number v-model="form.totalPrice" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="首付(万)" prop="downPayment"><el-input-number v-model="form.downPayment" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="月供(元)" prop="monthlyPayment"><el-input-number v-model="form.monthlyPayment" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="总价(万)" prop="totalPrice"><el-input-number v-model="form.totalPrice" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="首付(万)" prop="downPayment"><el-input-number v-model="form.downPayment" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
         </el-row>
         <el-row>
-          <el-col :span="8"><el-form-item label="期数(月)" prop="months"><el-input-number v-model="form.months" :min="1" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="利率(%)" prop="interestRate"><el-input-number v-model="form.interestRate" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="总利息" prop="totalInterest"><el-input-number v-model="form.totalInterest" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="月供(元)" prop="monthlyPayment"><el-input-number v-model="form.monthlyPayment" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="期数(月)" prop="months"><el-input-number v-model="form.months" :min="1" style="width:100%" /></el-form-item></el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="12"><el-form-item label="利率(%)" prop="interestRate"><el-input-number v-model="form.interestRate" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="总利息" prop="totalInterest"><el-input-number v-model="form.totalInterest" :min="0" :precision="2" style="width:100%" /></el-form-item></el-col>
         </el-row>
         <el-form-item label="总应付" prop="totalPayable">
           <el-input-number v-model="form.totalPayable" :min="0" :precision="2" style="width:100%" />

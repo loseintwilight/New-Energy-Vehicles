@@ -17,14 +17,6 @@ export function getStationDetail(stationId) {
   })
 }
 
-// 获取商户的充电站列表（含今日统计数据，用于工作台）
-export function getMerchantStationList() {
-  return request({
-    url: '/app/charge/station/merchant/list',
-    method: 'GET'
-  })
-}
-
 // 根据商户ID查询站点列表
 export function getStationsByMerchant(merchantId) {
   return request({

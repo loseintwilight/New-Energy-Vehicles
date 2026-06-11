@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 获取结算列表
 export function getSettlementList(params) {
   return request({
-    url: '/business/chargingsettlement/list',
+    url: '/app/charge/settlement/list',
     method: 'GET',
     params: params
   })
@@ -12,7 +12,7 @@ export function getSettlementList(params) {
 // 获取结算详情
 export function getSettlementDetail(settlementId) {
   return request({
-    url: '/business/chargingsettlement/' + settlementId,
+    url: '/app/charge/settlement/' + settlementId,
     method: 'GET'
   })
 }
@@ -20,7 +20,7 @@ export function getSettlementDetail(settlementId) {
 // 根据商户ID查询结算列表
 export function getSettlementsByMerchant(merchantId) {
   return request({
-    url: '/business/chargingsettlement/merchant/' + merchantId,
+    url: '/app/charge/settlement/merchant/' + merchantId,
     method: 'GET'
   })
 }
@@ -28,7 +28,7 @@ export function getSettlementsByMerchant(merchantId) {
 // 新增结算记录
 export function addSettlement(data) {
   return request({
-    url: '/business/chargingsettlement',
+    url: '/app/charge/settlement',
     method: 'POST',
     data: data
   })
@@ -37,7 +37,7 @@ export function addSettlement(data) {
 // 修改结算记录
 export function updateSettlement(data) {
   return request({
-    url: '/business/chargingsettlement',
+    url: '/app/charge/settlement',
     method: 'PUT',
     data: data
   })
@@ -46,7 +46,7 @@ export function updateSettlement(data) {
 // 删除结算记录
 export function deleteSettlement(settlementIds) {
   return request({
-    url: '/business/chargingsettlement/' + settlementIds,
+    url: '/app/charge/settlement/' + settlementIds,
     method: 'DELETE'
   })
 }

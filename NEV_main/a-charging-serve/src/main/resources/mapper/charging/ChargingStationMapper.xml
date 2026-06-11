@@ -1,27 +1,219 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper
-PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.charging.mapper.ChargingStationMapper">
+    
+    <resultMap type="com.ruoyi.charging.domain.ChargingStation" id="ChargingStationResult">
+        <id property="stationId" column="station_id"/>
+        <result property="stationName" column="station_name"/>
+        <result property="stationCode" column="station_code"/>
+        <result property="merchantId" column="merchant_id"/>
+        <result property="province" column="province"/>
+        <result property="city" column="city"/>
+        <result property="district" column="district"/>
+        <result property="address" column="address"/>
+        <result property="longitude" column="longitude"/>
+        <result property="latitude" column="latitude"/>
+        <result property="geoHash" column="geo_hash"/>
+        <result property="markerIconUrl" column="marker_icon_url"/>
+        <result property="markerSize" column="marker_size"/>
+        <result property="totalPiles" column="total_piles"/>
+        <result property="availablePiles" column="available_piles"/>
+        <result property="occupyingPiles" column="occupying_piles"/>
+        <result property="openTime" column="open_time"/>
+        <result property="closeTime" column="close_time"/>
+        <result property="parkingFee" column="parking_fee"/>
+        <result property="servicePhone" column="service_phone"/>
+        <result property="facilitiesInfo" column="facilities_info"/>
+        <result property="images" column="images"/>
+        <result property="isInternal" column="is_internal"/>
+        <result property="applyStatus" column="apply_status"/>
+        <result property="auditRemark" column="audit_remark"/>
+        <result property="auditTime" column="audit_time"/>
+        <result property="businessLicense" column="business_license"/>
+        <result property="siteProof" column="site_proof"/>
+        <result property="stationStatus" column="station_status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
 
-    <!-- 查询商户的充电站列表（含今日营收、订单、充电量统计） -->
-    <select id="selectMerchantStationList" resultType="com.ruoyi.charging.vo.MerchantStationVO">
+    <sql id="selectChargingStationVo">
+        select station_id, station_name, station_code, merchant_id, province, city, district, address,
+               longitude, latitude, geo_hash, marker_icon_url, marker_size, total_piles, available_piles,
+               occupying_piles, open_time, close_time, parking_fee, service_phone, facilities_info, images,
+               is_internal, apply_status, audit_remark, audit_time, business_license, site_proof, station_status,
+               create_time, update_time
+        from stad_charging_station
+    </sql>
+
+    <select id="selectChargingStationById" parameterType="Long" resultMap="ChargingStationResult">
+        <include refid="selectChargingStationVo"/>
+        where station_id = #{stationId}
+    </select>
+
+    <select id="selectChargingStationListByMerchantId" parameterType="Long" resultMap="ChargingStationResult">
+        <include refid="selectChargingStationVo"/>
+        where merchant_id = #{merchantId}
+        order by create_time desc
+    </select>
+
+    <select id="selectChargingStationList" parameterType="com.ruoyi.charging.domain.ChargingStation" resultMap="ChargingStationResult">
+        <include refid="selectChargingStationVo"/>
+        <where>
+            <if test="merchantId != null">and merchant_id = #{merchantId}</if>
+            <if test="stationName != null and stationName != ''">and station_name like concat('%', #{stationName}, '%')</if>
+            <if test="stationCode != null and stationCode != ''">and station_code = #{stationCode}</if>
+            <if test="stationStatus != null and stationStatus != ''">and station_status = #{stationStatus}</if>
+            <if test="city != null and city != ''">and city like concat('%', #{city}, '%')</if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <insert id="insertChargingStation" parameterType="com.ruoyi.charging.domain.ChargingStation" useGeneratedKeys="true" keyProperty="stationId">
+        insert into stad_charging_station
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="stationName != null">station_name,</if>
+            <if test="stationCode != null">station_code,</if>
+            <if test="merchantId != null">merchant_id,</if>
+            <if test="province != null">province,</if>
+            <if test="city != null">city,</if>
+            <if test="district != null">district,</if>
+            <if test="address != null">address,</if>
+            <if test="longitude != null">longitude,</if>
+            <if test="latitude != null">latitude,</if>
+            <if test="geoHash != null">geo_hash,</if>
+            <if test="markerIconUrl != null">marker_icon_url,</if>
+            <if test="markerSize != null">marker_size,</if>
+            <if test="totalPiles != null">total_piles,</if>
+            <if test="availablePiles != null">available_piles,</if>
+            <if test="occupyingPiles != null">occupying_piles,</if>
+            <if test="openTime != null">open_time,</if>
+            <if test="closeTime != null">close_time,</if>
+            <if test="parkingFee != null">parking_fee,</if>
+            <if test="servicePhone != null">service_phone,</if>
+            <if test="facilitiesInfo != null">facilities_info,</if>
+            <if test="images != null">images,</if>
+            <if test="isInternal != null">is_internal,</if>
+            <if test="applyStatus != null">apply_status,</if>
+            <if test="stationStatus != null">station_status,</if>
+            <if test="businessLicense != null">business_license,</if>
+            <if test="siteProof != null">site_proof,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="stationName != null">#{stationName},</if>
+            <if test="stationCode != null">#{stationCode},</if>
+            <if test="merchantId != null">#{merchantId},</if>
+            <if test="province != null">#{province},</if>
+            <if test="city != null">#{city},</if>
+            <if test="district != null">#{district},</if>
+            <if test="address != null">#{address},</if>
+            <if test="longitude != null">#{longitude},</if>
+            <if test="latitude != null">#{latitude},</if>
+            <if test="geoHash != null">#{geoHash},</if>
+            <if test="markerIconUrl != null">#{markerIconUrl},</if>
+            <if test="markerSize != null">#{markerSize},</if>
+            <if test="totalPiles != null">#{totalPiles},</if>
+            <if test="availablePiles != null">#{availablePiles},</if>
+            <if test="occupyingPiles != null">#{occupyingPiles},</if>
+            <if test="openTime != null">#{openTime},</if>
+            <if test="closeTime != null">#{closeTime},</if>
+            <if test="parkingFee != null">#{parkingFee},</if>
+            <if test="servicePhone != null">#{servicePhone},</if>
+            <if test="facilitiesInfo != null">#{facilitiesInfo},</if>
+            <if test="images != null">#{images},</if>
+            <if test="isInternal != null">#{isInternal},</if>
+            <if test="applyStatus != null">#{applyStatus},</if>
+            <if test="stationStatus != null">#{stationStatus},</if>
+            <if test="businessLicense != null">#{businessLicense},</if>
+            <if test="siteProof != null">#{siteProof},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateChargingStation" parameterType="com.ruoyi.charging.domain.ChargingStation">
+        update stad_charging_station
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="stationName != null">station_name = #{stationName},</if>
+            <if test="stationCode != null">station_code = #{stationCode},</if>
+            <if test="province != null">province = #{province},</if>
+            <if test="city != null">city = #{city},</if>
+            <if test="district != null">district = #{district},</if>
+            <if test="address != null">address = #{address},</if>
+            <if test="longitude != null">longitude = #{longitude},</if>
+            <if test="latitude != null">latitude = #{latitude},</if>
+            <if test="geoHash != null">geo_hash = #{geoHash},</if>
+            <if test="markerIconUrl != null">marker_icon_url = #{markerIconUrl},</if>
+            <if test="markerSize != null">marker_size = #{markerSize},</if>
+            <if test="totalPiles != null">total_piles = #{totalPiles},</if>
+            <if test="availablePiles != null">available_piles = #{availablePiles},</if>
+            <if test="occupyingPiles != null">occupying_piles = #{occupyingPiles},</if>
+            <if test="openTime != null">open_time = #{openTime},</if>
+            <if test="closeTime != null">close_time = #{closeTime},</if>
+            <if test="parkingFee != null">parking_fee = #{parkingFee},</if>
+            <if test="servicePhone != null">service_phone = #{servicePhone},</if>
+            <if test="facilitiesInfo != null">facilities_info = #{facilitiesInfo},</if>
+            <if test="images != null">images = #{images},</if>
+            <if test="isInternal != null">is_internal = #{isInternal},</if>
+            <if test="applyStatus != null">apply_status = #{applyStatus},</if>
+            <if test="stationStatus != null">station_status = #{stationStatus},</if>
+            <if test="businessLicense != null">business_license = #{businessLicense},</if>
+            <if test="siteProof != null">site_proof = #{siteProof},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where station_id = #{stationId}
+    </update>
+
+    <delete id="deleteChargingStationById" parameterType="Long">
+        delete from stad_charging_station where station_id = #{stationId}
+    </delete>
+
+    <!-- 工作台：查询商户今日各站营收、订单数、充电量 -->
+    <select id="selectDashboardStations" resultType="com.ruoyi.charging.domain.DashboardStationVO">
         SELECT
             s.station_id AS stationId,
             s.station_name AS stationName,
-            s.station_code AS stationCode,
-            s.address,
             s.station_status AS stationStatus,
-            COALESCE(SUM(CASE WHEN o.order_status = '1' AND o.create_time >= CURDATE() THEN o.total_amount ELSE 0 END), 0) AS todayIncome,
-            COUNT(CASE WHEN o.create_time >= CURDATE() THEN 1 ELSE NULL END) AS todayOrders,
-            COALESCE(SUM(CASE WHEN o.order_status = '1' AND o.create_time >= CURDATE() THEN o.total_energy ELSE 0 END), 0) AS todayEnergy,
             s.total_piles AS totalPiles,
-            s.available_piles AS availablePiles
+            s.available_piles AS availablePiles,
+            COALESCE(SUM(o.total_amount), 0) AS todayIncome,
+            COUNT(o.order_id) AS todayOrders,
+            COALESCE(SUM(o.total_energy), 0) AS todayEnergy
         FROM stad_charging_station s
         LEFT JOIN stad_charging_order o ON s.station_id = o.station_id
+            AND o.create_time >= CURDATE()
+            AND o.create_time &lt; CURDATE() + INTERVAL 1 DAY
         WHERE s.merchant_id = #{merchantId}
-        GROUP BY s.station_id, s.station_name, s.station_code, s.address, s.station_status, s.total_piles, s.available_piles
-        ORDER BY s.station_id DESC
+        GROUP BY s.station_id, s.station_name, s.station_status, s.total_piles, s.available_piles
+        ORDER BY s.create_time DESC
     </select>
 
+    <!-- 工作台：查询商户今日总营收、总订单数、总充电量 -->
+    <select id="selectDashboardTodayStats" resultType="com.ruoyi.charging.domain.DashboardVO">
+        SELECT
+            COALESCE(SUM(o.total_amount), 0) AS totalIncome,
+            COALESCE(SUM(o.total_energy), 0) AS totalEnergy,
+            COUNT(o.order_id) AS totalOrders
+        FROM stad_charging_station s
+        LEFT JOIN stad_charging_order o ON s.station_id = o.station_id
+            AND o.create_time >= CURDATE()
+            AND o.create_time &lt; CURDATE() + INTERVAL 1 DAY
+        WHERE s.merchant_id = #{merchantId}
+    </select>
+
+    <!-- 工作台：查询商户最近订单 -->
+    <select id="selectDashboardRecentOrders" resultType="com.ruoyi.charging.domain.DashboardOrderVO">
+        SELECT
+            o.order_id AS orderId,
+            o.order_no AS orderNo,
+            o.pile_code AS pileCode,
+            o.order_status AS orderStatus,
+            o.start_time AS startTime,
+            o.total_energy AS energy,
+            o.total_amount AS amount
+        FROM stad_charging_order o
+        JOIN stad_charging_station s ON o.station_id = s.station_id
+        WHERE s.merchant_id = #{merchantId}
+        ORDER BY o.create_time DESC
+        LIMIT #{limit}
+    </select>
 </mapper>

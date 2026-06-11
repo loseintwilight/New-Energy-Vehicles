@@ -1,5 +1,7 @@
 package com.ruoyi.web.controller.chargeMini;
 
+import com.ruoyi.charging.domain.AppMerchant;
+import com.ruoyi.charging.service.IAppMerchantService;
 import com.ruoyi.charging.service.IChargingStationService;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.utils.SecurityUtils;
@@ -11,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
  * 充电站接口（小程序 + 商户端）
  */
 @RestController
-@RequestMapping("/app/charge/station")
+@RequestMapping("/app/charge-mini/station")
 public class StationController {
 
     @Autowired
@@ -19,6 +21,9 @@ public class StationController {
 
     @Autowired
     private IChargingStationService chargingStationService;
+
+    @Autowired
+    private IAppMerchantService appMerchantService;
 
     /**
      * 1.1 获取充电站列表（分页，带距离排序）
@@ -65,7 +70,12 @@ public class StationController {
      */
     @GetMapping("/merchant/list")
     public AjaxResult merchantList() {
-        return chargingStationService.getMerchantStationList();
+        Long userId = SecurityUtils.getUserId();
+        AppMerchant merchant = appMerchantService.selectAppMerchantByUserId(userId);
+        if (merchant == null) {
+            return AjaxResult.error("商户信息不存在");
+        }
+        return AjaxResult.success(chargingStationService.selectChargingStationListByMerchantId(merchant.getMerchantId()));
     }
 
     /**

@@ -18,7 +18,7 @@ import java.util.Map;
  * 小程序端 - 充电桩接口
  */
 @RestController
-@RequestMapping("/app/charge/pile")
+@RequestMapping("/app/charge-mini/pile")
 public class PileController {
 
     @Autowired

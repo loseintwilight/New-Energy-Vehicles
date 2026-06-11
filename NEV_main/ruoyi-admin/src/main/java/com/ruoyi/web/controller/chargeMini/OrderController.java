@@ -12,7 +12,7 @@ import java.util.Map;
  * 小程序端 - 充电订单接口
  */
 @RestController
-@RequestMapping("/app/charge/order")
+@RequestMapping("/app/charge-mini/order")
 public class OrderController {
 
     @Autowired

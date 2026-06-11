@@ -14,20 +14,12 @@
     <view class="overlay-mask"></view>
 
     <!-- 主滚动区 -->
-    <!-- 全屏加载提示 -->
-    <view class="loading-mask" v-if="isLoading">
-      <view class="loading-box">
-        <view class="loading-spinner"></view>
-        <text class="loading-text">数据加载中...</text>
-      </view>
-    </view>
-
     <scroll-view scroll-y class="main-scroll" :show-scrollbar="false">
       <!-- 顶栏 -->
       <view class="header">
         <view class="header-bg"></view>
         <view class="header-circle"></view>
-        <view class="header-info">
+        <view class="header-info" style="margin-left:0;">
           <text class="header-title">充电桩工作台</text>
           <text class="header-date">{{ todayDate }}</text>
         </view>
@@ -38,16 +30,20 @@
         </view>
       </view>
 
-      <!-- 用户信息（在充电桩工作台标题下方） -->
-      <view class="user-info-row">
-        <image v-if="userAvatar" :src="userAvatar" class="user-avatar" mode="aspectFill" @click="goToAvatar"></image>
-        <view v-else class="user-avatar user-avatar-placeholder" @click="goToAvatar">
-          <uni-icons type="person" size="22" color="#d97706"></uni-icons>
+      <!-- 用户信息卡片 -->
+      <view class="user-card" @tap="goProfile">
+        <view class="user-avatar-wrap">
+          <image class="user-avatar" :src="userInfo.avatar || '/static/images/default-avatar.png'" mode="aspectFill"></image>
         </view>
-        <view class="user-meta" @click="goToInfo">
-          <text class="user-name">{{ userName }}</text>
+        <view class="user-info">
+          <text class="user-name">{{ userInfo.nickName || '充电桩管理员' }}</text>
+          <text class="user-phone">{{ userInfo.phone || '未绑定手机号' }}</text>
         </view>
-        <view class="switch-btn" @click="handleSwitchUser">切换用户端</view>
+        <view class="switch-btn" @tap.stop="goSwitch">
+          <text class="switch-text">切换用户端</text>
+        </view>
+        <!-- 充电桩装饰图片 -->
+        <image class="charging-pile-img" src="/static/images/charge/charging.png" mode="aspectFit"></image>
       </view>
 
       <!-- 4栏统计卡 -->
@@ -159,7 +155,7 @@
               </view>
               <view class="st-stats">
                 <view class="st-stat-item">
-                  <text class="st-stat-val">¥{{ fmtMoney(st.todayIncome) }}</text>
+                  <text class="st-stat-val">¥{{ st.todayIncome || 0 }}</text>
                   <text class="st-stat-lbl">今日营收</text>
                 </view>
                 <view class="st-stat-divider"></view>
@@ -169,7 +165,7 @@
                 </view>
                 <view class="st-stat-divider"></view>
                 <view class="st-stat-item">
-                  <text class="st-stat-val">{{ fmtEnergy(st.todayEnergy) }}kWh</text>
+                  <text class="st-stat-val">{{ st.todayEnergy || 0 }}kWh</text>
                   <text class="st-stat-lbl">充电量</text>
                 </view>
               </view>
@@ -186,11 +182,6 @@
                 </view>
               </view>
             </view>
-          </view>
-          <!-- 站点空状态 -->
-          <view class="empty-tip" v-if="dataLoaded && stationList.length === 0">
-            <text class="empty-icon">📡</text>
-            <text class="empty-text">暂无站点数据，请先在"站点管理"中添加站点</text>
           </view>
         </view>
       </view>
@@ -235,11 +226,6 @@
                 <text class="amount-val">¥{{ fmtAmount(od.amount) }}</text>
               </view>
             </view>
-          </view>
-          <!-- 订单空状态 -->
-          <view class="empty-tip" v-if="dataLoaded && recentOrders.length === 0">
-            <text class="empty-icon">📋</text>
-            <text class="empty-text">暂无订单数据</text>
           </view>
         </view>
       </view>
@@ -309,21 +295,23 @@
 </template>
 
 <script>
-import { getMerchantStationList } from '@/api/charger/station'
+import { getDashboardData } from '@/api/charger/dashboard'
+import { getStationList } from '@/api/charger/station'
 import { getOrderList } from '@/api/charger/order'
 
 export default {
   data: function() {
     return {
-      userName: this.$store.state.user.name || '充电桩管理员',
-      userPhone: this.$store.state.user.phonenumber || '',
-      userAvatar: this.$store.state.user.avatar || '',
       isReady: false,
-      isLoading: true,
-      dataLoaded: false,
       todayDate: '',
       glowRows: [],
       showMoreModal: false,
+      /* 用户信息 */
+      userInfo: {
+        avatar: '',
+        nickName: 'charger_b',
+        roleName: '商家端'
+      },
       /* 4栏统计卡数据（与下方stationList汇总值保持一致） */
       statsData: [
         { icon: '¥', value: '0.00', label: '今日营收(元)' },
@@ -358,6 +346,7 @@ export default {
   created: function() {
     this.buildGlowRows()
     this.initDate()
+    this.loadUserInfo()
     this.loadDashboardData()
     var that = this
     setTimeout(function() {
@@ -365,9 +354,8 @@ export default {
     }, 200)
   },
   onShow: function() {
-    this.userName = this.$store.state.user.name || '充电桩管理员'
-    this.userPhone = this.$store.state.user.phonenumber || ''
-    this.userAvatar = this.$store.state.user.avatar || ''
+    // 每次页面显示时刷新用户信息（与 mine/index 一致）
+    this.loadUserInfo()
   },
   computed: {
     /* 将4大功能拆成2行×2列 */
@@ -386,6 +374,40 @@ export default {
       uni.navigateTo({ url: url })
     },
     /* ---------- 初始化 ---------- */
+    loadUserInfo: function() {
+      // 与 mine/index 保持一致，从 Vuex store.state.user.name 读取
+      var nickName = ''
+      var avatar = ''
+      var phone = ''
+
+      try {
+        if (this.$store && this.$store.state && this.$store.state.user) {
+          var u = this.$store.state.user
+          // mine/index 使用 user.name，保持完全一致
+          nickName = u.name || u.nickName || u.userName || ''
+          avatar = u.avatar || ''
+          phone = u.phonenumber || ''
+        }
+      } catch (e) { /* store not available */ }
+
+      // 降级：从缓存读取
+      if (!nickName) {
+        try {
+          var cached = uni.getStorageSync('userInfo')
+          if (cached) {
+            nickName = cached.name || cached.nickName || cached.userName || ''
+            avatar = cached.avatar || ''
+            phone = cached.phonenumber || ''
+          }
+        } catch (e) { /* ignore */ }
+      }
+
+      this.userInfo.nickName = nickName || '充电桩管理员'
+      this.userInfo.avatar = avatar || ''
+      this.userInfo.phone = phone || '未绑定手机号'
+      this.userInfo.merchantId = this.$store?.state?.user?.merchantId || ''
+    },
+
     buildGlowRows: function() {
       var rows = []
       var colors = ['#f59e0b', '#f97316', '#fb923c', '#fbbf24', '#fcd34d', '#fde68a']
@@ -418,25 +440,46 @@ export default {
 
     /* ---------- 数据加载 ---------- */
     loadDashboardData: function() {
-      this.isLoading = true
-      this.loadStations()
-      this.loadOrders()
+      var self = this
+      getDashboardData().then(function(res) {
+        if (res.code === 200 && res.data) {
+          var d = res.data
+          /* 汇总统计 */
+          self.statsData = [
+            { icon: '¥', value: (d.totalIncome || 0).toFixed(2), label: '今日营收(元)' },
+            { icon: '⚡', value: (d.totalEnergy || 0).toFixed(1), label: '今日电量(kWh)' },
+            { icon: '📋', value: (d.totalOrders || 0).toString(), label: '今日订单(笔)' },
+            { icon: '◎', value: (d.availablePiles || 0) + '/' + (d.totalPiles || 0), label: '空闲/总桩' }
+          ]
+          /* 站点列表 */
+          self.stationList = d.stations || []
+          /* 最近订单 */
+          self.recentOrders = d.recentOrders || []
+          /* 商户信息 */
+          if (d.merchantName) {
+            self.userInfo.nickName = d.merchantName
+          }
+          if (d.merchantId) {
+            self.userInfo.merchantId = d.merchantId
+          }
+        }
+      }).catch(function() {
+        // 降级：使用旧的API加载
+        self.loadStations()
+        self.loadOrders()
+      })
     },
 
     loadStations: function() {
       var self = this
-      getMerchantStationList().then(function(res) {
-        self.isLoading = false
+      getStationList({ pageSize: 100 }).then(function(res) {
         if (res.code === 200) {
-          var list = res.data.rows || []
+          var list = res.rows || []
           self.stationList = list
-          /* 更新顶部统计数据 */
+          /* 更新统计数据 */
           self.updateStatsData(list, self.recentOrders)
-          self.dataLoaded = true
         }
       }).catch(function() {
-        self.isLoading = false
-        self.dataLoaded = true
         uni.showToast({ title: '加载站点数据失败', icon: 'none' })
       })
     },
@@ -445,24 +488,13 @@ export default {
       var self = this
       getOrderList({ pageSize: 20 }).then(function(res) {
         if (res.code === 200) {
-          var list = res.data.rows || []
-          // 映射字段名以匹配模板（orderStatus / pileCode）
-          self.recentOrders = list.map(function(item) {
-            return {
-              orderId: item.orderId,
-              orderNo: item.orderNo,
-              orderStatus: item.status,
-              pileCode: item.pileNo,
-              startTime: item.startTime,
-              energy: item.energy,
-              amount: item.amount
-            }
-          })
-          /* 更新顶部统计数据 */
-          self.updateStatsData(self.stationList, self.recentOrders)
+          var list = res.rows || []
+          self.recentOrders = list
+          /* 更新统计数据 */
+          self.updateStatsData(self.stationList, list)
         }
       }).catch(function() {
-        // 订单列表为空不报错（商户可能没有个人充电订单）
+        uni.showToast({ title: '加载订单数据失败', icon: 'none' })
       })
     },
 
@@ -526,19 +558,19 @@ export default {
       return Number(amount).toFixed(2)
     },
 
-    fmtMoney: function(val) {
-      if (val === null || val === undefined) return '0.00'
-      return Number(val).toFixed(2)
-    },
-
-    fmtEnergy: function(val) {
-      if (val === null || val === undefined) return '0.0'
-      return Number(val).toFixed(1)
-    },
-
     /* ---------- 页面跳转 ---------- */
     goBack: function() {
       uni.navigateBack({ delta: 1 })
+    },
+
+    goSwitch: function() {
+      // 切换到用户端（个人中心）
+      uni.switchTab({ url: '/pages/mine/index' })
+    },
+
+    goProfile: function() {
+      // 与 mine/index 个人信息页面统一切换到标准用户信息页
+      uni.navigateTo({ url: '/pages/mine/info/index' })
     },
 
     onStatTap: function(idx) {
@@ -572,18 +604,6 @@ export default {
         return
       }
       uni.navigateTo({ url: item.path })
-    },
-
-    goToAvatar: function() {
-      uni.navigateTo({ url: '/pages/mine/avatar/index' })
-    },
-
-    goToInfo: function() {
-      uni.navigateTo({ url: '/pages/mine/info/index' })
-    },
-
-    handleSwitchUser: function() {
-      this.$tab.switchTab('/pages/mine/index')
     }
   }
 }
@@ -677,54 +697,6 @@ export default {
   height: 100vh;
 }
 
-/* ========== 用户信息行（暖色风格） ========== */
-.user-info-row {
-  position: relative;
-  z-index: 3;
-  padding: 28rpx 28rpx 8rpx;
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-}
-.user-avatar {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
-  border: 3rpx solid rgba(251, 146, 60, 0.4);
-}
-.user-avatar-placeholder {
-  background: linear-gradient(135deg, #fde68a, #fbbf24);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.user-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 4rpx;
-}
-.user-name {
-  font-size: 30rpx;
-  font-weight: 700;
-  color: #431407;
-}
-.user-phone {
-  font-size: 22rpx;
-  color: #92400e;
-}
-.user-info-row .switch-btn {
-  margin-left: auto;
-  font-size: 22rpx;
-  color: #ffffff;
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  padding: 8rpx 20rpx;
-  border-radius: 10rpx;
-  font-weight: 600;
-  white-space: nowrap;
-  box-shadow: 0 4rpx 12rpx rgba(217, 119, 6, 0.35);
-  flex-shrink: 0;
-}
-
 /* ========== 顶栏 ========== */
 .header {
   position: relative;
@@ -751,6 +723,29 @@ export default {
   border-radius: 50%;
   background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
   pointer-events: none;
+}
+.back-btn {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 32rpx;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  box-shadow: 0 4rpx 14rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+.btn-hover {
+  transform: scale(0.9);
+  background: rgba(255, 255, 255, 0.45);
+}
+.back-icon {
+  font-size: 36rpx;
+  color: #ffffff;
+  font-weight: 300;
 }
 .header-info {
   flex: 1;
@@ -789,6 +784,80 @@ export default {
   font-size: 32rpx;
   color: #ffffff;
   font-weight: 700;
+}
+
+/* ========== 用户信息卡片 ========== */
+.user-card {
+  margin: -10rpx 24rpx 0;
+  padding: 28rpx 28rpx 24rpx;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24rpx;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 8rpx 32rpx rgba(217, 119, 6, 0.12), inset 0 1rpx 0 rgba(255, 255, 255, 0.9);
+  border: 1rpx solid rgba(255, 255, 255, 0.85);
+  overflow: hidden;
+}
+.user-avatar-wrap {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  border: 4rpx solid #f59e0b;
+  box-shadow: 0 4rpx 16rpx rgba(245, 158, 11, 0.3);
+  overflow: hidden;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+}
+.user-avatar {
+  width: 100%;
+  height: 100%;
+}
+.user-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.user-name {
+  font-size: 34rpx;
+  font-weight: 800;
+  color: #1c1917;
+  letter-spacing: 0.5rpx;
+  line-height: 1.3;
+}
+.user-phone {
+  font-size: 24rpx;
+  color: #333333;
+  font-weight: 500;
+  margin-top: 6rpx;
+  display: inline-block;
+}
+.switch-btn {
+  flex-shrink: 0;
+  padding: 12rpx 24rpx;
+  background: linear-gradient(135deg, #f59e0b, #fb923c);
+  border-radius: 30rpx;
+  box-shadow: 0 4rpx 14rpx rgba(245, 158, 11, 0.35);
+}
+.switch-text {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.5rpx;
+}
+.charging-pile-img {
+  position: absolute;
+  right: -20rpx;
+  bottom: -20rpx;
+  width: 200rpx;
+  height: 160rpx;
+  opacity: 0.15;
+  pointer-events: none;
 }
 
 /* ========== 4栏统计卡 ========== */
@@ -1598,59 +1667,5 @@ export default {
   color: #ccc;
   font-weight: 600;
   margin-left: 8rpx;
-}
-
-/* ========== 加载状态 ========== */
-.loading-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 247, 237, 0.85);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-.loading-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20rpx;
-}
-.loading-spinner {
-  width: 60rpx;
-  height: 60rpx;
-  border: 6rpx solid #fde68a;
-  border-top-color: #f59e0b;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-.loading-text {
-  font-size: 26rpx;
-  color: #d97706;
-  font-weight: 600;
-}
-
-/* ========== 空状态 ========== */
-.empty-tip {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40rpx 20rpx;
-  gap: 14rpx;
-}
-.empty-icon {
-  font-size: 52rpx;
-}
-.empty-text {
-  font-size: 24rpx;
-  color: #a8a29e;
-  text-align: center;
 }
 </style>

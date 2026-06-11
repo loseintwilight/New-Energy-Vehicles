@@ -1,50 +1,88 @@
 package com.ruoyi.charging.service.impl;
 
-import com.ruoyi.business.domain.StadMerchant;
-import com.ruoyi.business.mapper.StadMerchantMapper;
-import com.ruoyi.charging.mapper.ChargingStationMapper;
-import com.ruoyi.charging.service.IChargingStationService;
-import com.ruoyi.charging.vo.MerchantStationVO;
-import com.ruoyi.common.core.domain.AjaxResult;
-import com.ruoyi.common.utils.SecurityUtils;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.ruoyi.charging.mapper.ChargingStationMapper;
+import com.ruoyi.charging.domain.ChargingStation;
+import com.ruoyi.charging.service.IChargingStationService;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
+/**
+ * 充电站Service业务层处理
+ *
+ * @author ruoyi
+ */
 @Service
-public class ChargingStationServiceImpl implements IChargingStationService {
-
+public class ChargingStationServiceImpl implements IChargingStationService
+{
     @Autowired
     private ChargingStationMapper chargingStationMapper;
 
-    @Autowired
-    private StadMerchantMapper stadMerchantMapper;
-
+    /**
+     * 查询充电站
+     */
     @Override
-    public AjaxResult getMerchantStationList() {
-        Long userId = SecurityUtils.getUserId();
-        if (userId == null) {
-            return AjaxResult.error("用户未登录");
+    public ChargingStation selectChargingStationById(Long stationId)
+    {
+        return chargingStationMapper.selectChargingStationById(stationId);
+    }
+
+    /**
+     * 查询充电站列表
+     */
+    @Override
+    public List<ChargingStation> selectChargingStationList(ChargingStation station)
+    {
+        return chargingStationMapper.selectChargingStationList(station);
+    }
+
+    /**
+     * 根据商户ID查询充电站列表
+     */
+    @Override
+    public List<ChargingStation> selectChargingStationListByMerchantId(Long merchantId)
+    {
+        return chargingStationMapper.selectChargingStationListByMerchantId(merchantId);
+    }
+
+    /**
+     * 新增充电站
+     */
+    @Override
+    public int insertChargingStation(ChargingStation station)
+    {
+        return chargingStationMapper.insertChargingStation(station);
+    }
+
+    /**
+     * 修改充电站
+     */
+    @Override
+    public int updateChargingStation(ChargingStation station)
+    {
+        return chargingStationMapper.updateChargingStation(station);
+    }
+
+    /**
+     * 批量删除充电站
+     */
+    @Override
+    public int deleteChargingStationByIds(Long[] stationIds)
+    {
+        int rows = 0;
+        for (Long stationId : stationIds)
+        {
+            rows += chargingStationMapper.deleteChargingStationById(stationId);
         }
+        return rows;
+    }
 
-        // 查找当前用户关联的商户
-        StadMerchant merchant = stadMerchantMapper.selectStadMerchantByUserId(userId);
-        if (merchant == null) {
-            // 如果没有商户，返回空列表而不是报错
-            Map<String, Object> result = new LinkedHashMap<>();
-            result.put("rows", List.of());
-            result.put("total", 0);
-            return AjaxResult.success(result);
-        }
-
-        List<MerchantStationVO> list = chargingStationMapper.selectMerchantStationList(merchant.getMerchantId());
-
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("rows", list);
-        result.put("total", list != null ? list.size() : 0);
-        return AjaxResult.success(result);
+    /**
+     * 删除充电站信息
+     */
+    @Override
+    public int deleteChargingStationById(Long stationId)
+    {
+        return chargingStationMapper.deleteChargingStationById(stationId);
     }
 }

@@ -26,11 +26,8 @@
         <result property="withdrawnAmount" column="withdrawn_amount"/>
         <result property="bankName" column="bank_name"/>
         <result property="bankAccount" column="bank_account"/>
-        <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
-        <result property="updateBy" column="update_by"/>
         <result property="updateTime" column="update_time"/>
-        <result property="remark" column="remark"/>
     </resultMap>
 
     <sql id="selectAppMerchantVo">
@@ -38,7 +35,7 @@
                province, city, address, open_time, close_time, business_license, legal_person,
                id_card, status, audit_remark, audit_time, total_income, settled_amount,
                pending_amount, withdrawn_amount, bank_name, bank_account,
-               create_by, create_time, update_by, update_time, remark
+               create_time, update_time
         from stad_merchant
     </sql>
 

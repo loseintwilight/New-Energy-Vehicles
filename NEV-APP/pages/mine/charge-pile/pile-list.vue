@@ -69,15 +69,7 @@
         <text class="loading-text">加载中...</text>
       </view>
 
-      <!-- 空状态（未选择站点） -->
-      <view v-else-if="!stationId && !loading" class="empty-box">
-        <view class="empty-icon-wrap">
-          <text class="empty-icon">📍</text>
-        </view>
-        <text class="empty-main">请先选择站点</text>
-        <text class="empty-sub">请先到"站点管理"选择一个站点后查看充电桩</text>
-      </view>
-      <!-- 空状态（站点无桩） -->
+      <!-- 空状态 -->
       <view v-else-if="filteredPiles.length === 0 && !loading" class="empty-box">
         <view class="empty-icon-wrap">
           <text class="empty-icon">🔌</text>
@@ -227,20 +219,16 @@ export default {
     /* ---------- 数据加载 ---------- */
     loadPiles: function() {
       var self = this
-      // 没有 stationId 时显示空状态，不请求接口
-      if (!self.stationId) {
-        self.loading = false
-        self.pileList = []
-        self.calcStats()
-        return
-      }
       self.loading = true
       getPileList({
-        stationId: self.stationId
+        pileCode: self.searchKey || '',
+        stationId: self.stationId || '',
+        pileStatus: self.filterStatus || '',
+        pageSize: 100
       }).then(function(res) {
         self.loading = false
         if (res.code === 200) {
-          self.pileList = res.data || []
+          self.pileList = res.rows || []
           self.calcStats()
         } else {
           uni.showToast({ title: res.msg || '加载失败', icon: 'none' })

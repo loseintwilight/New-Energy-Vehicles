@@ -1,6 +1,12 @@
 package com.ruoyi.charging.controller;
 
 import java.util.List;
+
+import com.github.pagehelper.PageHelper;
+import com.ruoyi.common.core.page.PageDomain;
+import com.ruoyi.common.core.page.TableSupport;
+import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.common.utils.sql.SqlUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,7 +42,16 @@ public class AppChargingStationController extends BaseController
     @GetMapping("/list")
     public TableDataInfo list(ChargingStation station)
     {
-        startPage();
+        PageDomain pageDomain = TableSupport.buildPageRequest();
+        if (StringUtils.isNotNull(pageDomain.getPageNum())) {
+            // 过滤 distance 排序：表中无此列，距离排序由前端实时计算
+            if ("distance".equals(pageDomain.getOrderByColumn())) {
+                pageDomain.setOrderByColumn(null);
+            }
+            String orderBy = SqlUtil.escapeOrderBySql(pageDomain.getOrderBy());
+            Boolean reasonable = pageDomain.getReasonable();
+            PageHelper.startPage(pageDomain.getPageNum(), pageDomain.getPageSize(), orderBy).setReasonable(reasonable);
+        }
         List<ChargingStation> list = chargingStationService.selectChargingStationList(station);
         return getDataTable(list);
     }

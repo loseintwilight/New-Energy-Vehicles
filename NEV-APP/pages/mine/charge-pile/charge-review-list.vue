@@ -67,7 +67,7 @@
             <view
               class="filter-chip"
               v-for="(item, idx) in withdrawTabs"
-              :key="'withdraw-' + idx"
+              :key="idx + 100"
               :class="{ active: activeWithdraw === idx }"
               @tap="switchWithdraw(idx)"
             >

@@ -18,13 +18,12 @@
         <result property="withdrawStatus" column="withdraw_status"/>
         <result property="withdrawTime" column="withdraw_time"/>
         <result property="createTime" column="create_time"/>
-        <result property="updateTime" column="update_time"/>
     </resultMap>
 
     <sql id="selectChargingSettlementVo">
         select settlement_id, merchant_id, settle_date, total_orders, total_energy, total_amount,
                platform_commission, settle_amount, status, settle_time, withdraw_no, withdraw_amount,
-               withdraw_status, withdraw_time, create_time, update_time
+               withdraw_status, withdraw_time, create_time
         from stad_charging_settlement
     </sql>
 

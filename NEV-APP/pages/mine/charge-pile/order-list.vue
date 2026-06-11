@@ -176,7 +176,7 @@ export default {
       var self = this
       var sum = 0
       var today = new Date().toISOString().slice(0, 10)
-      self.orderList.filter(function(o) { return o.startTime && o.startTime.indexOf(today) !== -1 && o.orderStatus !== '2' }).forEach(function(o) { sum += Number(o.amount) || 0 })
+      self.orderList.filter(function(o) { return o.startTime && o.startTime.indexOf(today) !== -1 && o.orderStatus !== '2' }).forEach(function(o) { sum += (o.totalAmount || 0) })
       return sum.toFixed(2)
     },
     chargingCount: function() {
@@ -198,18 +198,7 @@ export default {
       getOrderList({ pageSize: 100 }).then(function(res) {
         self.loading = false
         if (res.code === 200) {
-          var list = res.data && res.data.rows ? res.data.rows : []
-          self.orderList = list.map(function(item) {
-            return {
-              orderId: item.orderId,
-              orderNo: item.orderNo,
-              orderStatus: item.status,
-              pileCode: item.pileNo,
-              startTime: item.startTime,
-              energy: item.energy,
-              amount: item.amount
-            }
-          })
+          self.orderList = res.rows || []
           if (self.orderList.length > 0) {
             self.hasMore = true
           }

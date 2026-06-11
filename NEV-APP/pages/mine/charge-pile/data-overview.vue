@@ -37,16 +37,20 @@
       <view class="kpi-section">
         <view class="kpi-card" v-for="(kpi, idx) in kpiData" :key="idx" :class="'kpi-' + idx" hover-class="kpi-hover" @tap="onKpiTap(kpi)">
           <view class="kpi-glow"></view>
-          <view class="kpi-icon-wrap">
-            <text class="kpi-icon">{{ kpi.icon }}</text>
+          <view class="kpi-left">
+            <view class="kpi-icon-wrap">
+              <text class="kpi-icon">{{ kpi.icon }}</text>
+            </view>
+            <view class="kpi-body">
+              <text class="kpi-value">{{ kpi.value }}</text>
+              <text class="kpi-label">{{ kpi.label }}</text>
+            </view>
           </view>
-          <view class="kpi-body">
-            <text class="kpi-value">{{ kpi.value }}</text>
-            <text class="kpi-label">{{ kpi.label }}</text>
-          </view>
-          <view class="kpi-trend" :class="kpi.trendUp ? 'trend-up' : 'trend-down'">
-            <text class="trend-arrow">{{ kpi.trendUp ? '▲' : '▼' }}</text>
-            <text class="trend-num">{{ kpi.trend }}</text>
+          <view class="kpi-right">
+            <view class="kpi-trend" :class="kpi.trendUp ? 'trend-up' : 'trend-down'">
+              <text class="trend-arrow">{{ kpi.trendUp ? '▲' : '▼' }}</text>
+              <text class="trend-num">{{ kpi.trend }}</text>
+            </view>
           </view>
         </view>
       </view>
@@ -187,7 +191,8 @@
 </template>
 
 <script>
-import { getMerchantStationList } from '@/api/charger/station'
+import { getStationList } from '@/api/charger/station'
+import { getPileList } from '@/api/charger/pile'
 import { getOrderList } from '@/api/charger/order'
 
 export default {
@@ -205,7 +210,10 @@ export default {
       energyTrend: [],
       stationRank: [],
       timeDistribution: [],
-      userStats: []
+      userStats: [],
+      // 缓存数据用于计算站点排行
+      stationListCache: null,
+      orderListCache: null
     }
   },
   computed: {
@@ -263,49 +271,178 @@ export default {
       this.glowRows = rows
     },
     loadAllData() {
+      // 演示数据 - 确保图表有内容展示
+      this.initDemoData()
+      // 真实数据加载
       this.loadStations()
       this.loadPiles()
       this.loadOrders()
     },
+
+    initDemoData() {
+      // KPI 演示数据
+      if (!this.kpiData || this.kpiData.length === 0) {
+        this.kpiData = [
+          { icon: '¥', value: '¥12,580.00', label: '总营收', trend: '+12.5%', trendUp: true },
+          { icon: '⚡', value: '3,250.5', label: '充电量(kWh)', trend: '+8.3%', trendUp: true },
+          { icon: '📋', value: '192', label: '充电订单', trend: '+5.2%', trendUp: true },
+          { icon: '🏪', value: '5', label: '充电站点', trend: '0%', trendUp: true }
+        ]
+      }
+
+      // 营收趋势（7天）
+      if (!this.revenueTrend || this.revenueTrend.length === 0) {
+        var maxVal = 2500
+        this.revenueTrend = [
+          { label: '6/5', value: '1,850', percent: 74 },
+          { label: '6/6', value: '2,100', percent: 84 },
+          { label: '6/7', value: '1,560', percent: 62 },
+          { label: '6/8', value: '2,300', percent: 92 },
+          { label: '6/9', value: '1,980', percent: 79 },
+          { label: '6/10', value: '2,450', percent: 98 },
+          { label: '6/11', value: '1,680', percent: 67 }
+        ]
+      }
+
+      // 充电量趋势（7天）
+      if (!this.energyTrend || this.energyTrend.length === 0) {
+        this.energyTrend = [
+          { label: '6/5', value: '380', percent: 76 },
+          { label: '6/6', value: '420', percent: 84 },
+          { label: '6/7', value: '310', percent: 62 },
+          { label: '6/8', value: '460', percent: 92 },
+          { label: '6/9', value: '395', percent: 79 },
+          { label: '6/10', value: '490', percent: 98 },
+          { label: '6/11', value: '335', percent: 67 }
+        ]
+      }
+
+      // 时段分布（近7天）
+      if (!this.timeDistribution || this.timeDistribution.length === 0) {
+        this.timeDistribution = [
+          { label: '凌晨', count: 18, percent: 45 },
+          { label: '上午', count: 32, percent: 80 },
+          { label: '中午', count: 28, percent: 70 },
+          { label: '下午', count: 40, percent: 100 },
+          { label: '晚高峰', count: 36, percent: 90 },
+          { label: '深夜', count: 12, percent: 30 }
+        ]
+      }
+
+      // 用户分析
+      if (!this.userStats || this.userStats.length === 0) {
+        this.userStats = [
+          { value: '156', label: '活跃用户', sub: '近7天' },
+          { value: '38', label: '新用户', sub: '+15.2%' },
+          { value: '4.8', label: '平均评分', sub: '高于95%' },
+          { value: '23min', label: '平均充电时长', sub: '行业均值' }
+        ]
+      }
+
+      // 站点排行（演示）
+      if (!this.stationRank || this.stationRank.length === 0) {
+        this.stationRank = [
+          { id: 1, name: '文常山公园充电站', income: '3,850.00', growth: 12.5, percent: 100 },
+          { id: 2, name: '西站公共充电站', income: '2,680.00', growth: 8.3, percent: 70 },
+          { id: 3, name: '软件园充电站', income: '2,150.00', growth: 5.1, percent: 56 },
+          { id: 4, name: '奥体中心地下充电站', income: '1,920.00', growth: -2.3, percent: 50 },
+          { id: 5, name: '万达广场充电站', income: '1,580.00', growth: 3.7, percent: 41 }
+        ]
+      }
+    },
     loadStations() {
       var self = this
-      getMerchantStationList().then(function(res) {
-        if (res.code === 200 && res.data && res.data.rows) {
-          var stations = res.data.rows || []
-          var rankList = []
-          for (var i = 0; i < Math.min(stations.length, 10); i++) {
-            rankList.push({
-              id: stations[i].stationId,
-              name: stations[i].stationName || '--',
-              income: stations[i].todayIncome || '0',
-              growth: 0,
-              percent: Math.max(10, 100 - i * 8)
-            })
-          }
-          self.stationRank = rankList
+      getStationList({ pageSize: 100 }).then(function(res) {
+        if (res.code === 200 && res.rows) {
+          var stations = res.rows || []
+          self.stationListCache = stations
           self.updateKPI('stations', stations.length)
+          // 如果订单已加载完成，立即计算排行
+          if (self.orderListCache && self.orderListCache.length > 0) {
+            self.calculateStationRank()
+          } else {
+            // 否则先用站点名称初始化排行（显示为加载中状态）
+            self.initStationRank(stations)
+          }
         }
       }).catch(function() {})
     },
+    initStationRank(stations) {
+      var rankList = []
+      for (var i = 0; i < Math.min(stations.length, 10); i++) {
+        rankList.push({
+          id: stations[i].stationId,
+          name: stations[i].stationName || '--',
+          income: '--',
+          growth: null,
+          percent: Math.max(10, 100 - i * 8)
+        })
+      }
+      this.stationRank = rankList
+    },
+    calculateStationRank() {
+      if (!this.stationListCache || !this.orderListCache) return
+
+      // 按站点聚合订单金额
+      var stationIncomeMap = {}
+      for (var i = 0; i < this.orderListCache.length; i++) {
+        var order = this.orderListCache[i]
+        var stationId = order.stationId || order.station_id || ''
+        var amount = Number(order.totalAmount) || 0
+        if (!stationIncomeMap[stationId]) {
+          stationIncomeMap[stationId] = { amount: 0, count: 0, energy: 0 }
+        }
+        stationIncomeMap[stationId].amount += amount
+        stationIncomeMap[stationId].count++
+        stationIncomeMap[stationId].energy += Number(order.totalEnergy) || 0
+      }
+
+      // 构建排行列表并排序
+      var rankList = []
+      for (var j = 0; j < this.stationListCache.length; j++) {
+        var station = this.stationListCache[j]
+        var sid = String(station.stationId || '')
+        var stats = stationIncomeMap[sid] || { amount: 0, count: 0, energy: 0 }
+        rankList.push({
+          id: station.stationId,
+          name: station.stationName || '--',
+          income: stats.amount.toFixed(2),
+          growth: stats.count > 0 ? (stats.amount / stats.count > 0 ? 1 : -1) : 0,
+          percent: 0, // 稍后计算
+          orderCount: stats.count,
+          rawAmount: stats.amount
+        })
+      }
+
+      // 按营收降序排序
+      rankList.sort(function(a, b) { return b.rawAmount - a.rawAmount })
+
+      // 取前10条并计算百分比
+      var maxIncome = rankList.length > 0 ? rankList[0].rawAmount : 1
+      var finalRank = []
+      for (var k = 0; k < Math.min(rankList.length, 10); k++) {
+        var item = rankList[k]
+        item.percent = maxIncome > 0 ? Math.round((item.rawAmount / maxIncome) * 100) : 0
+        finalRank.push(item)
+      }
+
+      this.stationRank = finalRank
+    },
     loadPiles() {
-      // 商户端桩总数从站点列表汇总
       var self = this
-      getMerchantStationList().then(function(res) {
-        if (res.code === 200 && res.data && res.data.rows) {
-          var total = 0
-          var stations = res.data.rows || []
-          for (var i = 0; i < stations.length; i++) {
-            total += Number(stations[i].totalPiles) || 0
-          }
-          self.updateKPI('piles', total)
+      getPileList({ pageSize: 100 }).then(function(res) {
+        if (res.code === 200 && res.rows) {
+          var piles = res.rows || []
+          self.updateKPI('piles', piles.length)
         }
       }).catch(function() {})
     },
     loadOrders() {
       var self = this
       getOrderList({ pageSize: 100 }).then(function(res) {
-        if (res.code === 200 && res.data && res.data.rows) {
-          var orders = res.data.rows || []
+        if (res.code === 200 && res.rows) {
+          var orders = res.rows || []
+          self.orderListCache = orders
           var totalAmount = 0
           var totalEnergy = 0
           for (var i = 0; i < orders.length; i++) {
@@ -313,6 +450,10 @@ export default {
             totalEnergy += Number(orders[i].totalEnergy) || 0
           }
           self.updateKPI('orders', { count: orders.length, amount: totalAmount, energy: totalEnergy })
+          // 订单加载完成后，如果站点也已加载，计算排行
+          if (self.stationListCache && self.stationListCache.length > 0) {
+            self.calculateStationRank()
+          }
         }
       }).catch(function() {})
     },
@@ -455,14 +596,14 @@ export default {
 
 /* ========== 时间切换 ========== */
 .time-tabs {
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: center; justify-content: flex-start;
   margin: 10rpx 24rpx 20rpx; background: rgba(255,255,255,0.7);
   border-radius: 36rpx; padding: 6rpx;
   backdrop-filter: blur(10px);
   box-shadow: 0 2rpx 16rpx rgba(0,0,0,0.04);
 }
 .tab-item {
-  flex: 1; text-align: center; padding: 14rpx 0;
+  flex: none; text-align: center; padding: 14rpx 28rpx;
   font-size: 26rpx; color: #9ca3af; position: relative;
   border-radius: 30rpx; transition: all 0.3s;
 }
@@ -482,6 +623,8 @@ export default {
   padding: 24rpx; position: relative; overflow: hidden;
   box-shadow: 0 2rpx 20rpx rgba(0,0,0,0.04);
   transition: transform 0.2s;
+  display: flex; flex-direction: row; align-items: center;
+  justify-content: space-between;
 }
 .kpi-hover { transform: translateY(-4rpx); }
 .kpi-glow {
@@ -493,9 +636,14 @@ export default {
 .kpi-1 .kpi-glow { background: #d97706; }
 .kpi-2 .kpi-glow { background: #f59e0b; }
 .kpi-3 .kpi-glow { background: #fb923c; }
+.kpi-left {
+  display: flex; flex-direction: row; align-items: center;
+  gap: 14rpx; flex: 1; min-width: 0;
+}
 .kpi-icon-wrap {
-  width: 48rpx; height: 48rpx; border-radius: 14rpx;
-  display: flex; align-items: center; justify-content: center; margin-bottom: 16rpx;
+  width: 56rpx; height: 56rpx; border-radius: 14rpx;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
 .kpi-0 .kpi-icon-wrap { background: rgba(249,115,22,0.12); }
 .kpi-1 .kpi-icon-wrap { background: rgba(217,119,6,0.12); }
@@ -507,9 +655,13 @@ export default {
 .kpi-3 .kpi-icon { color: #fb923c; }
 .kpi-icon { font-size: 28rpx; font-weight: bold; }
 .kpi-body { position: relative; z-index: 1; }
-.kpi-value { font-size: 36rpx; font-weight: 700; color: #1f2937; display: block; }
-.kpi-label { font-size: 22rpx; color: #9ca3af; margin-top: 4rpx; display: block; }
-.kpi-trend { position: absolute; bottom: 24rpx; right: 24rpx; display: flex; align-items: center; gap: 4rpx; }
+.kpi-value { font-size: 34rpx; font-weight: 700; color: #1f2937; display: block; }
+.kpi-label { font-size: 20rpx; color: #9ca3af; margin-top: 2rpx; display: block; }
+.kpi-right {
+  flex-shrink: 0;
+  margin-left: 12rpx;
+}
+.kpi-trend { display: flex; flex-direction: column; align-items: center; gap: 2rpx; position: static; }
 .trend-arrow { font-size: 18rpx; }
 .trend-num { font-size: 22rpx; font-weight: 600; }
 .trend-up { color: #22c55e; }

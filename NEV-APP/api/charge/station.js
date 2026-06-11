@@ -5,7 +5,7 @@ import request from '@/utils/request'
 /** 1.1 获取充电站列表（分页，带距离排序） */
 export function getStationList(params) {
   return request({
-    url: '/app/charge/station/list',
+    url: '/app/charge-mini/station/list',
     method: 'GET',
     params
   })
@@ -14,7 +14,7 @@ export function getStationList(params) {
 /** 1.2 获取充电站详情 */
 export function getStationDetail(stationId) {
   return request({
-    url: '/app/charge/station/detail/' + stationId,
+    url: '/app/charge-mini/station/detail/' + stationId,
     method: 'GET'
   })
 }
@@ -22,7 +22,7 @@ export function getStationDetail(stationId) {
 /** 1.3 搜索充电站 */
 export function searchStations(params) {
   return request({
-    url: '/app/charge/station/search',
+    url: '/app/charge-mini/station/search',
     method: 'GET',
     params
   })
@@ -31,7 +31,7 @@ export function searchStations(params) {
 /** 1.4 搜索建议 */
 export function getSuggestions(keyword) {
   return request({
-    url: '/app/charge/station/suggest',
+    url: '/app/charge-mini/station/suggest',
     method: 'GET',
     params: { keyword }
   })
@@ -40,7 +40,7 @@ export function getSuggestions(keyword) {
 /** 1.5 热门搜索 */
 export function getHotSearches() {
   return request({
-    url: '/app/charge/station/hot',
+    url: '/app/charge-mini/station/hot',
     method: 'GET'
   })
 }
@@ -48,7 +48,7 @@ export function getHotSearches() {
 /** 1.6 收藏/取消收藏 */
 export function toggleFavorite(stationId) {
   return request({
-    url: '/app/charge/station/favorite',
+    url: '/app/charge-mini/station/favorite',
     method: 'POST',
     data: { stationId }
   })
@@ -57,7 +57,7 @@ export function toggleFavorite(stationId) {
 /** 1.7 查询收藏状态 */
 export function getFavoriteStatus(stationId) {
   return request({
-    url: '/app/charge/station/favorite/status',
+    url: '/app/charge-mini/station/favorite/status',
     method: 'GET',
     params: { stationId }
   })
@@ -68,7 +68,7 @@ export function getFavoriteStatus(stationId) {
 /** 2.1 获取充电桩列表 */
 export function getPileList(stationId) {
   return request({
-    url: '/app/charge/pile/list',
+    url: '/app/charge-mini/pile/list',
     method: 'GET',
     params: { stationId }
   })
@@ -77,7 +77,7 @@ export function getPileList(stationId) {
 /** 2.2 重置所有异常占用充电桩（管理用） */
 export function resetAllPiles() {
   return request({
-    url: '/app/charge/pile/reset-all',
+    url: '/app/charge-mini/pile/reset-all',
     method: 'POST'
   })
 }
@@ -87,7 +87,7 @@ export function resetAllPiles() {
 /** 3.1 获取订单列表 */
 export function getOrderList(params) {
   return request({
-    url: '/app/charge/order/list',
+    url: '/app/charge-mini/order/list',
     method: 'GET',
     params
   })
@@ -96,7 +96,7 @@ export function getOrderList(params) {
 /** 3.2 开始充电 */
 export function startCharge(data) {
   return request({
-    url: '/app/charge/order/start',
+    url: '/app/charge-mini/order/start',
     method: 'POST',
     data
   })
@@ -105,7 +105,7 @@ export function startCharge(data) {
 /** 3.3 获取充电状态 */
 export function getChargeStatus(orderId) {
   return request({
-    url: '/app/charge/order/status/' + orderId,
+    url: '/app/charge-mini/order/status/' + orderId,
     method: 'GET'
   })
 }
@@ -113,7 +113,7 @@ export function getChargeStatus(orderId) {
 /** 3.4 停止充电 */
 export function stopCharge(data) {
   return request({
-    url: '/app/charge/order/stop',
+    url: '/app/charge-mini/order/stop',
     method: 'POST',
     data
   })
@@ -122,7 +122,7 @@ export function stopCharge(data) {
 /** 3.5 支付订单 */
 export function payOrder(data) {
   return request({
-    url: '/app/charge/order/pay',
+    url: '/app/charge-mini/order/pay',
     method: 'POST',
     data
   })
@@ -131,7 +131,7 @@ export function payOrder(data) {
 /** 3.6 取消订单 */
 export function cancelOrder(data) {
   return request({
-    url: '/app/charge/order/cancel',
+    url: '/app/charge-mini/order/cancel',
     method: 'POST',
     data
   })

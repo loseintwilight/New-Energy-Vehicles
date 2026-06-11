@@ -128,7 +128,7 @@
 </template>
 
 <script>
-import { getMerchantStationList, addStation, deleteStation } from '@/api/charger/station.js'
+import { getStationList, addStation, deleteStation } from '@/api/charger/station.js'
 
 export default {
   data: function() {
@@ -187,10 +187,14 @@ export default {
     loadStations: function() {
       var self = this
       self.loading = true
-      getMerchantStationList().then(function(res) {
+      getStationList({
+        stationName: self.searchKey || '',
+        stationStatus: self.currentStatus || '',
+        pageSize: 100
+      }).then(function(res) {
         self.loading = false
         if (res.code === 200) {
-          self.stationList = res.data.rows || []
+          self.stationList = res.rows || []
         } else {
           uni.showToast({ title: res.msg || '加载失败', icon: 'none' })
         }

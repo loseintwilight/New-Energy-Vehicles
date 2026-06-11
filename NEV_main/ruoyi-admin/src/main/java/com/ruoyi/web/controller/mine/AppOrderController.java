@@ -139,6 +139,11 @@ public class AppOrderController extends BaseController {
         MineStadChargingOrder cq = new MineStadChargingOrder();
         cq.setUserId(userId);
         for (MineStadChargingOrder o : stadChargingOrderService.selectStadChargingOrderList(cq)) {
+            // 已完成但未支付 → 待支付
+            if ("1".equals(o.getOrderStatus()) && "0".equals(o.getPayStatus())) {
+                unpaid++;
+                continue;
+            }
             String s = normalizeChargeStatus(o.getOrderStatus());
             switch (s) {
                 case "1": pending++; break;
@@ -271,7 +276,15 @@ public class AppOrderController extends BaseController {
 
     /** 充电订单 → VO */
     private OrderListVO buildFromCharging(MineStadChargingOrder o) {
-        String normStatus = normalizeChargeStatus(o.getOrderStatus());
+        // 已完成但未支付 → 待支付
+        String rawStatus = o.getOrderStatus();
+        String payStatus = o.getPayStatus();
+        String normStatus;
+        if ("1".equals(rawStatus) && "0".equals(payStatus)) {
+            normStatus = "0"; // 未支付
+        } else {
+            normStatus = normalizeChargeStatus(rawStatus);
+        }
         OrderListVO vo = new OrderListVO();
         vo.setOrderId(o.getOrderId());
         vo.setOrderNo(o.getOrderNo());

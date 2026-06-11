@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.charging.mapper.ChargingPileMapper">
+    
+    <resultMap type="com.ruoyi.charging.domain.ChargingPile" id="ChargingPileResult">
+        <id property="pileId" column="pile_id"/>
+        <result property="stationId" column="station_id"/>
+        <result property="pileCode" column="pile_code"/>
+        <result property="pileType" column="pile_type"/>
+        <result property="accessType" column="access_type"/>
+        <result property="powerKw" column="power_kw"/>
+        <result property="connectorType" column="connector_type"/>
+        <result property="pileStatus" column="pile_status"/>
+        <result property="currentOrderNo" column="current_order_no"/>
+        <result property="currentUserName" column="current_user_name"/>
+        <result property="currentStartTime" column="current_start_time"/>
+        <result property="lastHeartbeat" column="last_heartbeat"/>
+        <result property="voltage" column="voltage"/>
+        <result property="currentA" column="current_a"/>
+        <result property="powerNow" column="power_now"/>
+        <result property="energyTotal" column="energy_total"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectChargingPileVo">
+        select pile_id, station_id, pile_code, pile_type, access_type, power_kw, connector_type,
+               pile_status, current_order_no, current_user_name, current_start_time, last_heartbeat,
+               voltage, current_a, power_now, energy_total, sort_order,
+               create_time, update_time
+        from stad_charging_pile
+    </sql>
+
+    <select id="selectChargingPileById" parameterType="Long" resultMap="ChargingPileResult">
+        <include refid="selectChargingPileVo"/>
+        where pile_id = #{pileId}
+    </select>
+
+    <select id="selectChargingPileListByStationId" parameterType="Long" resultMap="ChargingPileResult">
+        <include refid="selectChargingPileVo"/>
+        where station_id = #{stationId}
+        order by sort_order asc, pile_code asc
+    </select>
+
+    <select id="selectChargingPileList" parameterType="com.ruoyi.charging.domain.ChargingPile" resultMap="ChargingPileResult">
+        <include refid="selectChargingPileVo"/>
+        <where>
+            <if test="stationId != null">and station_id = #{stationId}</if>
+            <if test="pileCode != null and pileCode != ''">and pile_code like concat('%', #{pileCode}, '%')</if>
+            <if test="pileType != null and pileType != ''">and pile_type = #{pileType}</if>
+            <if test="pileStatus != null and pileStatus != ''">and pile_status = #{pileStatus}</if>
+        </where>
+        order by sort_order asc, pile_code asc
+    </select>
+
+    <insert id="insertChargingPile" parameterType="com.ruoyi.charging.domain.ChargingPile" useGeneratedKeys="true" keyProperty="pileId">
+        insert into stad_charging_pile
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="stationId != null">station_id,</if>
+            <if test="pileCode != null">pile_code,</if>
+            <if test="pileType != null">pile_type,</if>
+            <if test="accessType != null">access_type,</if>
+            <if test="powerKw != null">power_kw,</if>
+            <if test="connectorType != null">connector_type,</if>
+            <if test="pileStatus != null">pile_status,</if>
+            <if test="sortOrder != null">sort_order,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="stationId != null">#{stationId},</if>
+            <if test="pileCode != null">#{pileCode},</if>
+            <if test="pileType != null">#{pileType},</if>
+            <if test="accessType != null">#{accessType},</if>
+            <if test="powerKw != null">#{powerKw},</if>
+            <if test="connectorType != null">#{connectorType},</if>
+            <if test="pileStatus != null">#{pileStatus},</if>
+            <if test="sortOrder != null">#{sortOrder},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateChargingPile" parameterType="com.ruoyi.charging.domain.ChargingPile">
+        update stad_charging_pile
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="pileCode != null">pile_code = #{pileCode},</if>
+            <if test="pileType != null">pile_type = #{pileType},</if>
+            <if test="accessType != null">access_type = #{accessType},</if>
+            <if test="powerKw != null">power_kw = #{powerKw},</if>
+            <if test="connectorType != null">connector_type = #{connectorType},</if>
+            <if test="pileStatus != null">pile_status = #{pileStatus},</if>
+            <if test="currentOrderNo != null">current_order_no = #{currentOrderNo},</if>
+            <if test="currentUserName != null">current_user_name = #{currentUserName},</if>
+            <if test="currentStartTime != null">current_start_time = #{currentStartTime},</if>
+            <if test="lastHeartbeat != null">last_heartbeat = #{lastHeartbeat},</if>
+            <if test="voltage != null">voltage = #{voltage},</if>
+            <if test="currentA != null">current_a = #{currentA},</if>
+            <if test="powerNow != null">power_now = #{powerNow},</if>
+            <if test="energyTotal != null">energy_total = #{energyTotal},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where pile_id = #{pileId}
+    </update>
+
+    <delete id="deleteChargingPileById" parameterType="Long">
+        delete from stad_charging_pile where pile_id = #{pileId}
+    </delete>
+</mapper>

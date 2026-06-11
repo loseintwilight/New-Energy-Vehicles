@@ -1,0 +1,23 @@
+# 服务配置
+server:
+  port: 8081
+
+# Spring配置
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/ry-vue?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+    username: root
+    password: password
+
+# MyBatis配置
+mybatis:
+  mapper-locations: classpath:mapper/charging/*.xml
+  type-aliases-package: com.ruoyi.charging.domain
+  configuration:
+    map-underscore-to-camel-case: true
+
+# 日志配置
+logging:
+  level:
+    com.ruoyi.charging.mapper: debug

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.charging.mapper.EndSwitchApplyMapper">
+    
+    <resultMap type="com.ruoyi.charging.domain.EndSwitchApply" id="EndSwitchApplyResult">
+        <id property="applyId" column="apply_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="username" column="username"/>
+        <result property="endType" column="end_type"/>
+        <result property="endName" column="end_name"/>
+        <result property="formData" column="form_data"/>
+        <result property="auditStatus" column="audit_status"/>
+        <result property="auditRemark" column="audit_remark"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectEndSwitchApplyVo">
+        select apply_id, user_id, username, end_type, end_name, form_data, audit_status, audit_remark,
+               create_by, create_time, update_by, update_time, remark
+        from stad_end_switch_apply
+    </sql>
+
+    <select id="selectEndSwitchApplyById" parameterType="Long" resultMap="EndSwitchApplyResult">
+        <include refid="selectEndSwitchApplyVo"/>
+        where apply_id = #{applyId}
+    </select>
+
+    <select id="selectLatestByUserId" parameterType="Long" resultMap="EndSwitchApplyResult">
+        <include refid="selectEndSwitchApplyVo"/>
+        where user_id = #{userId}
+        order by create_time desc
+        limit 1
+    </select>
+
+    <select id="selectEndSwitchApplyList" parameterType="com.ruoyi.charging.domain.EndSwitchApply" resultMap="EndSwitchApplyResult">
+        <include refid="selectEndSwitchApplyVo"/>
+        <where>
+            <if test="userId != null">and user_id = #{userId}</if>
+            <if test="endType != null and endType != ''">and end_type = #{endType}</if>
+            <if test="auditStatus != null and auditStatus != ''">and audit_status = #{auditStatus}</if>
+        </where>
+        order by create_time desc
+    </select>
+
+    <insert id="insertEndSwitchApply" parameterType="com.ruoyi.charging.domain.EndSwitchApply" useGeneratedKeys="true" keyProperty="applyId">
+        insert into stad_end_switch_apply
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="username != null">username,</if>
+            <if test="endType != null">end_type,</if>
+            <if test="endName != null">end_name,</if>
+            <if test="formData != null">form_data,</if>
+            <if test="auditStatus != null">audit_status,</if>
+            <if test="auditRemark != null">audit_remark,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="username != null">#{username},</if>
+            <if test="endType != null">#{endType},</if>
+            <if test="endName != null">#{endName},</if>
+            <if test="formData != null">#{formData},</if>
+            <if test="auditStatus != null">#{auditStatus},</if>
+            <if test="auditRemark != null">#{auditRemark},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <update id="updateEndSwitchApply" parameterType="com.ruoyi.charging.domain.EndSwitchApply">
+        update stad_end_switch_apply
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="auditStatus != null">audit_status = #{auditStatus},</if>
+            <if test="auditRemark != null">audit_remark = #{auditRemark},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where apply_id = #{applyId}
+    </update>
+
+    <update id="cancelEndSwitchApply" parameterType="com.ruoyi.charging.domain.EndSwitchApply">
+        update stad_end_switch_apply
+        set audit_status = 'cancelled',
+            update_time = sysdate()
+        where apply_id = #{applyId}
+          and user_id = #{userId}
+          and (audit_status = 'pending' or audit_status = 'rejected')
+    </update>
+</mapper>

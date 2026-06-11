@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.charging.mapper.ChargingRateMapper">
+    
+    <resultMap type="com.ruoyi.charging.domain.ChargingRate" id="ChargingRateResult">
+        <id property="rateId" column="rate_id"/>
+        <result property="stationId" column="station_id"/>
+        <result property="rateName" column="rate_name"/>
+        <result property="pileType" column="pile_type"/>
+        <result property="isActive" column="is_active"/>
+        <result property="effectiveFrom" column="effective_from"/>
+        <result property="effectiveTo" column="effective_to"/>
+        <result property="description" column="description"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectChargingRateVo">
+        select rate_id, station_id, rate_name, pile_type, is_active, effective_from, effective_to,
+               description, sort_order, create_time, update_time
+        from stad_charging_rate
+    </sql>
+
+    <select id="selectChargingRateById" parameterType="Long" resultMap="ChargingRateResult">
+        <include refid="selectChargingRateVo"/>
+        where rate_id = #{rateId}
+    </select>
+
+    <select id="selectChargingRateListByStationId" parameterType="Long" resultMap="ChargingRateResult">
+        <include refid="selectChargingRateVo"/>
+        where station_id = #{stationId}
+        order by sort_order asc
+    </select>
+
+    <select id="selectChargingRateList" parameterType="com.ruoyi.charging.domain.ChargingRate" resultMap="ChargingRateResult">
+        <include refid="selectChargingRateVo"/>
+        <where>
+            <if test="stationId != null">and station_id = #{stationId}</if>
+            <if test="rateName != null and rateName != ''">and rate_name like concat('%', #{rateName}, '%')</if>
+            <if test="isActive != null">and is_active = #{isActive}</if>
+            <if test="pileType != null and pileType != ''">and pile_type = #{pileType}</if>
+        </where>
+        order by sort_order asc
+    </select>
+
+    <insert id="insertChargingRate" parameterType="com.ruoyi.charging.domain.ChargingRate" useGeneratedKeys="true" keyProperty="rateId">
+        insert into stad_charging_rate
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="stationId != null">station_id,</if>
+            <if test="rateName != null">rate_name,</if>
+            <if test="pileType != null">pile_type,</if>
+            <if test="isActive != null">is_active,</if>
+            <if test="effectiveFrom != null">effective_from,</if>
+            <if test="effectiveTo != null">effective_to,</if>
+            <if test="description != null">description,</if>
+            <if test="sortOrder != null">sort_order,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="stationId != null">#{stationId},</if>
+            <if test="rateName != null">#{rateName},</if>
+            <if test="pileType != null">#{pileType},</if>
+            <if test="isActive != null">#{isActive},</if>
+            <if test="effectiveFrom != null">#{effectiveFrom},</if>
+            <if test="effectiveTo != null">#{effectiveTo},</if>
+            <if test="description != null">#{description},</if>
+            <if test="sortOrder != null">#{sortOrder},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateChargingRate" parameterType="com.ruoyi.charging.domain.ChargingRate">
+        update stad_charging_rate
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="rateName != null">rate_name = #{rateName},</if>
+            <if test="pileType != null">pile_type = #{pileType},</if>
+            <if test="isActive != null">is_active = #{isActive},</if>
+            <if test="effectiveFrom != null">effective_from = #{effectiveFrom},</if>
+            <if test="effectiveTo != null">effective_to = #{effectiveTo},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where rate_id = #{rateId}
+    </update>
+
+    <delete id="deleteChargingRateById" parameterType="Long">
+        delete from stad_charging_rate where rate_id = #{rateId}
+    </delete>
+</mapper>

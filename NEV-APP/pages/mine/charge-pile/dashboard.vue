@@ -30,41 +30,32 @@
         </view>
       </view>
 
-      <!-- 用户信息卡片 -->
-      <view class="user-card" @tap="goProfile">
-        <view class="user-avatar-wrap">
-          <image class="user-avatar" :src="userInfo.avatar || '/static/images/default-avatar.png'" mode="aspectFill"></image>
-        </view>
-        <view class="user-info">
-          <text class="user-name">{{ userInfo.nickName || '充电桩管理员' }}</text>
-          <text class="user-phone">{{ userInfo.phone || '未绑定手机号' }}</text>
-        </view>
-        <view class="switch-btn" @tap.stop="goSwitch">
-          <text class="switch-text">切换用户端</text>
-        </view>
-        <!-- 充电桩装饰图片 -->
-        <image class="charging-pile-img" src="/static/images/charge/charging.png" mode="aspectFit"></image>
-      </view>
-
-      <!-- 4栏统计卡 -->
-      <view class="stats-section">
-        <view class="stats-row">
-          <view
-            class="stat-card"
-            v-for="(item, idx) in statsData"
-            :key="idx"
-            :class="'stat-' + idx"
-            hover-class="stat-hover"
-            @tap="onStatTap(idx)"
-          >
-            <view class="stat-glow-bar"></view>
-            <view class="stat-icon-wrap">
-              <text class="stat-icon-text">{{ item.icon }}</text>
+      <!-- 用户信息卡片（含统计） -->
+      <view class="profile-card">
+        <view class="profile-bg"></view>
+        <view class="profile-content">
+          <view class="profile-top">
+            <view class="profile-user">
+              <image class="profile-avatar" :src="userInfo.avatar || '/static/images/default-avatar.png'" mode="aspectFill"></image>
+              <view class="profile-info">
+                <text class="profile-name">{{ userInfo.nickName || '充电桩管理员' }}</text>
+                <text class="profile-phone">{{ userInfo.phone || '未绑定手机号' }}</text>
+              </view>
             </view>
-            <text class="stat-value">{{ item.value }}</text>
-            <text class="stat-label">{{ item.label }}</text>
+            <view class="profile-actions">
+              <view class="switch-btn" @tap.stop="goSwitch">切换用户端</view>
+            </view>
+          </view>
+          <view class="profile-stats">
+            <view class="profile-stat" v-for="(item, idx) in statsData" :key="idx" @tap="onStatTap(idx)">
+              <text class="pstat-num">{{ item.value }}</text>
+              <text class="pstat-label">{{ item.label }}</text>
+            </view>
           </view>
         </view>
+        <view class="deco-circle c1"></view>
+        <view class="deco-circle c2"></view>
+        <view class="deco-circle c3"></view>
       </view>
 
       <!-- 快捷管理 - 4大功能卡 + 更多 -->
@@ -315,7 +306,7 @@ export default {
       /* 4栏统计卡数据（与下方stationList汇总值保持一致） */
       statsData: [
         { icon: '¥', value: '0.00', label: '今日营收(元)' },
-        { icon: '⚡', value: '0', label: '今日电量(kWh)' },
+        { icon: '⚡', value: '0', label: '今日充电量(kWh)' },
         { icon: '📋', value: '0', label: '今日订单(笔)' },
         { icon: '◎', value: '0/0', label: '空闲/总桩' }
       ],
@@ -447,17 +438,22 @@ export default {
           /* 汇总统计 */
           self.statsData = [
             { icon: '¥', value: (d.totalIncome || 0).toFixed(2), label: '今日营收(元)' },
-            { icon: '⚡', value: (d.totalEnergy || 0).toFixed(1), label: '今日电量(kWh)' },
+            { icon: '⚡', value: (d.totalEnergy || 0).toFixed(1), label: '今日充电量(kWh)' },
             { icon: '📋', value: (d.totalOrders || 0).toString(), label: '今日订单(笔)' },
             { icon: '◎', value: (d.availablePiles || 0) + '/' + (d.totalPiles || 0), label: '空闲/总桩' }
           ]
           /* 站点列表 */
-          self.stationList = d.stations || []
+          var stations = d.stations || []; stations.sort(function(a,b) { return (b.todayIncome||0) - (a.todayIncome||0) }); self.stationList = stations; self.updateStatsData(stations, d.recentOrders || [])
+          /* 更新快捷卡片描述 */
+          if (self.quickMain && self.quickMain.length >= 4) {
+            self.quickMain[0].desc = (stations.length || 0) + '个站点 · 运营监控'
+            self.quickMain[2].desc = (d.totalOrders || 0) + '笔订单 · 实时跟踪'
+          }
           /* 最近订单 */
           self.recentOrders = d.recentOrders || []
-          /* 商户信息 */
+          /* 商户信息 - 不覆盖用户昵称 */
           if (d.merchantName) {
-            self.userInfo.nickName = d.merchantName
+            self.userInfo.merchantName = d.merchantName
           }
           if (d.merchantId) {
             self.userInfo.merchantId = d.merchantId
@@ -475,7 +471,10 @@ export default {
       getStationList({ pageSize: 100 }).then(function(res) {
         if (res.code === 200) {
           var list = res.rows || []
-          self.stationList = list
+          self.stationList = list; self.updateStatsData(list, self.recentOrders)
+          if (self.quickMain && self.quickMain.length >= 4) {
+            self.quickMain[0].desc = (list.length || 0) + '个站点 · 运营监控'
+          }
           /* 更新统计数据 */
           self.updateStatsData(list, self.recentOrders)
         }
@@ -515,7 +514,7 @@ export default {
 
       this.statsData = [
         { icon: '¥', value: totalIncome.toFixed(2), label: '今日营收(元)' },
-        { icon: '⚡', value: totalEnergy.toFixed(1), label: '今日电量(kWh)' },
+        { icon: '⚡', value: totalEnergy.toFixed(1), label: '今日充电量(kWh)' },
         { icon: '📋', value: totalOrders.toString(), label: '今日订单(笔)' },
         { icon: '◎', value: availablePiles + '/' + totalPiles, label: '空闲/总桩' }
       ]
@@ -574,7 +573,7 @@ export default {
     },
 
     onStatTap: function(idx) {
-      var urls = ['/pages/mine/charge-pile/pile-list', '/pages/mine/charge-pile/order-list', '/pages/mine/charge-pile/data-overview', '/pages/mine/charge-pile/station-list']
+      var urls = ['/pages/mine/charge-pile/pile-list', '/pages/mine/charge-pile/order-list', '/pages/mine/charge-pile/order-list', '/pages/mine/charge-pile/station-list']
       if (urls[idx]) {
         uni.navigateTo({ url: urls[idx] })
       }
@@ -787,89 +786,112 @@ export default {
 }
 
 /* ========== 用户信息卡片 ========== */
-.user-card {
-  margin: -10rpx 24rpx 0;
-  padding: 28rpx 28rpx 24rpx;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: 24rpx;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
+.profile-card {
   position: relative;
-  z-index: 2;
-  box-shadow: 0 8rpx 32rpx rgba(217, 119, 6, 0.12), inset 0 1rpx 0 rgba(255, 255, 255, 0.9);
-  border: 1rpx solid rgba(255, 255, 255, 0.85);
+  margin: -10rpx 24rpx 0;
+  border-radius: 24rpx;
   overflow: hidden;
+  z-index: 2;
+  box-shadow: 0 8rpx 32rpx rgba(217, 119, 6, 0.15);
 }
-.user-avatar-wrap {
+.profile-bg {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(135deg, #f59e0b 0%, #fb923c 50%, #f97316 100%);
+}
+.profile-content {
+  position: relative;
+  z-index: 1;
+  padding: 28rpx 28rpx 0;
+}
+.profile-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.profile-user {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+.profile-avatar {
   width: 96rpx;
   height: 96rpx;
   border-radius: 50%;
-  border: 4rpx solid #f59e0b;
-  box-shadow: 0 4rpx 16rpx rgba(245, 158, 11, 0.3);
+  border: 4rpx solid rgba(255,255,255,0.3);
   overflow: hidden;
-  margin-right: 20rpx;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
 }
-.user-avatar {
-  width: 100%;
-  height: 100%;
-}
-.user-info {
-  flex: 1;
+.profile-info {
   display: flex;
   flex-direction: column;
 }
-.user-name {
+.profile-name {
   font-size: 34rpx;
   font-weight: 800;
-  color: #1c1917;
-  letter-spacing: 0.5rpx;
-  line-height: 1.3;
+  color: #fff;
 }
-.user-phone {
+.profile-phone {
   font-size: 24rpx;
-  color: #333333;
-  font-weight: 500;
+  color: rgba(255,255,255,0.85);
   margin-top: 6rpx;
-  display: inline-block;
+}
+.profile-actions {
+  flex-shrink: 0;
 }
 .switch-btn {
-  flex-shrink: 0;
   padding: 12rpx 24rpx;
-  background: linear-gradient(135deg, #f59e0b, #fb923c);
+  background: rgba(255,255,255,0.2);
   border-radius: 30rpx;
-  box-shadow: 0 4rpx 14rpx rgba(245, 158, 11, 0.35);
-}
-.switch-text {
   font-size: 24rpx;
   font-weight: 700;
-  color: #ffffff;
-  letter-spacing: 0.5rpx;
+  color: #fff;
 }
-.charging-pile-img {
+.profile-stats {
+  display: flex;
+  margin-top: 24rpx;
+  padding: 20rpx 0;
+  border-top: 1rpx solid rgba(255,255,255,0.2);
+}
+.profile-stat {
+  flex: 1;
+  text-align: center;
+}
+.pstat-num {
+  display: block;
+  font-size: 36rpx;
+  font-weight: 800;
+  color: #fff;
+}
+.pstat-label {
+  display: block;
+  font-size: 22rpx;
+  color: rgba(255,255,255,0.8);
+  margin-top: 6rpx;
+}
+.deco-circle {
   position: absolute;
-  right: -20rpx;
-  bottom: -20rpx;
-  width: 200rpx;
-  height: 160rpx;
-  opacity: 0.15;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
   pointer-events: none;
 }
-
-/* ========== 4栏统计卡 ========== */
-.stats-section {
-  padding: 24rpx 24rpx 16rpx;
-  position: relative;
-  z-index: 2;
+.deco-circle.c1 {
+  width: 200rpx;
+  height: 200rpx;
+  top: -60rpx;
+  right: -40rpx;
 }
-.stats-row {
-  display: flex;
-  flex-direction: row;
-  gap: 14rpx;
+.deco-circle.c2 {
+  width: 120rpx;
+  height: 120rpx;
+  bottom: 60rpx;
+  left: -30rpx;
+}
+.deco-circle.c3 {
+  width: 80rpx;
+  height: 80rpx;
+  bottom: -20rpx;
+  right: 60rpx;
 }
 .stat-card {
   flex: 1;

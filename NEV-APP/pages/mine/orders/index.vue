@@ -433,11 +433,11 @@ page {
 
 // ==================== 列表容器 ====================
 .order-scroll {
-  height: calc(100vh - 180rpx);
+  height: 100vh;
 }
 
 .order-list {
-  padding: 20rpx 24rpx;
+  padding: 20rpx 24rpx 40rpx;
 }
 
 // ==================== 订单卡片 ====================

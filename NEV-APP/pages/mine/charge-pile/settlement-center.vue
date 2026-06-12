@@ -241,8 +241,8 @@ export default {
 .bar-more { display: flex; align-items: center; }
 .bar-more-text { font-size: 24rpx; color: #a16207; }
 .bar-more-icon { font-size: 20rpx; color: #a16207; margin-left: 4rpx; }
-.income-grid { display: flex; flex-wrap: wrap; gap: 16rpx; }
-.income-item { width: calc(50% - 8rpx); background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); border-radius: 16rpx; padding: 24rpx; box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.04); }
+.income-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16rpx; }
+.income-item { background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); border-radius: 16rpx; padding: 24rpx; box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.04); }
 .income-val { font-size: 32rpx; font-weight: 700; color: #f59e0b; display: block; word-break: break-all; }
 .income-label { font-size: 22rpx; color: #78716c; margin-top: 4rpx; display: block; }
 

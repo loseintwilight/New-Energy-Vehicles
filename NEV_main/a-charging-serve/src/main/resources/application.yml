@@ -1,16 +1,4 @@
-# 服务配置
-server:
-  port: 8081
-
-# Spring配置
-spring:
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/ry-vue?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
-    username: root
-    password: password
-
-# MyBatis配置
+# MyBatis配置（数据源由 ruoyi-admin 主模块统一管理，使用 new_energy 数据库）
 mybatis:
   mapper-locations: classpath:mapper/charging/*.xml
   type-aliases-package: com.ruoyi.charging.domain

@@ -376,8 +376,9 @@ page { background-color: $bg; }
 	right: 0;
 	padding: 12px 16px;
 	padding-bottom: calc(12px + env(safe-area-inset-bottom));
-	background: $card;
+	background: #ffffff;
 	box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.04);
+	z-index: 999;
 }
 
 .submit-btn {

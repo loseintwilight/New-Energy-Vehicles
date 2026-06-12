@@ -719,11 +719,14 @@ export default {
 
     doScanCode() {
       uni.scanCode({
-        onlyFromCamera: false,
+        onlyFromCamera: true,
         success: (res) => {
           this.manualPileNumber = res.result || ''
         },
-        fail: () => {}
+        fail: (err) => {
+          console.log('扫码失败', err)
+          uni.showToast({ title: '扫码失败，请手动输入', icon: 'none' })
+        }
       })
     },
 

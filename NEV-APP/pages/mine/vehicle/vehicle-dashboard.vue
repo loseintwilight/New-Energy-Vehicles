@@ -503,7 +503,7 @@ export default {
       var urls = [
         '/pages/mine/vehicle/vehicle-list',
         '/pages/mine/vehicle/vehicle-order-list',
-        '/pages/mine/vehicle/finance-list',
+        '/pages/mine/vehicle/vehicle-order-list',
         '/pages/mine/vehicle/stock-manage'
       ]
       if (urls[idx]) {

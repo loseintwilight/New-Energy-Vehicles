@@ -251,6 +251,30 @@ public class AppOrderController extends BaseController {
     }
 
     /**
+     * 支付订单（统一支付接口）
+     * 充电订单：更新 pay_status = 1
+     * 统一订单：更新 status = 1（已付款）
+     */
+    @Log(title = "订单", businessType = BusinessType.UPDATE)
+    @PutMapping("/{id}/pay")
+    public AjaxResult payOrder(@PathVariable Long id,
+                                @RequestParam(required = false) String bizType) {
+        if ("charging".equals(bizType)) {
+            // 充电订单：更新支付状态
+            MineStadChargingOrder chargeOrder = new MineStadChargingOrder();
+            chargeOrder.setOrderId(id);
+            chargeOrder.setPayStatus("1");
+            return toAjax(stadChargingOrderService.updateStadChargingOrder(chargeOrder));
+        } else {
+            // 统一订单：更新订单状态为已付款
+            MineStadUnifiedOrder order = new MineStadUnifiedOrder();
+            order.setOrderId(id);
+            order.setStatus("1");
+            return toAjax(stadUnifiedOrderService.updateStadUnifiedOrder(order));
+        }
+    }
+
+    /**
      * 删除订单
      */
     @Log(title = "订单", businessType = BusinessType.DELETE)

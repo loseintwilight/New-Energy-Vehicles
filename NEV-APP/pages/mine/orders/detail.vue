@@ -533,11 +533,14 @@ export default {
         success: async (res) => {
           if (!res.confirm) return
           uni.showLoading({ title: '支付中...' })
-          // 模拟支付成功，发放碳积分
-          const { awardCarbonPoints } = await import('@/api/mine/carbon')
-          let points = 0
-          let sourceType = 0
           try {
+            // 1. 调用支付接口更新数据库
+            const { payOrder } = await import('@/api/mine/order')
+            await payOrder(this.order.id, this.order.bizType)
+            // 2. 发放碳积分
+            const { awardCarbonPoints } = await import('@/api/mine/carbon')
+            let points = 0
+            let sourceType = 0
             if (this.order.bizType === 'charging') {
               sourceType = 0
               const energy = parseFloat(this.order.totalEnergy) || 0
@@ -551,9 +554,11 @@ export default {
               await awardCarbonPoints(sourceType, this.order.id, points)
             }
           } catch (e) {
-            console.error('碳积分发放失败', e)
+            console.error('支付失败', e)
           }
           uni.hideLoading()
+          this.order.status = 'confirmed'
+          this.order.statusText = '已付款'
           if (points > 0) {
             uni.showModal({
               title: '支付成功',
@@ -563,8 +568,6 @@ export default {
           } else {
             uni.showToast({ title: '支付成功', icon: 'success' })
           }
-          this.order.status = 'confirmed'
-          this.order.statusText = '已付款'
         }
       })
     },

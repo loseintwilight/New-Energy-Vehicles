@@ -227,35 +227,20 @@ public class StationServiceImpl implements StationService {
         List<Object> tags = new ArrayList<>();
         // 快充/慢充标签
         if (fastCount > 0) {
-            Map<String, String> speedTag = new LinkedHashMap<>();
-            speedTag.put("text", fastCount > 0 && slowCount > 0 ? "快慢充" : "快充");
-            speedTag.put("type", "blue");
-            tags.add(speedTag);
+            tags.add(new TagVO(fastCount > 0 && slowCount > 0 ? "快慢充" : "快充", "blue"));
         }
         // 慢充专用标签（仅当慢充 > 0 且快充 == 0 时用"慢充"代替上方"快充"）
         if (fastCount == 0 && slowCount > 0) {
-            Map<String, String> speedTag = new LinkedHashMap<>();
-            speedTag.put("text", "慢充");
-            speedTag.put("type", "purple");
-            tags.add(speedTag);
+            tags.add(new TagVO("慢充", "purple"));
         }
         // 免费停车标签（仅当 parking_fee 精确等于"免费停车"时显示）
         if (isFreePark) {
-            Map<String, String> parkTag = new LinkedHashMap<>();
-            parkTag.put("text", "免费停车");
-            parkTag.put("type", "orange");
-            tags.add(parkTag);
+            tags.add(new TagVO("免费停车", "orange"));
         }
-        // 晚间优惠标签（根据费率时段判断）
-        Map<String, String> nightTag = new LinkedHashMap<>();
-        nightTag.put("text", "夜间优惠");
-        nightTag.put("type", "green");
-        tags.add(nightTag);
+        // 晚间优惠标签
+        tags.add(new TagVO("夜间优惠", "green"));
         // 24小时标签
-        Map<String, String> hourTag = new LinkedHashMap<>();
-        hourTag.put("text", "24小时");
-        hourTag.put("type", "gray");
-        tags.add(hourTag);
+        tags.add(new TagVO("24小时", "gray"));
         item.setTags(tags);
         // 移除不需要的字段
         item.setOccupyingPiles(null);

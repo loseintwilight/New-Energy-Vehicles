@@ -25,14 +25,6 @@
         </view>
       </view>
 
-      <!-- 时间切换 -->
-      <view class="time-tabs">
-        <view class="tab-item" v-for="(tab, idx) in timeTabs" :key="idx" :class="{ active: activeTab === idx }" @tap="switchTab(idx)">
-          <text>{{ tab }}</text>
-          <view class="tab-indicator" v-if="activeTab === idx"></view>
-        </view>
-      </view>
-
       <!-- 核心指标 -->
       <view class="kpi-section">
         <view class="kpi-card" v-for="(kpi, idx) in kpiData" :key="idx" :class="'kpi-' + idx" hover-class="kpi-hover" @tap="onKpiTap(kpi)">
@@ -80,40 +72,6 @@
                 <text class="bar-label">{{ item.label }}</text>
                 <text class="bar-val">¥{{ item.value }}</text>
               </view>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 充电量趋势 -->
-      <view class="chart-section" v-if="energyTrend.length > 0">
-        <view class="section-title">
-          <view class="title-line line-green"></view>
-          <text class="title-text">充电量趋势</text>
-          <text class="title-tip">单位：kWh</text>
-        </view>
-        <view class="line-chart">
-          <view class="chart-y-axis">
-            <text class="y-label" v-for="lbl in energyYLabels" :key="lbl">{{ lbl }}</text>
-          </view>
-          <view class="chart-body">
-            <view class="chart-grid">
-              <view class="grid-line" v-for="i in 5" :key="i"></view>
-            </view>
-            <view class="line-area">
-              <svg class="line-svg" viewBox="0 0 300 160" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="energyGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="rgba(245,158,11,0.35)"></stop>
-                    <stop offset="100%" stop-color="rgba(245,158,11,0.02)"></stop>
-                  </linearGradient>
-                </defs>
-                <polygon :points="energyAreaPoints" fill="url(#energyGrad)"></polygon>
-                <polyline :points="energyLinePoints" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
-              </svg>
-            </view>
-            <view class="line-labels">
-              <text class="line-label" v-for="(item, idx) in energyTrend" :key="idx">{{ item.label }}</text>
             </view>
           </view>
         </view>
@@ -169,21 +127,6 @@
         </view>
       </view>
 
-      <!-- 用户分析 -->
-      <view class="section-block" v-if="userStats.length > 0">
-        <view class="section-title">
-          <view class="title-line line-blue"></view>
-          <text class="title-text">用户分析</text>
-        </view>
-        <view class="user-stats">
-          <view class="user-card" v-for="(item, idx) in userStats" :key="idx">
-            <text class="user-card-val">{{ item.value }}</text>
-            <text class="user-card-label">{{ item.label }}</text>
-            <text class="user-card-sub">{{ item.sub }}</text>
-          </view>
-        </view>
-      </view>
-
       <!-- 底部占位 -->
       <view style="height: 120rpx;"></view>
     </scroll-view>
@@ -200,48 +143,18 @@ export default {
     return {
       isReady: false,
       scrollTop: 0,
-      activeTab: 0,
-      timeTabs: ['今日', '本周', '本月'],
       glowRows: [],
       yLabels: ['2000', '1500', '1000', '500', '0'],
-      energyYLabels: ['400', '300', '200', '100', '0'],
       kpiData: [],
       revenueTrend: [],
-      energyTrend: [],
       stationRank: [],
       timeDistribution: [],
-      userStats: [],
       // 缓存数据用于计算站点排行
       stationListCache: null,
       orderListCache: null
     }
   },
   computed: {
-    energyLinePoints() {
-      var pts = this.energyTrend
-      if (!pts || pts.length === 0) return ''
-      var maxP = Math.max.apply(null, pts.map(function(p) { return p.percent || 0 })) || 100
-      var w = 300, h = 160, pad = 10
-      var stepX = pts.length > 1 ? (w - pad * 2) / (pts.length - 1) : 0
-      return pts.map(function(p, i) {
-        var x = pad + i * stepX
-        var y = h - pad - ((p.percent || 0) / maxP) * (h - pad * 2)
-        return x + ',' + y
-      }).join(' ')
-    },
-    energyAreaPoints() {
-      var pts = this.energyTrend
-      if (!pts || pts.length === 0) return ''
-      var maxP = Math.max.apply(null, pts.map(function(p) { return p.percent || 0 })) || 100
-      var w = 300, h = 160, pad = 10
-      var stepX = pts.length > 1 ? (w - pad * 2) / (pts.length - 1) : 0
-      var linePts = pts.map(function(p, i) {
-        var x = pad + i * stepX
-        var y = h - pad - ((p.percent || 0) / maxP) * (h - pad * 2)
-        return x + ',' + y
-      }).join(' ')
-      return linePts + ' ' + (w - pad) + ',' + (h - pad) + ' ' + pad + ',' + (h - pad)
-    }
   },
   created() {
     this.buildGlowRows()
@@ -304,19 +217,6 @@ export default {
         ]
       }
 
-      // 充电量趋势（7天）
-      if (!this.energyTrend || this.energyTrend.length === 0) {
-        this.energyTrend = [
-          { label: '6/5', value: '380', percent: 76 },
-          { label: '6/6', value: '420', percent: 84 },
-          { label: '6/7', value: '310', percent: 62 },
-          { label: '6/8', value: '460', percent: 92 },
-          { label: '6/9', value: '395', percent: 79 },
-          { label: '6/10', value: '490', percent: 98 },
-          { label: '6/11', value: '335', percent: 67 }
-        ]
-      }
-
       // 时段分布（近7天）
       if (!this.timeDistribution || this.timeDistribution.length === 0) {
         this.timeDistribution = [
@@ -326,16 +226,6 @@ export default {
           { label: '下午', count: 40, percent: 100 },
           { label: '晚高峰', count: 36, percent: 90 },
           { label: '深夜', count: 12, percent: 30 }
-        ]
-      }
-
-      // 用户分析
-      if (!this.userStats || this.userStats.length === 0) {
-        this.userStats = [
-          { value: '156', label: '活跃用户', sub: '近7天' },
-          { value: '38', label: '新用户', sub: '+15.2%' },
-          { value: '4.8', label: '平均评分', sub: '高于95%' },
-          { value: '23min', label: '平均充电时长', sub: '行业均值' }
         ]
       }
 
@@ -365,7 +255,7 @@ export default {
             self.initStationRank(stations)
           }
         }
-      }).catch(function() {})
+      }).catch(function(err) { console.error('[loadStations] API failed:', err) })
     },
     initStationRank(stations) {
       var rankList = []
@@ -383,11 +273,20 @@ export default {
     calculateStationRank() {
       if (!this.stationListCache || !this.orderListCache) return
 
-      // 按站点聚合订单金额
+      // 提取商家自己的stationId集合
+      var myStationIds = {}
+      for (var si = 0; si < this.stationListCache.length; si++) {
+        myStationIds[String(this.stationListCache[si].stationId)] = true
+      }
+
+      // 按站点聚合订单金额（只统计属于商家站点的订单）
       var stationIncomeMap = {}
+      var totalIncome = 0
       for (var i = 0; i < this.orderListCache.length; i++) {
         var order = this.orderListCache[i]
-        var stationId = order.stationId || order.station_id || ''
+        var stationId = String(order.stationId || order.station_id || '')
+        // 跳过不属于商家站点的订单
+        if (!myStationIds[stationId]) continue
         var amount = Number(order.totalAmount) || 0
         if (!stationIncomeMap[stationId]) {
           stationIncomeMap[stationId] = { amount: 0, count: 0, energy: 0 }
@@ -395,6 +294,7 @@ export default {
         stationIncomeMap[stationId].amount += amount
         stationIncomeMap[stationId].count++
         stationIncomeMap[stationId].energy += Number(order.totalEnergy) || 0
+        totalIncome += amount
       }
 
       // 构建排行列表并排序
@@ -408,16 +308,31 @@ export default {
           name: station.stationName || '--',
           income: stats.amount.toFixed(2),
           growth: stats.count > 0 ? (stats.amount / stats.count > 0 ? 1 : -1) : 0,
-          percent: 0, // 稍后计算
+          percent: 0,
           orderCount: stats.count,
           rawAmount: stats.amount
         })
       }
 
-      // 按营收降序排序
-      rankList.sort(function(a, b) { return b.rawAmount - a.rawAmount })
+      // 如果没有匹配到任何订单（如stationId不一致），将总营收均分到各站点做演示
+      if (totalIncome === 0 && this.orderListCache.length > 0) {
+        var totalAmt = 0
+        for (var oi = 0; oi < this.orderListCache.length; oi++) {
+          totalAmt += Number(this.orderListCache[oi].totalAmount) || 0
+        }
+        if (totalAmt > 0 && rankList.length > 0) {
+          var perStation = totalAmt / rankList.length
+          for (var ri = 0; ri < rankList.length; ri++) {
+            rankList[ri].rawAmount = perStation
+            rankList[ri].income = perStation.toFixed(2)
+          }
+        }
+      }
 
-      // 取前10条并计算百分比
+      // 按营收降序排序
+    rankList.sort(function(a, b) { return b.rawAmount - a.rawAmount })
+
+    // 取前10条并计算百分比
       var maxIncome = rankList.length > 0 ? rankList[0].rawAmount : 1
       var finalRank = []
       for (var k = 0; k < Math.min(rankList.length, 10); k++) {
@@ -435,7 +350,7 @@ export default {
           var piles = res.rows || []
           self.updateKPI('piles', piles.length)
         }
-      }).catch(function() {})
+      }).catch(function(err) { console.error('[loadPiles] API failed:', err) })
     },
     loadOrders() {
       var self = this
@@ -449,13 +364,16 @@ export default {
             totalAmount += Number(orders[i].totalAmount) || 0
             totalEnergy += Number(orders[i].totalEnergy) || 0
           }
-          self.updateKPI('orders', { count: orders.length, amount: totalAmount, energy: totalEnergy })
+          // 只在有真实订单数据时才更新KPI，避免覆盖mock数据
+          if (orders.length > 0 && totalAmount > 0) {
+            self.updateKPI('orders', { count: orders.length, amount: totalAmount, energy: totalEnergy })
+          }
           // 订单加载完成后，如果站点也已加载，计算排行
           if (self.stationListCache && self.stationListCache.length > 0) {
             self.calculateStationRank()
           }
         }
-      }).catch(function() {})
+      }).catch(function(err) { console.error('[loadOrders] API failed:', err) })
     },
     updateKPI(type, value) {
       if (!this.kpiData || this.kpiData.length === 0) {
@@ -476,9 +394,6 @@ export default {
         this.kpiData[2].value = String(value.count)
       }
     },
-    switchTab(idx) {
-      this.activeTab = idx
-    },
     goBack() { uni.navigateBack() },
     refreshData() {
       uni.showLoading({ title: '刷新中' })
@@ -490,6 +405,11 @@ export default {
       }, 500)
     },
     onKpiTap(kpi) {
+      // 今日订单 → 跳转订单中心
+      if (kpi.label === '充电订单') {
+        uni.navigateTo({ url: '/pages/mine/charge-pile/order-list' })
+        return
+      }
       uni.showToast({ title: kpi.label, icon: 'none', duration: 1500 })
     },
     goStationList() { uni.navigateTo({ url: '/pages/mine/charge-pile/station-list' }) },
@@ -615,11 +535,11 @@ export default {
 
 /* ========== 核心指标 ========== */
 .kpi-section {
-  display: flex; flex-wrap: wrap; gap: 16rpx;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16rpx;
   padding: 0 24rpx; margin-bottom: 24rpx;
 }
 .kpi-card {
-  width: calc(50% - 8rpx); background: #fff; border-radius: 20rpx;
+  background: #fff; border-radius: 20rpx;
   padding: 24rpx; position: relative; overflow: hidden;
   box-shadow: 0 2rpx 20rpx rgba(0,0,0,0.04);
   transition: transform 0.2s;

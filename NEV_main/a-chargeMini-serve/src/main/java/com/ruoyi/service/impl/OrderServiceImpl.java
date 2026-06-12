@@ -9,6 +9,9 @@ import com.ruoyi.service.OrderService;
 import com.ruoyi.vo.OrderVO;
 import com.ruoyi.vo.PileVO;
 import com.ruoyi.vo.RateVO;
+import com.ruoyi.vo.StartChargeVO;
+import com.ruoyi.vo.ChargeStatusVO;
+import com.ruoyi.vo.StopChargeVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,7 +87,6 @@ public class OrderServiceImpl implements OrderService {
         Double electricPrice = null;
         Double servicePrice = null;
         Double totalPrice = null;
-
         if (rates != null && !rates.isEmpty()) {
             for (RateVO rate : rates) {
                 // 匹配费率组：pileType 一致或为 all
@@ -149,12 +151,12 @@ public class OrderServiceImpl implements OrderService {
         // 同步更新充电站表的可用/占用桩数
         stationMapper.syncStationPileCounts(stationId);
 
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("orderNo", orderNo);
-        data.put("electricPrice", electricPrice);
-        data.put("servicePrice", servicePrice);
-        data.put("totalPrice", totalPrice);
-        return AjaxResult.success(data);
+        StartChargeVO vo = new StartChargeVO();
+        vo.setOrderNo(orderNo);
+        vo.setElectricPrice(electricPrice);
+        vo.setServicePrice(servicePrice);
+        vo.setTotalPrice(totalPrice);
+        return AjaxResult.success(vo);
     }
 
     @Override
@@ -164,15 +166,15 @@ public class OrderServiceImpl implements OrderService {
             return AjaxResult.error("订单不存在");
         }
 
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("orderId", orderNo);
-        data.put("status", order.getStatus());
-        data.put("orderNo", order.getOrderNo());
-        data.put("stationName", order.getStationName());
-        data.put("pileNo", order.getPileNo());
-        data.put("chargeType", order.getChargeType());
-        data.put("startTime", order.getStartTime());
-        data.put("endTime", order.getEndTime());
+        ChargeStatusVO statusVO = new ChargeStatusVO();
+        statusVO.setOrderId(orderNo);
+        statusVO.setStatus(order.getStatus());
+        statusVO.setOrderNo(order.getOrderNo());
+        statusVO.setStationName(order.getStationName());
+        statusVO.setPileNo(order.getPileNo());
+        statusVO.setChargeType(order.getChargeType());
+        statusVO.setStartTime(order.getStartTime());
+        statusVO.setEndTime(order.getEndTime());
 
         String status = order.getStatus();
         Double targetEnergy = order.getEnergy() != null ? order.getEnergy() : 0D;
@@ -233,7 +235,7 @@ public class OrderServiceImpl implements OrderService {
                     }
                 }
 
-                data.put("status", "1");
+                statusVO.setStatus("1");
                 chargePercent = 100;
                 // 用目标电量计算费用
                 actualEnergy = targetEnergy;
@@ -259,15 +261,15 @@ public class OrderServiceImpl implements OrderService {
         }
         chargedAmount = Math.round((electricFee + serviceFee) * 100.0) / 100.0;
 
-        data.put("chargedTime", chargedTime);
-        data.put("chargedEnergy", String.format("%.1f", actualEnergy));
-        data.put("chargedAmount", String.format("%.2f", chargedAmount));
-        data.put("electricFee", String.format("%.2f", electricFee));
-        data.put("serviceFee", String.format("%.2f", serviceFee));
-        data.put("totalEstimate", String.format("%.2f", chargedAmount));
-        data.put("chargePercent", chargePercent);
+        statusVO.setChargedTime(chargedTime);
+        statusVO.setChargedEnergy(String.format("%.1f", actualEnergy));
+        statusVO.setChargedAmount(String.format("%.2f", chargedAmount));
+        statusVO.setElectricFee(String.format("%.2f", electricFee));
+        statusVO.setServiceFee(String.format("%.2f", serviceFee));
+        statusVO.setTotalEstimate(String.format("%.2f", chargedAmount));
+        statusVO.setChargePercent(chargePercent);
 
-        return AjaxResult.success(data);
+        return AjaxResult.success(statusVO);
     }
 
     @Override
@@ -280,17 +282,17 @@ public class OrderServiceImpl implements OrderService {
 
         // 如果订单已完成或已取消，直接返回成功（避免重复操作）
         if (!"0".equals(order.getStatus())) {
-            Map<String, Object> data = new LinkedHashMap<>();
-            data.put("orderNo", orderNo);
-            data.put("chargedAmount", order.getAmount() != null ? order.getAmount() : 0D);
-            data.put("energy", order.getEnergy() != null ? order.getEnergy() : 0D);
-            data.put("electricFee", order.getElectricFee() != null ? order.getElectricFee() : 0D);
-            data.put("serviceFee", order.getServiceFee() != null ? order.getServiceFee() : 0D);
-            data.put("total", order.getAmount() != null ? order.getAmount() : 0D);
+            StopChargeVO vo = new StopChargeVO();
+            vo.setOrderNo(orderNo);
+            vo.setChargedAmount(order.getAmount() != null ? order.getAmount() : 0D);
+            vo.setEnergy(order.getEnergy() != null ? order.getEnergy() : 0D);
+            vo.setElectricFee(order.getElectricFee() != null ? order.getElectricFee() : 0D);
+            vo.setServiceFee(order.getServiceFee() != null ? order.getServiceFee() : 0D);
+            vo.setTotal(order.getAmount() != null ? order.getAmount() : 0D);
             int d = order.getDuration() != null ? order.getDuration() : 0;
-            data.put("duration", d);
-            data.put("durationText", (d / 60) + "分");
-            return AjaxResult.success(data);
+            vo.setDuration(d);
+            vo.setDurationText((d / 60) + "分");
+            return AjaxResult.success(vo);
         }
 
         // 计算实际充电量：按时间比例（5秒充满测试模式）
@@ -339,18 +341,18 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("orderNo", orderNo);
-        data.put("duration", durationSecs);
+        StopChargeVO vo = new StopChargeVO();
+        vo.setOrderNo(orderNo);
+        vo.setDuration(durationSecs);
         int hours = durationSecs / 3600;
         int mins = (durationSecs % 3600) / 60;
-        data.put("durationText", hours > 0 ? hours + "小时" + mins + "分" : mins + "分");
-        data.put("energy", actualEnergy);
-        data.put("chargedAmount", totalAmount);
-        data.put("electricFee", electricFee);
-        data.put("serviceFee", serviceFee);
-        data.put("total", totalAmount);
-        return AjaxResult.success(data);
+        vo.setDurationText(hours > 0 ? hours + "小时" + mins + "分" : mins + "分");
+        vo.setEnergy(actualEnergy);
+        vo.setChargedAmount(totalAmount);
+        vo.setElectricFee(electricFee);
+        vo.setServiceFee(serviceFee);
+        vo.setTotal(totalAmount);
+        return AjaxResult.success(vo);
     }
 
     @Override

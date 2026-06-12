@@ -49,3 +49,12 @@ export function getOrderStatusCount() {
     method: 'get'
   })
 }
+
+// 支付订单
+export function payOrder(id, bizType) {
+  return request({
+    url: `/app/order/${id}/pay`,
+    method: 'put',
+    params: { bizType }
+  })
+}

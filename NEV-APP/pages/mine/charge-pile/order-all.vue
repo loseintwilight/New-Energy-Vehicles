@@ -22,7 +22,7 @@
           <text class="back-icon">‹</text>
         </view>
         <view class="header-info">
-          <text class="header-title">充电订单</text>
+          <text class="header-title">全部订单</text>
           <text class="header-sub">共 {{ filteredOrders.length }} 笔订单</text>
         </view>
       </view>
@@ -30,13 +30,13 @@
       <!-- 统计概览条（3个毛玻璃小卡片横排） -->
       <view class="stats-bar">
         <view class="stat-item">
-          <text class="stat-val">{{ todayOrderCount }}</text>
-          <text class="stat-label">今日订单</text>
+          <text class="stat-val">{{ totalOrderCount }}</text>
+          <text class="stat-label">全部订单</text>
         </view>
         <view class="stat-divider"></view>
         <view class="stat-item">
-          <text class="stat-val">¥{{ todayRevenue }}</text>
-          <text class="stat-label">今日营收</text>
+          <text class="stat-val">¥{{ totalRevenue }}</text>
+          <text class="stat-label">总营收</text>
         </view>
         <view class="stat-divider"></view>
         <view class="stat-item">
@@ -67,7 +67,7 @@
         <!-- 空状态 -->
         <view class="empty-state" v-if="filteredOrders.length === 0 && !loading">
           <text class="empty-icon">📋</text>
-          <text class="empty-title">暂无订单数据</text>
+          <text class="empty-title">暂无订单</text>
           <text class="empty-desc">试试调整筛选条件或下拉刷新</text>
         </view>
 
@@ -163,16 +163,13 @@ export default {
       }
       return list
     },
-    todayOrderCount: function() {
-      var self = this
-      var today = (new Date().getFullYear() + "-" + String(new Date().getMonth() + 1).padStart(2, "0") + "-" + String(new Date().getDate()).padStart(2, "0"))
-      return self.orderList.filter(function(o) { return self.toDateStr(o.startTime || o.createTime) === today }).length
+    totalOrderCount: function() {
+      return this.orderList.length
     },
-    todayRevenue: function() {
+    totalRevenue: function() {
       var self = this
       var sum = 0
-      var today = (new Date().getFullYear() + "-" + String(new Date().getMonth() + 1).padStart(2, "0") + "-" + String(new Date().getDate()).padStart(2, "0"))
-      self.orderList.filter(function(o) { return self.toDateStr(o.startTime || o.createTime) === today && o.orderStatus !== '2' }).forEach(function(o) { sum += (o.totalAmount || 0) })
+      self.orderList.filter(function(o) { return o.orderStatus !== '2' }).forEach(function(o) { sum += (o.totalAmount || 0) })
       return sum.toFixed(2)
     },
     chargingCount: function() {
@@ -187,12 +184,7 @@ export default {
     setTimeout(function() { that.isReady = true }, 200)
   },
   methods: {
-    toDateStr: function(val) {
-      if (!val) return ""
-      var d = new Date(val)
-      if (isNaN(d.getTime())) return ""
-      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0")
-    },
+
     /* ---------- 数据加载 ---------- */
     loadOrders: function() {
       var self = this

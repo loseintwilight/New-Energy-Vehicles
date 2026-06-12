@@ -96,6 +96,25 @@ const CITY_DISTRICTS = {
   '菏泽市': ['牡丹区', '定陶区', '曹县', '单县', '成武县', '巨野县', '郓城县', '鄄城县', '东明县']
 }
 
+const CITY_COORDS = {
+  '济南市': { lat: 36.6512, lng: 117.1201 },
+  '青岛市': { lat: 36.0671, lng: 120.3826 },
+  '淄博市': { lat: 36.8135, lng: 118.0548 },
+  '枣庄市': { lat: 34.8107, lng: 117.3217 },
+  '东营市': { lat: 37.4348, lng: 118.6746 },
+  '烟台市': { lat: 37.4645, lng: 121.4479 },
+  '潍坊市': { lat: 36.7068, lng: 119.1618 },
+  '济宁市': { lat: 35.4145, lng: 116.5870 },
+  '泰安市': { lat: 36.2000, lng: 117.0876 },
+  '威海市': { lat: 37.5135, lng: 122.1205 },
+  '日照市': { lat: 35.4164, lng: 119.5269 },
+  '临沂市': { lat: 35.1047, lng: 118.3565 },
+  '德州市': { lat: 37.4356, lng: 116.3593 },
+  '聊城市': { lat: 36.4570, lng: 115.9855 },
+  '滨州市': { lat: 37.3820, lng: 117.9728 },
+  '菏泽市': { lat: 35.2336, lng: 115.4806 }
+}
+
 export default {
   mixins: [safeAreaMixin],
   data() {
@@ -173,6 +192,13 @@ export default {
       const name = cityName.replace(/[市区县].*$/, '') + '市'
       const finalName = CITY_LETTER_MAP[name] ? name : cityName
       uni.setStorageSync('selectedCity', finalName)
+      // 同时保存城市坐标
+      const coords = CITY_COORDS[finalName]
+      if (coords) {
+        uni.setStorageSync('selectedCityCoords', coords)
+      }
+      // 设置标记，通知充电页面城市已变更需要重新定位
+      uni.setStorageSync('cityJustChanged', true)
       uni.navigateBack()
     },
     scrollToLetter(letter) {

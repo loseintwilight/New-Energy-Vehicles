@@ -387,15 +387,27 @@ export default {
 
   onShow() {
     this.noticeCount = uni.getStorageSync('unreadNotice') || 0
+
+    // 检测城市变更标记（从城市选择页面返回时由 city-select 设置）
+    const cityJustChanged = uni.getStorageSync('cityJustChanged')
+    if (cityJustChanged) {
+      // 清除标记，避免重复触发
+      uni.removeStorageSync('cityJustChanged')
+      const savedCity = uni.getStorageSync('selectedCity') || '济南市'
+      this.currentCity = savedCity
+      this.queryParams.pageNum = 1
+      this.stationList = []
+      this.onCityChanged(savedCity)
+      return
+    }
+
+    // 兜底：如果 currentCity 与存储不一致，也触发更新
     const savedCity = uni.getStorageSync('selectedCity')
     if (savedCity && savedCity !== this.currentCity) {
       this.currentCity = savedCity
       this.queryParams.pageNum = 1
       this.stationList = []
-      if (!this.locationReady) {
-        this.initLocation()
-      }
-      this.fetchStationList(true)
+      this.onCityChanged(savedCity)
     }
   },
 
@@ -468,6 +480,71 @@ export default {
       this.mapCenter = { lat, lng }
     },
 
+    async onCityChanged(cityName) {
+      uni.showLoading({ title: '定位中...', mask: true })
+      // 优先使用城市选择页面保存的坐标
+      const storedCoords = uni.getStorageSync('selectedCityCoords')
+      if (storedCoords && storedCoords.lat && storedCoords.lng) {
+        this.setLocation(storedCoords.lat, storedCoords.lng)
+        uni.hideLoading()
+        await this.fetchStationList(true)
+        // 确保地图移动到新城市坐标
+        this.moveToCoords(storedCoords.lat, storedCoords.lng)
+        return
+      }
+      // 降级：通过高德地理编码获取坐标
+      try {
+        const result = await amap.geocode(cityName)
+        if (result && result.latitude && result.longitude) {
+          this.setLocation(result.latitude, result.longitude)
+          uni.hideLoading()
+          await this.fetchStationList(true)
+          this.moveToCoords(result.latitude, result.longitude)
+          return
+        }
+      } catch (e) {
+        console.error('[onCityChanged] 地理编码失败:', e)
+      }
+      uni.hideLoading()
+      this.fetchStationList(true)
+    },
+
+    /** 移动地图到指定坐标，带重试机制确保地图就绪 */
+    moveToCoords(lat, lng) {
+      // 先更新绑定的 mapCenter（保证 map 组件的 latitude/longitude 正确）
+      this.mapCenter = { lat, lng }
+      const tryMove = (attempt = 0) => {
+        if (attempt > 10) return
+        if (this.mapCtx) {
+          this.mapCtx.moveToLocation({ latitude: lat, longitude: lng })
+        } else {
+          // 地图上下文尚未就绪，等待后重试
+          setTimeout(() => {
+            if (!this.mapCtx) {
+              this.mapCtx = uni.createMapContext('chargeMap', this)
+            }
+            tryMove(attempt + 1)
+          }, 200)
+        }
+      }
+      this.$nextTick(() => tryMove())
+    },
+
+    /** 点击重新定位时重置城市名为默认城市 */
+    refreshCurrentCity(lat, lng) {
+      // 重新定位时直接重置为默认城市
+      this.currentCity = '济南市'
+      uni.setStorageSync('selectedCity', '济南市')
+      // 尝试逆地理编码获取真实城市（仅作为优化，失败不影响功能）
+      amap.reverseGeocode(lng, lat).then(result => {
+        if (result && typeof result.city === 'string' && result.city) {
+          const cityName = result.city.indexOf('市') !== -1 ? result.city : result.city + '市'
+          this.currentCity = cityName
+          uni.setStorageSync('selectedCity', cityName)
+        }
+      }).catch(() => {})
+    },
+
     reLocate() {
       if (this.locating) return
       this.locating = true
@@ -486,6 +563,8 @@ export default {
         this.queryParams.pageNum = 1
         this.stationList = []
         this.fetchStationList(true)
+        // 逆地理编码：根据坐标更新当前城市名称
+        this.refreshCurrentCity(pos.latitude, pos.longitude)
         this.locating = false
         uni.hideLoading()
       }).catch(() => {
@@ -506,6 +585,7 @@ export default {
           this.queryParams.pageNum = 1
           this.stationList = []
           this.fetchStationList(true)
+          this.refreshCurrentCity(res.latitude, res.longitude)
           this.locating = false
         },
         fail: () => {
@@ -525,6 +605,7 @@ export default {
           this.queryParams.pageNum = 1
           this.stationList = []
           this.fetchStationList(true)
+          this.refreshCurrentCity(res.latitude, res.longitude)
           this.locating = false
         },
         fail: () => {

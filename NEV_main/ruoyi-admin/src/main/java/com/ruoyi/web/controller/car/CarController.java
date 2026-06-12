@@ -161,8 +161,59 @@ public class CarController extends BaseController {
         if (params.get("oldValuation") != null) {
             order.setOldValuation(new BigDecimal(params.get("oldValuation").toString()));
         }
-        // 以旧换新暂未关联具体车辆，设 vehicleId = 1 兜底
-        order.setVehicleId(1L);
+        // 保存旧车详细信息到 insurance_info（PC端购车订单菜单可见）
+        StringBuilder oldCarInfo = new StringBuilder();
+        if (params.get("oldVehicleBrand") != null) oldCarInfo.append("品牌:").append(params.get("oldVehicleBrand")).append(";");
+        if (params.get("oldVehicleModel") != null) oldCarInfo.append("车型:").append(params.get("oldVehicleModel")).append(";");
+        if (params.get("oldVehicleYear") != null) oldCarInfo.append("年份:").append(params.get("oldVehicleYear")).append(";");
+        if (params.get("mileage") != null) oldCarInfo.append("里程:").append(params.get("mileage")).append(";");
+        if (params.get("condition") != null) oldCarInfo.append("车况:").append(params.get("condition")).append(";");
+        if (params.get("storeName") != null) oldCarInfo.append("门店:").append(params.get("storeName"));
+        if (oldCarInfo.length() > 0) {
+            order.setInsuranceInfo(oldCarInfo.toString());
+        }
+        // 关联新车信息
+        if (params.get("newVehicleId") != null) {
+            try {
+                order.setVehicleId(Long.valueOf(params.get("newVehicleId").toString()));
+            } catch (Exception ignored) {
+                order.setVehicleId(1L);
+            }
+        } else {
+            order.setVehicleId(1L);
+        }
+        if (params.get("newVehiclePrice") != null) {
+            try {
+                order.setVehiclePrice(new BigDecimal(params.get("newVehiclePrice").toString()));
+            } catch (Exception ignored) {}
+        }
+        // 如果前端没传新车价格，从新车表查询（guidePrice已是元）
+        if (order.getVehiclePrice() == null && order.getVehicleId() != null) {
+            try {
+                NewCar nc = newCarService.selectCarById(order.getVehicleId());
+                if (nc != null && nc.getGuidePrice() != null) {
+                    order.setVehiclePrice(BigDecimal.valueOf(nc.getGuidePrice()));
+                }
+            } catch (Exception ignored) {}
+        }
+        if (params.get("newVehicleModel") != null) {
+            // 新车车型名暂存到 expectTimeSlot 字段中
+            order.setExpectTimeSlot(params.get("newVehicleModel").toString());
+        }
+        // 如果前端没传车型名，从新车表查询
+        if ((order.getExpectTimeSlot() == null || order.getExpectTimeSlot().isEmpty()) && order.getVehicleId() != null) {
+            try {
+                NewCar nc = newCarService.selectCarById(order.getVehicleId());
+                if (nc != null && nc.getModelName() != null) {
+                    order.setExpectTimeSlot(nc.getModelName());
+                }
+            } catch (Exception ignored) {}
+        }
+        // 订单总金额（元）= 新车价格(元) - 旧车估值(元)
+        if (order.getVehiclePrice() != null && order.getOldValuation() != null) {
+            BigDecimal total = order.getVehiclePrice().subtract(order.getOldValuation());
+            order.setTotalAmount(total.compareTo(BigDecimal.ZERO) > 0 ? total : BigDecimal.ZERO);
+        }
         order.setStatus("0");
 
         int result = stadUnifiedOrderService.insertStadUnifiedOrder(order);

@@ -63,6 +63,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="shopId != null">
                 AND o.shop_id = #{shopId}
             </if>
+            <if test="userId != null">
+                AND o.user_id = #{userId}
+            </if>
             <if test="serviceItem != null and serviceItem != ''">
                 AND o.service_item like concat('%', #{serviceItem}, '%')
             </if>

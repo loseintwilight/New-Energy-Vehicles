@@ -12,7 +12,7 @@
 
 		<!-- 用户卡片 + 导航 -->
 		<view>
-			<view class="user-card">
+			<view class="user-card" @click="goToMine">
 				<view class="user-left">
 					<image :src="userAvatar || '/static/images/index/touxiang.png'" class="avatar-circle" />
 					<view class="user-info">
@@ -115,9 +115,11 @@
 </template>
 
 <script>
+	import { getCarbonOverview } from '@/api/mine/carbon'
 	export default {
 		data() {
 			return {
+				realCarbonPoints: 0,
 				newlist: [
 					"/static/images/index/img2.png",
 					"/static/images/index/img1.png",
@@ -244,8 +246,14 @@
 				return this.$store.state.user.avatar
 			},
 			carbonPoints() {
-				return '1,280'
+				return this.realCarbonPoints
 			}
+		},
+		created() {
+			this.loadCarbonPoints()
+		},
+		onShow() {
+			this.loadCarbonPoints()
 		},
 		methods: {
 			switchTab(index) {
@@ -278,6 +286,17 @@
 				} else {
 					uni.showToast({ title: `即将跳转至${title}`, icon: "none" });
 				}
+			},
+			goToMine() {
+				uni.switchTab({ url: '/pages/mine/index' })
+			},
+			loadCarbonPoints() {
+				getCarbonOverview().then(res => {
+					const data = res.data || res
+					this.realCarbonPoints = data.points || data.totalEarned || 0
+				}).catch(() => {
+					this.realCarbonPoints = 0
+				})
 			}
 		}
 	};

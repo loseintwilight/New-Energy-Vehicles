@@ -49,3 +49,12 @@ export function doCheckIn() {
     method: 'post'
   })
 }
+
+// 订单支付后发放碳积分
+export function awardCarbonPoints(sourceType, sourceId, points) {
+  return request({
+    url: '/app/carbon/award',
+    method: 'post',
+    params: { sourceType, sourceId, points }
+  })
+}

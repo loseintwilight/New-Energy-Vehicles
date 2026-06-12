@@ -162,7 +162,7 @@
       const list = this.currentFilter === 'all'
         ? this.records
         : this.records.filter(r => r.record_type === typeMap[this.currentFilter])
-      const iconMap = { 0: '\ue699', 1: '\ue7ae', 2: '\ue741', 3: '\ue604' }
+      const iconMap = { 0: '', 1: '', 2: '', 3: '' }
       const iconClassMap = { 0: 'icon-earn', 1: 'icon-spend', 2: 'icon-exchange', 3: 'icon-read' }
       const sourceTitles = { 0: '充电获得', 1: '购车奖励', 2: '阅读获得', 3: '签到获得', 4: '积分兑换', 5: '系统操作' }
       return list.map(r => ({
@@ -222,10 +222,8 @@
         // 使用默认获取方式
         if (this.earnWays.length === 0) {
           this.earnWays = [
-            { type: 'charge', name: '充电', iconImg: '/static/images/index/charging.png', points: 10, desc: '每次充电获得', bgClass: 'bg-green' },
-            { type: 'checkin', name: '签到', iconImg: '/static/images/index/work.png', points: 5, desc: '每日签到获得', bgClass: 'bg-purple' },
-            { type: 'purchase', name: '购车', iconImg: '/static/images/index/car.png', points: 500, desc: '购买新能源车获得', bgClass: 'bg-blue' },
-            { type: 'read', name: '阅读', iconImg: '/static/images/index/CO2.png', points: 2, desc: '阅读环保文章获得', bgClass: 'bg-orange' }
+            { type: 'charge', name: '充电', iconImg: '/static/images/index/charging.png', points: 10, desc: '订单支付后每1kWh获得10积分', bgClass: 'bg-green' },
+            { type: 'purchase', name: '购车', iconImg: '/static/images/index/car.png', points: 500, desc: '支付完成后一次性获得500积分', bgClass: 'bg-blue' }
           ]
         }
       }

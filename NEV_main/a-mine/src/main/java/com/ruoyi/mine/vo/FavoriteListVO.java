@@ -27,6 +27,7 @@ public class FavoriteListVO {
     private Integer range;
     private BigDecimal battery;
     private BigDecimal price;
+    private String image;
 
     // ===== 充电站收藏特有字段 =====
     private String stationName;
@@ -69,6 +70,9 @@ public class FavoriteListVO {
 
     public BigDecimal getPrice() { return price; }
     public void setPrice(BigDecimal price) { this.price = price; }
+
+    public String getImage() { return image; }
+    public void setImage(String image) { this.image = image; }
 
     // station
     public String getStationName() { return stationName; }

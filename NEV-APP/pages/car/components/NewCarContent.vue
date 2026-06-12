@@ -37,7 +37,6 @@
             <view class="card-price">
               <text class="price-symbol">¥</text>
               <text class="price-num">{{ car.guidePrice }}</text>
-              <text class="price-unit">万</text>
             </view>
             <view class="card-actions">
               <text class="card-delivery">{{ car.deliveryTime }}</text>
@@ -90,34 +89,34 @@ export default {
 
   methods: {
     fetchCarList() {
-      const carImages = [
-        '/static/images/car/main/比亚迪汉EV冠军版 .jpg',
-        '/static/images/car/main/特斯拉Model Y.png',
-        '/static/images/car/main/蔚来ES6.jpg',
-        '/static/images/car/main/小鹏p7i.jpeg',
-        '/static/images/car/main/理想L7.jpg',
-        '/static/images/car/main/五菱宏光MINI EV 马卡龙.jpg',
-        '/static/images/car/main/比亚迪汉EV 创世版.jpg',
-        '/static/images/car/main/特斯拉Model3.jpg'
-      ]
+      // 车辆ID → 图片映射（static/images/car/main/ 下的图片）
+      const idImageMap = {
+        1: '/static/images/car/main/比亚迪汉EV冠军版 .jpg',
+        2: '/static/images/car/main/特斯拉Model Y.png',
+        3: '/static/images/car/main/蔚来ES6.jpg',
+        4: '/static/images/car/main/小鹏p7i.jpeg',
+        5: '/static/images/car/main/理想L7.jpg'
+      }
       getCarList().then(res => {
-        this.carList = (res.rows || []).map((car, index) => ({
-          vehicleId: car.vehicleId,
-          modelName: car.modelName,
-          title: car.title,
-          guidePrice: car.guidePrice,
-          color: car.color || '海湾蓝',
-          tags: car.tags || '',
-          image: carImages[index] || car.image || '/static/images/car/car1.png',
-          typeLabel: car.vehicleType === 'new' ? '全新现车' : '二手车',
-          exteriorHex: car.exteriorHex || '#4A7DB4',
-          interiorColor: car.interiorColor || '极夜黑',
-          interiorHex: car.interiorHex || '#1a1a1a',
-          wheel: car.wheel || '19英寸钻石轮毂',
-          rangeKm: car.rangeKm || 700,
-          deliveryTime: car.publishTime ? '已发布' : '现车供应',
-          description: car.description || ''
-        }))
+        this.carList = (res.rows || []).map((car, index) => {
+          return {
+            vehicleId: car.vehicleId,
+            modelName: car.modelName,
+            title: car.title,
+            guidePrice: car.guidePrice,
+            color: car.color || '海湾蓝',
+            tags: car.tags || '',
+            image: car.image || idImageMap[Number(car.vehicleId)] || '/static/images/car/car1.png',
+            typeLabel: car.vehicleType === 'new' ? '全新现车' : '二手车',
+            exteriorHex: car.exteriorHex || '#4A7DB4',
+            interiorColor: car.interiorColor || '极夜黑',
+            interiorHex: car.interiorHex || '#1a1a1a',
+            wheel: car.wheel || '19英寸钻石轮毂',
+            rangeKm: car.rangeKm || 700,
+            deliveryTime: car.publishTime ? '已发布' : '现车供应',
+            description: car.description || ''
+          }
+        })
       }).catch(() => {
         this.carList = []
       })

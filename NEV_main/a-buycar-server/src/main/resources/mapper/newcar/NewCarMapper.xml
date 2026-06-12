@@ -18,6 +18,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="tags"         column="tags"          />
         <result property="viewCount"    column="view_count"    />
         <result property="status"       column="status"        />
+        <result property="image"        column="image"         />
         <result property="publishTime"  column="publish_time"  />
         <result property="createTime"   column="create_time"   />
         <result property="updateTime"   column="update_time"   />

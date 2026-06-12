@@ -77,7 +77,7 @@
           <view class="action-icon-box bg-gradient-blue">
             <uni-icons type="location" size="36" color="#fff"></uni-icons>
           </view>
-          <text class="action-text">我的车辆</text>
+          <text class="action-text">购车记录</text>
         </view>
         <view class="action-item" @click="handleToCharging">
           <view class="action-icon-box bg-gradient-green">
@@ -128,42 +128,48 @@
       </view>
     </view>
 
-    <!-- 订单状态 -->
-    <view class="order-section" v-if="name">
-      <view class="section-header">
-        <text class="section-title">我的订单</text>
-        <view class="section-more" @click="handleToOrders">
-          <text>全部订单</text>
-          <uni-icons type="forward" size="20" color="#999"></uni-icons>
+    <!-- 订单状态（与PC端维保5态一致） -->
+      <view class="order-section" v-if="name">
+        <view class="section-header">
+          <text class="section-title">我的订单</text>
+          <view class="section-more" @click="handleToOrders">
+            <text>全部订单</text>
+            <uni-icons type="forward" size="20" color="#999"></uni-icons>
+          </view>
+        </view>
+        <view class="order-status">
+          <view class="status-item" @click="handleToOrderStatus('pending_confirm')">
+            <view class="status-icon-box bg-orange">
+              <uni-icons type="circle" size="32" color="#ff9800"></uni-icons>
+            </view>
+            <text class="status-text">待确认</text>
+          </view>
+          <view class="status-item" @click="handleToOrderStatus('confirmed')">
+            <view class="status-icon-box bg-blue">
+              <uni-icons type="checkbox" size="32" color="#2196f3"></uni-icons>
+            </view>
+            <text class="status-text">已确认</text>
+          </view>
+          <view class="status-item" @click="handleToOrderStatus('in_service')">
+            <view class="status-icon-box bg-cyan">
+              <uni-icons type="loop" size="32" color="#00bcd4"></uni-icons>
+            </view>
+            <text class="status-text">服务中</text>
+          </view>
+          <view class="status-item" @click="handleToOrderStatus('completed')">
+            <view class="status-icon-box bg-green">
+              <uni-icons type="checkmarkempty" size="32" color="#4caf50"></uni-icons>
+            </view>
+            <text class="status-text">已完成</text>
+          </view>
+          <view class="status-item" @click="handleToOrderStatus('cancelled')">
+            <view class="status-icon-box bg-gray">
+              <uni-icons type="close" size="32" color="#9e9e9e"></uni-icons>
+            </view>
+            <text class="status-text">已取消</text>
+          </view>
         </view>
       </view>
-      <view class="order-status">
-        <view class="status-item" @click="handleToOrderStatus('unpaid')">
-          <view class="status-icon-box bg-orange">
-            <uni-icons type="star" size="32" color="#ff9800"></uni-icons>
-          </view>
-          <text class="status-text">待支付</text>
-        </view>
-        <view class="status-item" @click="handleToOrderStatus('pending')">
-          <view class="status-icon-box bg-blue">
-            <uni-icons type="circle" size="32" color="#2196f3"></uni-icons>
-          </view>
-          <text class="status-text">待服务</text>
-        </view>
-        <view class="status-item" @click="handleToOrderStatus('completed')">
-          <view class="status-icon-box bg-green">
-            <uni-icons type="checkmarkempty" size="32" color="#4caf50"></uni-icons>
-          </view>
-          <text class="status-text">已完成</text>
-        </view>
-        <view class="status-item" @click="handleToOrderStatus('cancelled')">
-          <view class="status-icon-box bg-gray">
-            <uni-icons type="close" size="32" color="#9e9e9e"></uni-icons>
-          </view>
-          <text class="status-text">已取消</text>
-        </view>
-      </view>
-    </view>
 
     <!-- 功能菜单列表 -->
     <view class="menu-section">
@@ -233,8 +239,9 @@ export default {
       couponCount: 0,
       walletBalance: '0.00',
       orderStatusCount: {
-        unpaid: 0,
-        pending: 0,
+        pending_confirm: 0,
+        confirmed: 0,
+        in_service: 0,
         completed: 0,
         cancelled: 0
       }
@@ -312,8 +319,9 @@ export default {
         if (res && (res.code === 200 || res.code === 0)) {
           const data = res.data || {}
           this.orderStatusCount = {
-            unpaid: data.unpaid || 0,
-            pending: data.pending || 0,
+            pending_confirm: data.pending_confirm || 0,
+            confirmed: data.confirmed || 0,
+            in_service: data.in_service || 0,
             completed: data.completed || 0,
             cancelled: data.cancelled || 0
           }
@@ -718,6 +726,15 @@ export default {
     font-size: 22rpx;
     color: #666;
   }
+
+  .status-icon-box.bg-cyan {
+    background-color: #e0f7fa;
+  }
+
+  .status-icon-box.bg-cyan uni-icons {
+    color: #00bcd4;
+  }
+
 
   /* 碳积分模块 */
   .carbon-section {

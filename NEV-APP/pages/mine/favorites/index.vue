@@ -101,8 +101,8 @@
             <view class="card-bg car-bg"></view>
             <view class="card-content">
               <view class="car-main">
-                <view class="car-icon-box">
-                  <image src="/static/images/index/car.png" class="car-card-icon" mode="aspectFit" />
+                <view class="car-img-box">
+                  <image :src="item.image" class="car-card-img" mode="aspectFill" />
                 </view>
                 <view class="car-info">
                   <text class="car-model">{{ item.model }}</text>
@@ -122,7 +122,7 @@
               <view class="car-price-row">
                 <text class="price-symbol">¥</text>
                 <text class="price-num">{{ item.price }}</text>
-                <text class="price-unit">万</text>
+                
               </view>
             </view>
             <view class="card-arrow">
@@ -226,8 +226,8 @@
           <view v-for="item in carFavorites" :key="item.id" class="fav-card car-card-full" @click="handleDetail(item)">
             <view class="card-content">
               <view class="car-main">
-                <view class="car-icon-box">
-                  <image src="/static/images/index/car.png" class="car-card-icon" mode="aspectFit" />
+                <view class="car-img-box">
+                  <image :src="item.image" class="car-card-img" mode="aspectFill" />
                 </view>
                 <view class="car-info">
                   <text class="car-model">{{ item.model }}</text>
@@ -247,7 +247,7 @@
               <view class="car-price-row">
                 <text class="price-symbol">¥</text>
                 <text class="price-num">{{ item.price }}</text>
-                <text class="price-unit">万起</text>
+                
               </view>
             </view>
             <view class="card-actions">
@@ -322,6 +322,7 @@
 
 <script>
 import { getCollectionList, cancelCollection } from '@/api/mine/collection'
+import { getCarList } from '@/api/car/car'
 
 export default {
   data() {
@@ -415,14 +416,24 @@ export default {
       }
     },
     formatCarFavorite(item) {
+      const targetId = Number(item.targetId) || 0
+      // 车辆ID → 图片路径映射（static/images/car/main/ 下的图片）
+      const idImageMap = {
+        1: '/static/images/car/main/比亚迪汉EV冠军版 .jpg',
+        2: '/static/images/car/main/特斯拉Model Y.png',
+        3: '/static/images/car/main/蔚来ES6.jpg',
+        4: '/static/images/car/main/小鹏p7i.jpeg',
+        5: '/static/images/car/main/理想L7.jpg'
+      }
       return {
         id: item.id,
-        targetId: item.targetId || 0,
+        targetId: targetId,
         model: item.model || item.carModel || '',
         brand: item.brand || '',
         range: item.range || item.batteryRange || 0,
         battery: item.battery || item.batteryCapacity || 0,
-        price: item.price || 0
+        price: item.price || 0,
+        image: idImageMap[targetId] || '/static/images/car/car1.png'
       }
     },
     formatChargeFavorite(item) {
@@ -446,24 +457,49 @@ export default {
         const articleType = (item.source && (item.source.indexOf('政策') !== -1 || item.source.indexOf('法规') !== -1)) ? 'policy' : 'science'
         uni.navigateTo({ url: `/pages/index/detail?type=${articleType}&id=${item.targetId}` })
       } else if (item.model) {
-        // 车辆 → 跳转购车页（使用车型对应图片）
-        const carImageMap = {
-          '比亚迪汉EV冠军版': '/static/images/car/main/比亚迪汉EV冠军版 .jpg',
-          '特斯拉Model Y': '/static/images/car/main/特斯拉Model Y.png',
-          '蔚来ES6': '/static/images/car/main/蔚来ES6.jpg',
-          '小鹏P7': '/static/images/car/main/小鹏p7i.jpeg',
-          '理想L7': '/static/images/car/main/理想L7.jpg',
-          '五菱宏光MINI EV': '/static/images/car/main/五菱宏光MINI EV 马卡龙.jpg',
-          '比亚迪汉EV 创世版': '/static/images/car/main/比亚迪汉EV 创世版.jpg',
-          '特斯拉Model 3': '/static/images/car/main/特斯拉Model3.jpg'
-        }
-        const carData = {
+        // 车辆 → 从车辆API获取完整数据再跳转
+        uni.showLoading({ title: '加载中...' })
+        // 先尝试从收藏数据中组装基础信息
+        let carData = {
           vehicleId: item.targetId,
           modelName: item.model,
-          guidePrice: item.price,
-          image: carImageMap[item.model] || '/static/images/car/car1.png'
+          guidePrice: parseFloat(item.price) || 0,
+          image: item.image || '/static/images/car/car1.png',
+          typeLabel: '全新现车',
+          deliveryTime: '现车供应'
         }
-        uni.navigateTo({ url: `/pages/car/order-new?car=${encodeURIComponent(JSON.stringify(carData))}` })
+        // 从车辆列表API获取完整信息（价格、颜色、轮毂等）
+        getCarList().then(res => {
+          uni.hideLoading()
+          const rows = res.rows || res.data || []
+          const match = rows.find(c => c.vehicleId === item.targetId || c.id === item.targetId)
+          if (match) {
+            carData = {
+              vehicleId: match.vehicleId || carData.vehicleId,
+              modelName: match.modelName || carData.modelName,
+              guidePrice: match.guidePrice || carData.guidePrice,
+              image: match.image || carData.image,
+              typeLabel: match.vehicleType === 'new' ? '全新现车' : '二手车',
+              deliveryTime: match.publishTime ? '已发布' : '现车供应',
+              color: match.color || '海湾蓝',
+              exteriorHex: match.exteriorHex || '#4A7DB4',
+              interiorColor: match.interiorColor || '极夜黑',
+              interiorHex: match.interiorHex || '#1a1a1a',
+              wheel: match.wheel || '19英寸钻石轮毂',
+              rangeKm: match.rangeKm || 700,
+              tags: match.tags || ''
+            }
+          }
+          uni.navigateTo({
+            url: `/pages/car/order-new?car=${encodeURIComponent(JSON.stringify(carData))}`
+          })
+        }).catch(() => {
+          uni.hideLoading()
+          // API失败时使用收藏数据直接跳转
+          uni.navigateTo({
+            url: `/pages/car/order-new?car=${encodeURIComponent(JSON.stringify(carData))}`
+          })
+        })
       } else if (item.stationName) {
         // 充电站 → 跳转站点详情
         uni.navigateTo({ url: `/pages/charge/detail?stationId=${item.targetId}&name=${encodeURIComponent(item.stationName)}` })
@@ -853,20 +889,19 @@ page {
   margin-bottom: 20rpx;
 }
 
-.car-icon-box {
-    width: 80rpx;
-    height: 80rpx;
-    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-    border-radius: 20rpx;
+.car-img-box {
+    width: 160rpx;
+    height: 120rpx;
+    border-radius: 16rpx;
     margin-right: 20rpx;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #f5f5f5;
   }
 
-.car-card-icon {
-    width: 50rpx;
-    height: 50rpx;
+.car-card-img {
+    width: 100%;
+    height: 100%;
   }
 
 .car-info {

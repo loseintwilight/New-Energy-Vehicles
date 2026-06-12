@@ -59,12 +59,7 @@
             <version>3.9.2</version>
             <scope>compile</scope>
         </dependency>
-        <dependency>
-            <groupId>com.ruoyi</groupId>
-            <artifactId>a-charge-serve</artifactId>
-            <version>3.9.2</version>
-            <scope>compile</scope>
-        </dependency>
+
         <dependency>
             <groupId>com.ruoyi</groupId>
             <artifactId>a-buycar-server</artifactId>
@@ -104,6 +99,12 @@
         <dependency>
             <groupId>com.ruoyi</groupId>
             <artifactId>a-mine</artifactId>
+            <version>3.9.2</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.ruoyi</groupId>
+            <artifactId>a-chargeMini-serve</artifactId>
             <version>3.9.2</version>
             <scope>compile</scope>
         </dependency>

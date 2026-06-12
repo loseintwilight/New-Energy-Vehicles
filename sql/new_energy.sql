@@ -11,7 +11,7 @@
  Target Server Version : 80024 (8.0.24)
  File Encoding         : 65001
 
- Date: 09/06/2026 22:20:25
+ Date: 12/06/2026 15:59:20
 */
 
 SET NAMES utf8mb4;
@@ -697,7 +697,7 @@ CREATE TABLE `stad_carbon_ledger`  (
   INDEX `idx_user_time`(`user_id` ASC, `create_time` ASC) USING BTREE,
   INDEX `idx_record_type`(`record_type` ASC) USING BTREE,
   INDEX `idx_source`(`source_type` ASC, `source_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '碳积分流水账（来源可追溯）' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 26 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '碳积分流水账（来源可追溯）' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of stad_carbon_ledger
@@ -713,6 +713,20 @@ INSERT INTO `stad_carbon_ledger` VALUES (8, 3, 0, NULL, 50, 50, 0, 3, '充电订
 INSERT INTO `stad_carbon_ledger` VALUES (9, 3, 0, NULL, 15, 65, 2, 2, '阅读文章《电动汽车冬季续航实测》- 碳积分奖励', '2026-05-22 12:00:00', 'admin', 'admin');
 INSERT INTO `stad_carbon_ledger` VALUES (10, 3, 0, NULL, 20, 85, 3, 2, '每日签到 - 碳积分奖励', '2026-05-23 07:00:00', 'admin', 'admin');
 INSERT INTO `stad_carbon_ledger` VALUES (11, 3, 1, NULL, -30, 55, 4, 2, '兑换洗车券一张 - 消耗碳积分', '2026-05-28 15:00:00', 'admin', 'admin');
+INSERT INTO `stad_carbon_ledger` VALUES (12, 1, 0, NULL, 50, 50, 0, 13, '充电订单CO1780913509182 - 碳积分奖励', '2026-06-08 18:16:01', 'admin', 'admin');
+INSERT INTO `stad_carbon_ledger` VALUES (13, 1, 0, NULL, 30, 80, 0, 18, '充电订单CO1780918490356 - 碳积分奖励', '2026-06-08 19:34:55', 'admin', 'admin');
+INSERT INTO `stad_carbon_ledger` VALUES (14, 1, 0, NULL, 20, 100, 3, 1, '每日签到 - 碳积分奖励', '2026-06-09 08:00:00', 'admin', 'admin');
+INSERT INTO `stad_carbon_ledger` VALUES (15, 1, 0, NULL, 50, 150, 1, 6, '购车订单PUR202606072155169166 - 碳积分奖励', '2026-06-07 21:55:16', 'admin', 'admin');
+INSERT INTO `stad_carbon_ledger` VALUES (16, 1, 1, NULL, -30, 120, 4, 1, '兑换充电优惠券 - 消耗碳积分', '2026-06-09 10:00:00', 'admin', 'admin');
+INSERT INTO `stad_carbon_ledger` VALUES (17, 1, 0, NULL, 500, 0, 1, 17, '购车奖励500积分', '2026-06-12 03:49:10', '', '');
+INSERT INTO `stad_carbon_ledger` VALUES (18, 1, 0, NULL, 500, 0, 1, 18, '购车奖励500积分', '2026-06-12 03:52:37', '', '');
+INSERT INTO `stad_carbon_ledger` VALUES (19, 1, 0, NULL, 288, 0, 0, 33, '充电获得288积分', '2026-06-12 04:00:01', '', '');
+INSERT INTO `stad_carbon_ledger` VALUES (20, 4, 0, NULL, 50, 50, 0, 1, '充电订单CO20260612000001 - 碳积分奖励', '2026-06-12 09:45:00', 'admin', 'admin');
+INSERT INTO `stad_carbon_ledger` VALUES (21, 4, 0, NULL, 20, 70, 3, 1, '每日签到 - 碳积分奖励', '2026-06-12 08:00:00', 'admin', 'admin');
+INSERT INTO `stad_carbon_ledger` VALUES (22, 5, 0, NULL, 80, 80, 1, 1, '购车订单PUR20260612000001 - 碳积分奖励', '2026-06-12 09:30:00', 'admin', 'admin');
+INSERT INTO `stad_carbon_ledger` VALUES (23, 5, 0, NULL, 20, 100, 3, 1, '每日签到 - 碳积分奖励', '2026-06-12 08:00:00', 'admin', 'admin');
+INSERT INTO `stad_carbon_ledger` VALUES (24, 6, 0, NULL, 30, 30, 0, 1, '充电订单CO20260612000003 - 碳积分奖励', '2026-06-12 17:25:00', 'admin', 'admin');
+INSERT INTO `stad_carbon_ledger` VALUES (25, 6, 0, NULL, 15, 45, 2, 3, '阅读文章《新能源车夏季充电注意事项》- 碳积分奖励', '2026-06-12 12:00:00', 'admin', 'admin');
 
 -- ----------------------------
 -- Table structure for stad_carbon_statistics
@@ -817,7 +831,7 @@ CREATE TABLE `stad_charging_order`  (
   CONSTRAINT `fk_charging_order_pile` FOREIGN KEY (`pile_id`) REFERENCES `stad_charging_pile` (`pile_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_charging_order_rate` FOREIGN KEY (`rate_id`) REFERENCES `stad_charging_rate` (`rate_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_charging_order_station` FOREIGN KEY (`station_id`) REFERENCES `stad_charging_station` (`station_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 19 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '充电订单表（含费率时段记录）' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 37 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '充电订单表（含费率时段记录）' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of stad_charging_order
@@ -840,6 +854,24 @@ INSERT INTO `stad_charging_order` VALUES (15, 'CO1780917482801', 1, 3, 15, 'DXC-
 INSERT INTO `stad_charging_order` VALUES (16, 'CO1780917591852', 1, 3, 15, 'DXC-DC-01', NULL, NULL, '2026-06-08 19:19:51', '2026-06-08 19:19:53', 2, NULL, NULL, 14.40, 0.00, 0.00, 0.00, 0.00, NULL, '1', '0', NULL, NULL, 0, '2026-06-08 19:19:51', 'admin', NULL, 'admin');
 INSERT INTO `stad_charging_order` VALUES (17, 'CO1780918015500', 1, 3, 15, 'DXC-DC-01', NULL, NULL, '2026-06-08 19:26:55', '2026-06-08 19:27:00', 5, NULL, NULL, 36.00, 0.00, 0.00, 0.00, 0.00, NULL, '1', '0', NULL, NULL, 0, '2026-06-08 19:26:55', 'admin', NULL, 'admin');
 INSERT INTO `stad_charging_order` VALUES (18, 'CO1780918490356', 1, 3, 15, 'DXC-DC-01', NULL, NULL, '2026-06-08 19:34:50', '2026-06-08 19:34:55', 5, NULL, NULL, 36.00, 12.60, 19.80, 0.00, 32.40, NULL, '1', '1', '微信支付', NULL, 0, '2026-06-08 19:34:50', 'admin', NULL, 'admin');
+INSERT INTO `stad_charging_order` VALUES (19, 'CO1781031847627', 1, 3, 15, 'DXC-DC-01', NULL, NULL, '2026-06-10 03:04:07', '2026-06-10 03:04:12', 5, NULL, NULL, 36.00, 12.60, 19.80, 0.00, 32.40, NULL, '1', '1', '微信支付', NULL, 0, '2026-06-10 03:04:07', '', NULL, '');
+INSERT INTO `stad_charging_order` VALUES (20, 'CO1781032605717', 1, 2, 10, 'WD-DC-02', 2, 6, '2026-06-10 03:16:45', '2026-06-10 03:16:50', 5, NULL, NULL, 36.00, 12.60, 19.80, 0.00, 32.40, NULL, '1', '1', '微信支付', NULL, 0, '2026-06-10 03:16:45', '', NULL, '');
+INSERT INTO `stad_charging_order` VALUES (21, 'CO1781032639625', 1, 1, 1, 'AT-DC-01', 1, 1, '2026-06-10 03:17:19', '2026-06-10 03:17:24', 5, NULL, NULL, 36.00, 12.60, 19.80, 0.00, 32.40, NULL, '1', '1', '微信支付', NULL, 0, '2026-06-10 03:17:19', '', NULL, '');
+INSERT INTO `stad_charging_order` VALUES (22, 'CO1781032846011', 1, 21, 86, 'LC-DC-01', NULL, NULL, '2026-06-10 03:20:46', '2026-06-10 03:20:51', 5, NULL, NULL, 36.00, 12.60, 19.80, 0.00, 32.40, NULL, '1', '1', '微信支付', NULL, 0, '2026-06-10 03:20:46', '', NULL, '');
+INSERT INTO `stad_charging_order` VALUES (23, 'CO1781033022420', 1, 3, 17, 'DXC-AC-01', 4, 12, '2026-06-10 03:23:42', '2026-06-10 03:23:45', 3, NULL, NULL, 21.60, 10.80, 6.48, 0.00, 17.28, NULL, '1', '1', '微信支付', NULL, 0, '2026-06-10 03:23:42', '', NULL, '');
+INSERT INTO `stad_charging_order` VALUES (24, 'CO1781033083645', 1, 7, 33, 'ZB-DC-01', 9, 25, '2026-06-10 03:24:43', '2026-06-10 03:24:46', 3, NULL, NULL, 21.60, 6.91, 9.72, 0.00, 16.63, NULL, '1', '1', '微信支付', NULL, 0, '2026-06-10 03:24:43', '', NULL, '');
+INSERT INTO `stad_charging_order` VALUES (25, 'CO1781173248501', 1, 3, 15, 'DXC-DC-01', NULL, NULL, '2026-06-11 18:20:48', '2026-06-11 18:20:53', 5, NULL, NULL, 36.00, 12.60, 19.80, 0.00, 32.40, NULL, '1', '1', '微信支付', NULL, 0, '2026-06-11 18:20:48', '', NULL, '');
+INSERT INTO `stad_charging_order` VALUES (26, 'CO1781173293745', 1, 3, 15, 'DXC-DC-01', NULL, NULL, '2026-06-11 18:21:33', '2026-06-11 18:21:38', 5, NULL, NULL, 36.00, 12.60, 19.80, 0.00, 32.40, NULL, '1', '0', NULL, NULL, 0, '2026-06-11 18:21:33', '', NULL, '');
+INSERT INTO `stad_charging_order` VALUES (27, 'CO1781173925003', 1, 3, 17, 'DXC-AC-01', 4, 12, '2026-06-11 18:32:05', '2026-06-11 18:32:08', 3, NULL, NULL, 21.60, 10.80, 6.48, 0.00, 17.28, NULL, '1', '0', NULL, NULL, 0, '2026-06-11 18:32:05', '', NULL, '');
+INSERT INTO `stad_charging_order` VALUES (28, 'CO1781193177463', 1, 3, 15, 'DXC-DC-01', NULL, NULL, '2026-06-11 23:52:57', '2026-06-11 23:53:02', 5, NULL, NULL, 24.00, 8.40, 13.20, 0.00, 21.60, NULL, '1', '1', '微信支付', NULL, 0, '2026-06-11 23:52:57', '', NULL, '');
+INSERT INTO `stad_charging_order` VALUES (29, 'CO1781207573380', 1, 3, 15, 'DXC-DC-01', NULL, NULL, '2026-06-12 03:52:53', '2026-06-12 03:52:56', 3, NULL, NULL, 21.60, 7.56, 11.88, 0.00, 19.44, NULL, '1', '1', '微信支付', NULL, 0, '2026-06-12 03:52:53', '', NULL, '');
+INSERT INTO `stad_charging_order` VALUES (30, 'CO1781207638575', 1, 3, 15, 'DXC-DC-01', NULL, NULL, '2026-06-12 03:53:58', '2026-06-12 03:54:02', 4, NULL, NULL, 28.80, 10.08, 15.84, 0.00, 25.92, NULL, '1', '1', '微信支付', NULL, 0, '2026-06-12 03:53:58', '', NULL, '');
+INSERT INTO `stad_charging_order` VALUES (31, 'CO1781207709561', 1, 3, 15, 'DXC-DC-01', NULL, NULL, '2026-06-12 03:55:09', '2026-06-12 03:55:11', 2, NULL, NULL, 14.40, 5.04, 7.92, 0.00, 12.96, NULL, '1', '0', NULL, NULL, 0, '2026-06-12 03:55:09', '', NULL, '');
+INSERT INTO `stad_charging_order` VALUES (32, 'CO1781207917149', 1, 3, 15, 'DXC-DC-01', NULL, NULL, '2026-06-12 03:58:37', '2026-06-12 03:58:39', 2, NULL, NULL, 14.40, 5.04, 7.92, 0.00, 12.96, NULL, '1', '1', '微信支付', NULL, 0, '2026-06-12 03:58:37', '', NULL, '');
+INSERT INTO `stad_charging_order` VALUES (33, 'CO1781207954100', 1, 3, 15, 'DXC-DC-01', NULL, NULL, '2026-06-12 03:59:14', '2026-06-12 03:59:18', 4, NULL, NULL, 28.80, 10.08, 15.84, 0.00, 25.92, NULL, '1', '0', NULL, NULL, 0, '2026-06-12 03:59:14', '', NULL, '');
+INSERT INTO `stad_charging_order` VALUES (34, 'CO20260612000001', 4, 1, 1, 'AT-DC-01', 1, 3, '2026-06-12 09:00:00', '2026-06-12 09:45:00', 2700, 30.00, 80.00, 40.00, 28.00, 22.00, 0.00, 50.00, '平时: 1.25元/kWh × 40.0kWh = 50.00元', '1', '1', '微信支付', 'WX20260612094500001', 40, '2026-06-12 09:00:00', 'admin', NULL, 'admin');
+INSERT INTO `stad_charging_order` VALUES (35, 'CO20260612000002', 5, 3, 15, 'DXC-DC-01', 4, 12, '2026-06-12 14:00:00', '2026-06-12 14:30:00', 1800, 35.00, 85.00, 30.00, 15.00, 9.00, 0.00, 24.00, '全天: 0.80元/kWh × 30.0kWh = 24.00元', '1', '1', '支付宝', 'ALI20260612143000002', 30, '2026-06-12 14:00:00', 'admin', NULL, 'admin');
+INSERT INTO `stad_charging_order` VALUES (36, 'CO20260612000003', 6, 2, 9, 'WD-DC-01', 2, 9, '2026-06-12 17:00:00', '2026-06-12 17:25:00', 1500, 20.00, 60.00, 25.00, 28.75, 13.75, 0.00, 42.50, '平时: 1.25元/kWh × 25.0kWh + 服务费0.55元 = 42.50元', '1', '1', '微信支付', 'WX20260612172500003', 25, '2026-06-12 17:00:00', 'admin', NULL, 'admin');
 
 -- ----------------------------
 -- Table structure for stad_charging_pile
@@ -1259,7 +1291,7 @@ CREATE TABLE `stad_charging_settlement`  (
 -- ----------------------------
 INSERT INTO `stad_charging_settlement` VALUES (1, 2, '2026-05-15', 45, 850.50, 1280.00, 64.00, 1216.00, '1', '2026-05-16 10:00:00', 'WD20260516000001', 1216.00, '1', '2026-05-17 10:00:00', '2026-05-16 10:00:00', 'admin', 'admin');
 INSERT INTO `stad_charging_settlement` VALUES (2, 2, '2026-05-20', 62, 1120.00, 1650.00, 82.50, 1567.50, '1', '2026-05-21 10:00:00', 'WD20260521000002', 1567.50, '1', '2026-05-22 10:00:00', '2026-05-21 10:00:00', 'admin', 'admin');
-INSERT INTO `stad_charging_settlement` VALUES (3, 2, '2026-05-30', 85, 1680.00, 2450.00, 122.50, 2327.50, '0', NULL, NULL, NULL, NULL, NULL, '2026-05-30 10:00:00', 'admin', 'admin');
+INSERT INTO `stad_charging_settlement` VALUES (3, 2, '2026-05-30', 85, 1680.00, 2450.00, 122.50, 2327.50, '1', NULL, NULL, 0.00, NULL, NULL, '2026-05-30 10:00:00', 'admin', 'admin');
 
 -- ----------------------------
 -- Table structure for stad_charging_station
@@ -1461,7 +1493,7 @@ CREATE TABLE `stad_maintenance_order`  (
   INDEX `fk_maintenance_order_vehicle`(`vehicle_id` ASC) USING BTREE,
   CONSTRAINT `fk_maintenance_order_shop` FOREIGN KEY (`shop_id`) REFERENCES `stad_maintenance_shop` (`shop_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_maintenance_order_vehicle` FOREIGN KEY (`vehicle_id`) REFERENCES `stad_vehicle` (`vehicle_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '维保订单表（含预约）' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '维保订单表（含预约）' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of stad_maintenance_order
@@ -1469,7 +1501,10 @@ CREATE TABLE `stad_maintenance_order`  (
 INSERT INTO `stad_maintenance_order` VALUES (1, 'MO20260510000001', 2, 1, 1, '常规保养+电池检测', 580.00, 580.00, 580.00, '2026-05-15', 'am', '3', NULL, '2026-05-15 11:30:00', 5, '服务非常专业，电池检测报告详细，技师耐心解答了充电保养问题，好评！', '1', '微信支付', '2026-05-10 09:00:00', 'admin', NULL, 'admin');
 INSERT INTO `stad_maintenance_order` VALUES (2, 'MO20260520000002', 3, 2, 2, '空调清洗+轮胎更换', 880.00, 880.00, 0.00, '2026-05-28', 'pm', '1', NULL, NULL, NULL, NULL, '1', NULL, '2026-05-20 14:00:00', 'admin', '2026-06-09 15:03:19', 'admin');
 INSERT INTO `stad_maintenance_order` VALUES (3, 'WH20260609114631', 1, 2, 7, '常规保养', 299.00, 299.00, 0.00, '2026-06-11', 'am', '0', NULL, NULL, NULL, NULL, '0', NULL, '2026-06-09 14:45:17', 'admin', NULL, 'admin');
-INSERT INTO `stad_maintenance_order` VALUES (4, 'WH20260609802699', 1, 2, 4, '空调清洗', 168.00, 168.00, 0.00, '2026-07-14', 'am', '0', NULL, NULL, NULL, NULL, '0', NULL, '2026-06-09 15:51:54', '', NULL, '');
+INSERT INTO `stad_maintenance_order` VALUES (4, 'WH20260609802699', 1, 2, 4, '空调清洗', 168.00, 168.00, 0.00, '2026-07-14', 'am', '2', NULL, NULL, NULL, NULL, '1', NULL, '2026-06-09 15:51:54', '', '2026-06-11 20:12:36', 'admin');
+INSERT INTO `stad_maintenance_order` VALUES (5, 'MO20260612000001', 4, 2, 1, '常规保养+空调清洗', 680.00, 680.00, 680.00, '2026-06-15', 'am', '3', NULL, '2026-06-15 10:30:00', 5, '服务很好，空调清洗后制冷效果明显提升了', '1', '微信支付', '2026-06-12 10:00:00', 'admin', NULL, 'admin');
+INSERT INTO `stad_maintenance_order` VALUES (6, 'MO20260612000002', 5, 1, 3, '电池健康检测+底盘检查', 380.00, 380.00, 0.00, '2026-06-18', 'pm', '1', NULL, NULL, NULL, NULL, '1', NULL, '2026-06-12 11:00:00', 'admin', NULL, 'admin');
+INSERT INTO `stad_maintenance_order` VALUES (7, 'MO20260612000003', 6, 1, 5, '常规保养+轮胎换位', 520.00, 520.00, 520.00, '2026-06-14', 'am', '3', NULL, '2026-06-14 11:00:00', 4, '技师专业，服务到位', '1', '微信支付', '2026-06-12 08:00:00', 'admin', NULL, 'admin');
 
 -- ----------------------------
 -- Table structure for stad_maintenance_shop
@@ -1544,14 +1579,14 @@ CREATE TABLE `stad_merchant`  (
   UNIQUE INDEX `uk_user_id`(`user_id` ASC) USING BTREE,
   INDEX `idx_merchant_type`(`merchant_type` ASC) USING BTREE,
   INDEX `idx_status`(`status` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '商户表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '商户表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of stad_merchant
 -- ----------------------------
-INSERT INTO `stad_merchant` VALUES (1, 4, '济南鑫源新能源汽车销售有限公司', 'dealer', '王经理', '13700001111', '山东省', '济南市', '历城区工业北路88号', '09:00:00', '18:00:00', '/upload/biz/001.jpg', '王建国', '370112197501011234', '1', '资质审核通过', '2026-01-15 10:00:00', 850000.00, 600000.00, 250000.00, 500000.00, '中国工商银行济南分行', '6222021602001234567', '2026-01-10 10:00:00', 'admin', NULL, 'admin');
-INSERT INTO `stad_merchant` VALUES (2, 5, '济南绿能充电运营有限公司', 'charger', '赵经理', '13600002222', '山东省', '济南市', '历下区奥体中路2000号', '00:00:00', '23:59:59', '/upload/biz/002.jpg', '赵志强', '370112198003012345', '1', '充电运营商资质审核通过', '2026-02-20 10:00:00', 320000.00, 280000.00, 40000.00, 250000.00, '中国建设银行济南分行', '6227002234567890123', '2026-02-15 10:00:00', 'admin', NULL, 'admin');
-INSERT INTO `stad_merchant` VALUES (3, 6, '济南鑫维保汽车服务有限公司', 'maintenance', '孙经理', '13500003333', '山东省', '济南市', '槐荫区经十西路500号', '08:30:00', '17:30:00', '/upload/biz/003.jpg', '孙大伟', '370112198505053456', '1', '维保商资质审核通过', '2026-03-10 10:00:00', 150000.00, 120000.00, 30000.00, 100000.00, '中国农业银行济南分行', '6228480012345678901', '2026-03-05 10:00:00', 'admin', NULL, 'admin');
+INSERT INTO `stad_merchant` VALUES (1, 4, '济南鑫源新能源汽车销售有限公司', 'dealer', '王经理', '13700001111', '山东省', '济南市', '历城区工业北路88号', '09:00:00', '18:00:00', 'http://localhost:9000/newenergy/2026-06-10/1182a7b38619496096e0f220db5e3493.jpg', '王建国', '370112197501011234', '1', '资质审核通过', '2026-01-15 10:00:00', 850000.00, 600000.00, 250000.00, 500000.00, '中国工商银行济南分行', '6222021602001234567', '2026-01-10 10:00:00', 'admin', NULL, 'admin');
+INSERT INTO `stad_merchant` VALUES (2, 5, '济南绿能充电运营有限公司', 'charger', '赵经理', '13600002222', '山东省', '济南市', '历下区奥体中路2000号', '00:00:00', '23:59:59', 'http://localhost:9000/newenergy/2026-06-10/1182a7b38619496096e0f220db5e3493.jpg', '赵志强', '370112198003012345', '1', '充电运营商资质审核通过', '2026-02-20 10:00:00', 320000.00, 280000.00, 40000.00, 250000.00, '中国建设银行济南分行', '6227002234567890123', '2026-02-15 10:00:00', 'admin', NULL, 'admin');
+INSERT INTO `stad_merchant` VALUES (3, 6, '济南鑫维保汽车服务有限公司', 'maintenance', '孙经理', '13500003333', '山东省', '济南市', '槐荫区经十西路500号', '09:30:00', '17:30:00', 'http://localhost:9000/newenergy/2026-06-10/1182a7b38619496096e0f220db5e3493.jpg', '孙大伟', '370112198505053456', '1', '维保商资质审核通过', '2026-03-10 10:00:00', 150000.00, 120000.00, 30000.00, 100000.00, '中国农业银行济南分行', '6228480012345678901', '2026-03-05 10:00:00', 'admin', '2026-06-10 02:57:15', 'admin');
 
 -- ----------------------------
 -- Table structure for stad_reservation
@@ -1630,7 +1665,7 @@ CREATE TABLE `stad_unified_order`  (
   CONSTRAINT `fk_unified_order_merchant` FOREIGN KEY (`merchant_id`) REFERENCES `stad_merchant` (`merchant_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_unified_order_old_vehicle` FOREIGN KEY (`old_vehicle_id`) REFERENCES `stad_vehicle` (`vehicle_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_unified_order_vehicle` FOREIGN KEY (`vehicle_id`) REFERENCES `stad_vehicle` (`vehicle_id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '统一订单表（购车+试驾+以旧换新）' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 22 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '统一订单表（购车+试驾+以旧换新）' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of stad_unified_order
@@ -1640,7 +1675,13 @@ INSERT INTO `stad_unified_order` VALUES (2, 'PO20260510000002', 'purchase', 3, 2
 INSERT INTO `stad_unified_order` VALUES (3, 'TDO20260520000001', 'test_drive', 2, 3, 1, '张先生', '13800001111', NULL, NULL, 0.00, 0.00, '—', NULL, '2026-05-25', 'am', NULL, NULL, NULL, '2', NULL, '2026-05-20 14:00:00', 'admin', '2026-05-25 11:00:00', 'admin');
 INSERT INTO `stad_unified_order` VALUES (4, 'TDO20260522000002', 'test_drive', 3, 4, 1, '李女士', '13900002222', NULL, NULL, 0.00, 0.00, '—', NULL, '2026-05-28', 'pm', NULL, NULL, NULL, '1', NULL, '2026-05-22 10:00:00', 'admin', '2026-05-22 10:00:00', 'admin');
 INSERT INTO `stad_unified_order` VALUES (5, 'TIO20260525000001', 'trade_in', 2, 5, 1, '张先生', '13800001111', 1, 339800.00, 181800.00, 50000.00, '微信支付', NULL, NULL, NULL, 7, 158000.00, NULL, '1', NULL, '2026-05-25 08:00:00', 'admin', '2026-05-25 08:00:00', 'admin');
-INSERT INTO `stad_unified_order` VALUES (6, 'PUR202606072155169166', 'purchase', 1, 1, NULL, '好好', '12313124144', NULL, 219800.00, 219800.58, 0.00, 'full', '{\"name\":\"基础保障\",\"desc\":\"交强险+三者200万\",\"price\":5800}', NULL, NULL, NULL, NULL, NULL, '0', NULL, '2026-06-07 21:55:16', 'admin', NULL, 'admin');
+INSERT INTO `stad_unified_order` VALUES (6, 'PUR202606072155169166', 'purchase', 1, 1, NULL, '好好', '12313124144', NULL, 219800.00, 219800.58, 0.00, '微信支付', '{\"name\":\"基础保障\",\"desc\":\"交强险+三者200万\",\"price\":5800}', NULL, NULL, NULL, 0.00, NULL, '1', NULL, '2026-06-07 21:55:16', 'admin', '2026-06-11 22:39:56', 'admin');
+INSERT INTO `stad_unified_order` VALUES (16, 'TIN202606120309388352', 'trade_in', 1, 1, NULL, '123', '12313212313', NULL, 0.00, 0.00, 0.00, NULL, '品牌:213;车型:123;年份:2025;里程:32;车况:良好', NULL, NULL, NULL, 46859.00, NULL, '0', NULL, '2026-06-12 03:09:38', '', NULL, '');
+INSERT INTO `stad_unified_order` VALUES (17, 'PUR202606120348539404', 'purchase', 1, 1, NULL, '213', '99999999999', NULL, 219800.00, 219800.58, 0.00, 'full', '{\"name\":\"基础保障\",\"desc\":\"交强险+三者200万\",\"price\":5800}', NULL, NULL, NULL, NULL, NULL, '0', NULL, '2026-06-12 03:48:53', '', NULL, '');
+INSERT INTO `stad_unified_order` VALUES (18, 'PUR202606120352110280', 'purchase', 1, 1, NULL, '6', '13421343453', NULL, 219800.00, 219800.58, 0.00, 'full', '{\"name\":\"基础保障\",\"desc\":\"交强险+三者200万\",\"price\":5800}', NULL, NULL, NULL, NULL, NULL, '0', NULL, '2026-06-12 03:52:11', '', NULL, '');
+INSERT INTO `stad_unified_order` VALUES (19, 'PUR20260612000001', 'purchase', 4, 2, 1, '商户账号A', '13700000004', NULL, 299900.00, 299900.00, 89970.00, '支付宝', '{\"name\":\"全险套餐\",\"desc\":\"交强险+三者200万+车损险\",\"price\":8800}', NULL, NULL, NULL, NULL, NULL, '0', NULL, '2026-06-12 09:30:00', 'admin', NULL, 'admin');
+INSERT INTO `stad_unified_order` VALUES (20, 'TDO20260612000001', 'test_drive', 5, 4, 1, '商户账号B', '13700000005', NULL, NULL, 0.00, 0.00, '—', NULL, '2026-06-20', 'am', NULL, NULL, NULL, '1', NULL, '2026-06-12 11:00:00', 'admin', NULL, 'admin');
+INSERT INTO `stad_unified_order` VALUES (21, 'TIO20260612000001', 'trade_in', 6, 1, 1, '商户账号C', '13700000006', NULL, 219800.00, 179900.00, 50000.00, '微信支付', '品牌:五菱宏光;车型:宏光MINI EV;年份:2022;里程:3.5;车况:良好;门店:济南鑫维保-经十西路店', NULL, NULL, 6, 39900.00, NULL, '1', NULL, '2026-06-12 10:00:00', 'admin', NULL, 'admin');
 
 -- ----------------------------
 -- Table structure for stad_user_address
@@ -1719,7 +1760,7 @@ CREATE TABLE `stad_user_favorite`  (
   UNIQUE INDEX `uk_user_favorite`(`user_id` ASC, `target_type` ASC, `target_id` ASC) USING BTREE,
   INDEX `idx_user_id`(`user_id` ASC) USING BTREE,
   INDEX `idx_target`(`target_type` ASC, `target_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户收藏表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 1024 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户收藏表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of stad_user_favorite
@@ -1729,6 +1770,20 @@ INSERT INTO `stad_user_favorite` VALUES (2, 2, 'vehicle', 3, '2026-05-12 14:30:0
 INSERT INTO `stad_user_favorite` VALUES (3, 2, 'station', 1, '2026-05-15 09:00:00', 'admin', 'admin');
 INSERT INTO `stad_user_favorite` VALUES (4, 3, 'vehicle', 2, '2026-05-20 11:00:00', 'admin', 'admin');
 INSERT INTO `stad_user_favorite` VALUES (5, 3, 'station', 2, '2026-05-22 16:00:00', 'admin', 'admin');
+INSERT INTO `stad_user_favorite` VALUES (1001, 1, 'vehicle', 1, '2026-05-05 10:00:00', 'admin', 'admin');
+INSERT INTO `stad_user_favorite` VALUES (1002, 1, 'vehicle', 2, '2026-05-08 14:30:00', 'admin', 'admin');
+INSERT INTO `stad_user_favorite` VALUES (1003, 1, 'vehicle', 3, '2026-05-12 09:00:00', 'admin', 'admin');
+INSERT INTO `stad_user_favorite` VALUES (1004, 1, 'vehicle', 4, '2026-05-15 16:00:00', 'admin', 'admin');
+INSERT INTO `stad_user_favorite` VALUES (1005, 1, 'vehicle', 5, '2026-05-20 11:00:00', 'admin', 'admin');
+INSERT INTO `stad_user_favorite` VALUES (1006, 1, 'station', 1, '2026-05-10 09:00:00', 'admin', 'admin');
+INSERT INTO `stad_user_favorite` VALUES (1009, 1, 'station', 4, '2026-05-25 16:00:00', 'admin', 'admin');
+INSERT INTO `stad_user_favorite` VALUES (1011, 1, 'article', 2, '2026-06-05 15:00:00', 'admin', 'admin');
+INSERT INTO `stad_user_favorite` VALUES (1012, 1, 'article', 3, '2026-06-10 10:00:00', 'admin', 'admin');
+INSERT INTO `stad_user_favorite` VALUES (1018, 1, 'charging_station', 3, '2026-06-10 01:14:32', '', '');
+INSERT INTO `stad_user_favorite` VALUES (1019, 1, 'station', 2, '2026-06-10 01:21:27', '', '');
+INSERT INTO `stad_user_favorite` VALUES (1021, 4, 'vehicle', 6, '2026-06-12 09:00:00', 'admin', 'admin');
+INSERT INTO `stad_user_favorite` VALUES (1022, 5, 'vehicle', 2, '2026-06-12 10:00:00', 'admin', 'admin');
+INSERT INTO `stad_user_favorite` VALUES (1023, 6, 'vehicle', 3, '2026-06-12 11:00:00', 'admin', 'admin');
 
 -- ----------------------------
 -- Table structure for stad_user_feedback
@@ -1774,13 +1829,17 @@ CREATE TABLE `stad_user_profile`  (
   `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`profile_id`) USING BTREE,
   UNIQUE INDEX `uk_user_id`(`user_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户扩展表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '用户扩展表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of stad_user_profile
 -- ----------------------------
 INSERT INTO `stad_user_profile` VALUES (1, 2, '370112199001011234', 190, 70, 120, 'admin', '2026-06-09 15:02:55', 'admin', '2026-06-01 18:41:15');
 INSERT INTO `stad_user_profile` VALUES (2, 3, '370112199205052345', 85, 30, 55, 'admin', '2026-06-09 15:02:55', 'admin', '2026-06-01 18:41:15');
+INSERT INTO `stad_user_profile` VALUES (3, 1, NULL, 1438, 30, 1408, 'admin', '2026-06-09 22:41:25', 'admin', '2026-06-12 04:00:01');
+INSERT INTO `stad_user_profile` VALUES (4, 4, NULL, 70, 0, 70, 'admin', '2026-06-12 08:00:00', 'admin', '2026-06-12 08:00:00');
+INSERT INTO `stad_user_profile` VALUES (5, 5, NULL, 100, 0, 100, 'admin', '2026-06-12 08:00:00', 'admin', '2026-06-12 08:00:00');
+INSERT INTO `stad_user_profile` VALUES (6, 6, NULL, 45, 0, 45, 'admin', '2026-06-12 08:00:00', 'admin', '2026-06-12 08:00:00');
 
 -- ----------------------------
 -- Table structure for stad_vehicle
@@ -1982,12 +2041,15 @@ CREATE TABLE `stad_wallet`  (
   `update_time` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_user_id_wallet`(`user_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of stad_wallet
 -- ----------------------------
-INSERT INTO `stad_wallet` VALUES (1, 1, 1600.00, 3801.00, 2201.00, 0.00, '2026-06-08 22:51:45', '2026-06-09 21:12:17');
+INSERT INTO `stad_wallet` VALUES (1, 1, 1600.00, 4301.00, 2701.00, 0.00, '2026-06-08 22:51:45', '2026-06-10 18:48:22');
+INSERT INTO `stad_wallet` VALUES (2, 4, 0.00, 0.00, 0.00, 0.00, '2026-06-10 21:11:53', '2026-06-10 21:11:53');
+INSERT INTO `stad_wallet` VALUES (3, 5, 0.00, 0.00, 0.00, 0.00, '2026-06-10 21:26:55', '2026-06-10 21:26:55');
+INSERT INTO `stad_wallet` VALUES (4, 6, 0.00, 0.00, 0.00, 0.00, '2026-06-12 00:01:53', '2026-06-12 00:01:53');
 
 -- ----------------------------
 -- Table structure for sys_config
@@ -2005,7 +2067,7 @@ CREATE TABLE `sys_config`  (
   `update_time` datetime NULL DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`config_id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 100 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '参数配置表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 101 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '参数配置表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of sys_config
@@ -2019,6 +2081,7 @@ INSERT INTO `sys_config` VALUES (6, '用户登录-黑名单列表', 'sys.login.b
 INSERT INTO `sys_config` VALUES (7, '用户管理-初始密码修改策略', 'sys.account.initPasswordModify', '1', 'Y', 'admin', '2026-05-28 18:11:25', '', NULL, '0：初始密码修改策略关闭，没有任何提示，1：提醒用户，如果未修改初始密码，则在登录时就会提醒修改密码对话框');
 INSERT INTO `sys_config` VALUES (8, '用户管理-账号密码更新周期', 'sys.account.passwordValidateDays', '0', 'Y', 'admin', '2026-05-28 18:11:25', '', NULL, '密码更新周期（填写数字，数据初始化值为0不限制，若修改必须为大于0小于365的正整数），如果超过这个周期登录系统时，则在登录时就会提醒修改密码对话框');
 INSERT INTO `sys_config` VALUES (9, '用户管理-密码字符范围', 'sys.account.chrtype', '0', 'Y', 'admin', '2026-05-28 18:11:25', '', NULL, '默认任意字符范围，0任意（密码可以输入任意字符），1数字（密码只能为0-9数字），2英文字母（密码只能为a-z和A-Z字母），3字母和数字（密码必须包含字母，数字）,4字母数字和特殊字符（目前支持的特殊字符包括：~!@#$%^&*()-=_+）');
+INSERT INTO `sys_config` VALUES (100, '验证码开关', 'sys.account.captchaEnabled', 'true', 'Y', 'admin', '2026-06-10 00:25:03', 'admin', '2026-06-10 00:25:03', '测试时关闭验证码');
 
 -- ----------------------------
 -- Table structure for sys_dept
@@ -2210,7 +2273,7 @@ CREATE TABLE `sys_logininfor`  (
   PRIMARY KEY (`info_id`) USING BTREE,
   INDEX `idx_sys_logininfor_s`(`status` ASC) USING BTREE,
   INDEX `idx_sys_logininfor_lt`(`login_time` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 437 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '系统访问记录' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 551 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '系统访问记录' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of sys_logininfor
@@ -2552,6 +2615,120 @@ INSERT INTO `sys_logininfor` VALUES (433, 'admin', '127.0.0.1', '内网IP', 'WeC
 INSERT INTO `sys_logininfor` VALUES (434, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-09 20:55:48');
 INSERT INTO `sys_logininfor` VALUES (435, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-09 21:10:50');
 INSERT INTO `sys_logininfor` VALUES (436, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-09 22:16:53');
+INSERT INTO `sys_logininfor` VALUES (437, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-09 22:41:54');
+INSERT INTO `sys_logininfor` VALUES (438, 'admin', '127.0.0.1', '内网IP', 'Edge 149', 'Windows >=10', '0', '登录成功', '2026-06-10 00:03:15');
+INSERT INTO `sys_logininfor` VALUES (439, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '1', '验证码已失效', '2026-06-10 00:04:51');
+INSERT INTO `sys_logininfor` VALUES (440, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 00:04:52');
+INSERT INTO `sys_logininfor` VALUES (441, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 00:16:05');
+INSERT INTO `sys_logininfor` VALUES (442, 'admin', '127.0.0.1', '内网IP', 'WindowsPowerShell 5.1.26100.8457', 'Windows 10.0', '1', '验证码已失效', '2026-06-10 00:21:06');
+INSERT INTO `sys_logininfor` VALUES (443, 'admin', '127.0.0.1', '内网IP', 'WindowsPowerShell 5.1.26100.8457', 'Windows 10.0', '0', '登录成功', '2026-06-10 00:26:16');
+INSERT INTO `sys_logininfor` VALUES (444, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 01:08:36');
+INSERT INTO `sys_logininfor` VALUES (445, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 01:13:43');
+INSERT INTO `sys_logininfor` VALUES (446, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 01:21:03');
+INSERT INTO `sys_logininfor` VALUES (447, 'admin', '127.0.0.1', '内网IP', 'Edge 149', 'Windows >=10', '1', '验证码已失效', '2026-06-10 01:26:14');
+INSERT INTO `sys_logininfor` VALUES (448, 'admin', '127.0.0.1', '内网IP', 'Edge 149', 'Windows >=10', '0', '登录成功', '2026-06-10 01:26:17');
+INSERT INTO `sys_logininfor` VALUES (449, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 01:54:27');
+INSERT INTO `sys_logininfor` VALUES (450, 'admin', '127.0.0.1', '内网IP', 'Edge 149', 'Windows >=10', '0', '登录成功', '2026-06-10 01:56:42');
+INSERT INTO `sys_logininfor` VALUES (451, 'admin', '127.0.0.1', '内网IP', 'Edge 149', 'Windows >=10', '0', '登录成功', '2026-06-10 02:19:10');
+INSERT INTO `sys_logininfor` VALUES (452, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 02:54:46');
+INSERT INTO `sys_logininfor` VALUES (453, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 03:03:49');
+INSERT INTO `sys_logininfor` VALUES (454, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 03:05:46');
+INSERT INTO `sys_logininfor` VALUES (455, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 03:07:11');
+INSERT INTO `sys_logininfor` VALUES (456, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 03:14:06');
+INSERT INTO `sys_logininfor` VALUES (457, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 03:23:26');
+INSERT INTO `sys_logininfor` VALUES (458, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 18:32:15');
+INSERT INTO `sys_logininfor` VALUES (459, 'admin', '127.0.0.1', '内网IP', 'Edge 149', 'Windows >=10', '0', '登录成功', '2026-06-10 18:32:55');
+INSERT INTO `sys_logininfor` VALUES (460, 'admin', '127.0.0.1', '内网IP', 'Edge 149', 'Windows >=10', '0', '登录成功', '2026-06-10 18:58:25');
+INSERT INTO `sys_logininfor` VALUES (461, 'admin', '127.0.0.1', '内网IP', 'Edge 149', 'Windows >=10', '0', '登录成功', '2026-06-10 19:04:39');
+INSERT INTO `sys_logininfor` VALUES (462, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '1', '验证码错误', '2026-06-10 19:29:44');
+INSERT INTO `sys_logininfor` VALUES (463, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 19:29:47');
+INSERT INTO `sys_logininfor` VALUES (464, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 19:45:17');
+INSERT INTO `sys_logininfor` VALUES (465, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 20:03:15');
+INSERT INTO `sys_logininfor` VALUES (466, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 20:35:31');
+INSERT INTO `sys_logininfor` VALUES (467, 'admin', '127.0.0.1', '内网IP', 'Edge 149', 'Windows >=10', '0', '登录成功', '2026-06-10 20:48:54');
+INSERT INTO `sys_logininfor` VALUES (468, 'dealer_a', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 21:11:51');
+INSERT INTO `sys_logininfor` VALUES (469, 'charger_b', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 21:26:53');
+INSERT INTO `sys_logininfor` VALUES (470, 'charger_b', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '退出成功', '2026-06-10 21:28:12');
+INSERT INTO `sys_logininfor` VALUES (471, 'dealer_a', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 21:28:19');
+INSERT INTO `sys_logininfor` VALUES (472, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 21:28:52');
+INSERT INTO `sys_logininfor` VALUES (473, 'charger_b', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-10 21:29:22');
+INSERT INTO `sys_logininfor` VALUES (474, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 17:30:41');
+INSERT INTO `sys_logininfor` VALUES (475, 'charger_b', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 17:37:55');
+INSERT INTO `sys_logininfor` VALUES (476, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 18:13:00');
+INSERT INTO `sys_logininfor` VALUES (477, 'charger_b', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 18:13:11');
+INSERT INTO `sys_logininfor` VALUES (478, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 18:15:23');
+INSERT INTO `sys_logininfor` VALUES (479, 'charger_b', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 18:15:34');
+INSERT INTO `sys_logininfor` VALUES (480, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '1', '验证码已失效', '2026-06-11 18:18:54');
+INSERT INTO `sys_logininfor` VALUES (481, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 18:20:13');
+INSERT INTO `sys_logininfor` VALUES (482, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 18:31:44');
+INSERT INTO `sys_logininfor` VALUES (483, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 19:33:06');
+INSERT INTO `sys_logininfor` VALUES (484, 'admin', '127.0.0.1', '内网IP', 'Edge 149', 'Windows >=10', '0', '登录成功', '2026-06-11 19:33:22');
+INSERT INTO `sys_logininfor` VALUES (485, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 19:36:37');
+INSERT INTO `sys_logininfor` VALUES (486, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 19:50:49');
+INSERT INTO `sys_logininfor` VALUES (487, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 20:09:30');
+INSERT INTO `sys_logininfor` VALUES (488, 'admin', '127.0.0.1', '内网IP', 'Edge 149', 'Windows >=10', '0', '登录成功', '2026-06-11 20:11:10');
+INSERT INTO `sys_logininfor` VALUES (489, 'dealer_a', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 22:30:40');
+INSERT INTO `sys_logininfor` VALUES (490, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 22:35:07');
+INSERT INTO `sys_logininfor` VALUES (491, 'admin', '127.0.0.1', '内网IP', 'Edge 149', 'Windows >=10', '0', '登录成功', '2026-06-11 22:35:49');
+INSERT INTO `sys_logininfor` VALUES (492, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 22:38:53');
+INSERT INTO `sys_logininfor` VALUES (493, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 22:40:05');
+INSERT INTO `sys_logininfor` VALUES (494, 'dealer_a', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 22:48:23');
+INSERT INTO `sys_logininfor` VALUES (495, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 23:08:45');
+INSERT INTO `sys_logininfor` VALUES (496, 'admin', '127.0.0.1', '内网IP', 'Edge 149', 'Windows >=10', '0', '登录成功', '2026-06-11 23:11:04');
+INSERT INTO `sys_logininfor` VALUES (497, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 23:38:00');
+INSERT INTO `sys_logininfor` VALUES (498, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 23:50:06');
+INSERT INTO `sys_logininfor` VALUES (499, 'dealer_a', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-11 23:59:56');
+INSERT INTO `sys_logininfor` VALUES (500, 'maintainc', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 00:01:50');
+INSERT INTO `sys_logininfor` VALUES (501, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 00:35:10');
+INSERT INTO `sys_logininfor` VALUES (502, 'maintainc', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 00:35:21');
+INSERT INTO `sys_logininfor` VALUES (503, 'maintainc', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 00:40:32');
+INSERT INTO `sys_logininfor` VALUES (504, 'dealer_a', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 00:40:48');
+INSERT INTO `sys_logininfor` VALUES (505, 'charger_b', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 00:41:03');
+INSERT INTO `sys_logininfor` VALUES (506, 'maintainc', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 00:41:23');
+INSERT INTO `sys_logininfor` VALUES (507, 'maintainc', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 00:51:08');
+INSERT INTO `sys_logininfor` VALUES (508, 'maintainc', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 00:52:17');
+INSERT INTO `sys_logininfor` VALUES (509, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 00:54:57');
+INSERT INTO `sys_logininfor` VALUES (510, 'admin', '127.0.0.1', '内网IP', 'Edge 149', 'Windows >=10', '0', '登录成功', '2026-06-12 00:58:15');
+INSERT INTO `sys_logininfor` VALUES (511, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 01:05:49');
+INSERT INTO `sys_logininfor` VALUES (512, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 01:20:56');
+INSERT INTO `sys_logininfor` VALUES (513, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 01:45:15');
+INSERT INTO `sys_logininfor` VALUES (514, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 01:58:18');
+INSERT INTO `sys_logininfor` VALUES (515, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 02:04:56');
+INSERT INTO `sys_logininfor` VALUES (516, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 02:21:36');
+INSERT INTO `sys_logininfor` VALUES (517, 'admin', '127.0.0.1', '内网IP', 'Edge 149', 'Windows >=10', '1', '验证码已失效', '2026-06-12 02:33:52');
+INSERT INTO `sys_logininfor` VALUES (518, 'admin', '127.0.0.1', '内网IP', 'Edge 149', 'Windows >=10', '0', '登录成功', '2026-06-12 02:33:58');
+INSERT INTO `sys_logininfor` VALUES (519, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 02:43:48');
+INSERT INTO `sys_logininfor` VALUES (520, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 02:56:48');
+INSERT INTO `sys_logininfor` VALUES (521, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 03:00:02');
+INSERT INTO `sys_logininfor` VALUES (522, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 03:27:58');
+INSERT INTO `sys_logininfor` VALUES (523, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 03:32:30');
+INSERT INTO `sys_logininfor` VALUES (524, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 03:36:17');
+INSERT INTO `sys_logininfor` VALUES (525, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 03:39:44');
+INSERT INTO `sys_logininfor` VALUES (526, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 03:41:11');
+INSERT INTO `sys_logininfor` VALUES (527, 'admin', '127.0.0.1', '内网IP', 'Edge 149', 'Windows >=10', '0', '登录成功', '2026-06-12 03:44:34');
+INSERT INTO `sys_logininfor` VALUES (528, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 03:47:24');
+INSERT INTO `sys_logininfor` VALUES (529, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 03:48:26');
+INSERT INTO `sys_logininfor` VALUES (530, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '1', '验证码错误', '2026-06-12 03:51:41');
+INSERT INTO `sys_logininfor` VALUES (531, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '1', '验证码错误', '2026-06-12 03:51:42');
+INSERT INTO `sys_logininfor` VALUES (532, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 03:51:45');
+INSERT INTO `sys_logininfor` VALUES (533, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 03:58:24');
+INSERT INTO `sys_logininfor` VALUES (534, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 04:04:20');
+INSERT INTO `sys_logininfor` VALUES (535, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 04:07:33');
+INSERT INTO `sys_logininfor` VALUES (536, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 04:20:35');
+INSERT INTO `sys_logininfor` VALUES (537, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 04:22:26');
+INSERT INTO `sys_logininfor` VALUES (538, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 04:28:32');
+INSERT INTO `sys_logininfor` VALUES (539, 'admin', '127.0.0.1', '内网IP', 'Edge 149', 'Windows >=10', '0', '登录成功', '2026-06-12 15:17:27');
+INSERT INTO `sys_logininfor` VALUES (540, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 15:20:28');
+INSERT INTO `sys_logininfor` VALUES (541, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 15:23:20');
+INSERT INTO `sys_logininfor` VALUES (542, 'dealer_a', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 15:26:00');
+INSERT INTO `sys_logininfor` VALUES (543, 'charger_b', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 15:26:17');
+INSERT INTO `sys_logininfor` VALUES (544, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 15:33:56');
+INSERT INTO `sys_logininfor` VALUES (545, 'maintainc', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 15:35:35');
+INSERT INTO `sys_logininfor` VALUES (546, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '1', '验证码错误', '2026-06-12 15:53:36');
+INSERT INTO `sys_logininfor` VALUES (547, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '1', '验证码错误', '2026-06-12 15:53:36');
+INSERT INTO `sys_logininfor` VALUES (548, 'dealer_a', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 15:53:44');
+INSERT INTO `sys_logininfor` VALUES (549, 'charger_b', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 15:54:22');
+INSERT INTO `sys_logininfor` VALUES (550, 'admin', '127.0.0.1', '内网IP', 'WeChat 8.0.5', 'iOS 17.0.3', '0', '登录成功', '2026-06-12 15:58:25');
 
 -- ----------------------------
 -- Table structure for sys_menu
@@ -2694,11 +2871,11 @@ INSERT INTO `sys_menu` VALUES (2302, '车辆查询', 2301, 1, '', '', '', '', 1,
 INSERT INTO `sys_menu` VALUES (2303, '车辆新增', 2301, 2, '', '', '', '', 1, 0, 'F', '0', '0', 'business:vehicle:add', '#', 'admin', '2026-06-01 21:20:19', '', NULL, '');
 INSERT INTO `sys_menu` VALUES (2304, '车辆修改', 2301, 3, '', '', '', '', 1, 0, 'F', '0', '0', 'business:vehicle:edit', '#', 'admin', '2026-06-01 21:20:19', '', NULL, '');
 INSERT INTO `sys_menu` VALUES (2305, '车辆删除', 2301, 4, '', '', '', '', 1, 0, 'F', '0', '0', 'business:vehicle:remove', '#', 'admin', '2026-06-01 21:20:19', '', NULL, '');
-INSERT INTO `sys_menu` VALUES (2311, '车辆规格', 2300, 2, 'spec', 'business/vehiclespec/index', '', '', 1, 0, 'C', '0', '0', 'business:vehiclespec:list', 'form', 'admin', '2026-06-01 21:20:19', '', NULL, '');
-INSERT INTO `sys_menu` VALUES (2312, '规格查询', 2311, 1, '', '', '', '', 1, 0, 'F', '0', '0', 'business:vehiclespec:query', '#', 'admin', '2026-06-01 21:20:19', '', NULL, '');
-INSERT INTO `sys_menu` VALUES (2313, '规格新增', 2311, 2, '', '', '', '', 1, 0, 'F', '0', '0', 'business:vehiclespec:add', '#', 'admin', '2026-06-01 21:20:19', '', NULL, '');
-INSERT INTO `sys_menu` VALUES (2314, '规格修改', 2311, 3, '', '', '', '', 1, 0, 'F', '0', '0', 'business:vehiclespec:edit', '#', 'admin', '2026-06-01 21:20:19', '', NULL, '');
-INSERT INTO `sys_menu` VALUES (2315, '规格删除', 2311, 4, '', '', '', '', 1, 0, 'F', '0', '0', 'business:vehiclespec:remove', '#', 'admin', '2026-06-01 21:20:19', '', NULL, '');
+INSERT INTO `sys_menu` VALUES (2311, '车辆规格', 2300, 2, 'spec', 'business/vehiclespec/index', '', '', 1, 0, 'C', '1', '0', 'business:vehiclespec:list', 'form', 'admin', '2026-06-01 21:20:19', '', NULL, '');
+INSERT INTO `sys_menu` VALUES (2312, '规格查询', 2311, 1, '', '', '', '', 1, 0, 'F', '1', '0', 'business:vehiclespec:query', '#', 'admin', '2026-06-01 21:20:19', '', NULL, '');
+INSERT INTO `sys_menu` VALUES (2313, '规格新增', 2311, 2, '', '', '', '', 1, 0, 'F', '1', '0', 'business:vehiclespec:add', '#', 'admin', '2026-06-01 21:20:19', '', NULL, '');
+INSERT INTO `sys_menu` VALUES (2314, '规格修改', 2311, 3, '', '', '', '', 1, 0, 'F', '1', '0', 'business:vehiclespec:edit', '#', 'admin', '2026-06-01 21:20:19', '', NULL, '');
+INSERT INTO `sys_menu` VALUES (2315, '规格删除', 2311, 4, '', '', '', '', 1, 0, 'F', '1', '0', 'business:vehiclespec:remove', '#', 'admin', '2026-06-01 21:20:19', '', NULL, '');
 INSERT INTO `sys_menu` VALUES (2321, '金融方案', 2300, 3, 'plan', 'business/financeplan/index', '', '', 1, 0, 'C', '0', '0', 'business:financeplan:list', 'money', 'admin', '2026-06-01 21:20:19', '', NULL, '');
 INSERT INTO `sys_menu` VALUES (2322, '方案查询', 2321, 1, '', '', '', '', 1, 0, 'F', '0', '0', 'business:financeplan:query', '#', 'admin', '2026-06-01 21:20:19', '', NULL, '');
 INSERT INTO `sys_menu` VALUES (2323, '方案新增', 2321, 2, '', '', '', '', 1, 0, 'F', '0', '0', 'business:financeplan:add', '#', 'admin', '2026-06-01 21:20:19', '', NULL, '');
@@ -2861,7 +3038,7 @@ CREATE TABLE `sys_oper_log`  (
   INDEX `idx_sys_oper_log_bt`(`business_type` ASC) USING BTREE,
   INDEX `idx_sys_oper_log_s`(`status` ASC) USING BTREE,
   INDEX `idx_sys_oper_log_ot`(`oper_time` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 128 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '操作日志记录' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 182 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '操作日志记录' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of sys_oper_log
@@ -2894,6 +3071,60 @@ INSERT INTO `sys_oper_log` VALUES (124, '维保订单管理', 2, 'com.ruoyi.web.
 INSERT INTO `sys_oper_log` VALUES (125, '维保订单管理', 2, 'com.ruoyi.web.controller.business.StadMaintenanceOrderController.edit()', 'PUT', 1, 'admin', '研发部门', '/business/maintenance/order', '127.0.0.1', '内网IP', '{\"contactName\":\"刘师傅\",\"contactPhone\":\"13400004444\",\"createTime\":\"2026-05-20 14:00:00\",\"expectDate\":\"2026-05-28 00:00:00\",\"expectTimeSlot\":\"pm\",\"finishTime\":\"2026-06-09 14:49:10\",\"nickName\":\"李车主\",\"orderId\":2,\"orderNo\":\"MO20260520000002\",\"orderStatus\":\"1\",\"paidAmount\":0,\"params\":{},\"payStatus\":\"1\",\"serviceItem\":\"空调清洗+轮胎更换\",\"servicePrice\":880,\"shopAddress\":\"山东省济南市历城区 工业北路88号汽车产业园\",\"shopId\":2,\"shopName\":\"济南鑫维保-工业北路店\",\"totalAmount\":880,\"updateBy\":\"admin\",\"userId\":3,\"vehicleId\":2,\"vehicleName\":\"2025款 特斯拉 Model Y 长续航全轮驱动版\"} ', NULL, 1, '\r\n### Error updating database.  Cause: java.sql.SQLSyntaxErrorException: Unknown column \'update_by\' in \'field list\'\r\n### The error may exist in file [D:\\NEV_Life\\NEV_main\\ruoyi-system\\target\\classes\\mapper\\business\\StadMaintenanceOrderMapper.xml]\r\n### The error may involve com.ruoyi.business.mapper.StadMaintenanceOrderMapper.updateStadMaintenanceOrder-Inline\r\n### The error occurred while setting parameters\r\n### SQL: update stad_maintenance_order          SET order_no = ?,             user_id = ?,             shop_id = ?,             vehicle_id = ?,             service_item = ?,             service_price = ?,             total_amount = ?,             paid_amount = ?,             expect_date = ?,             expect_time_slot = ?,             order_status = ?,                          finish_time = ?,                                       pay_status = ?,                          update_by = ?,             update_time = sysdate()          where order_id = ?\r\n### Cause: java.sql.SQLSyntaxErrorException: Unknown column \'update_by\' in \'field list\'\n; bad SQL grammar []', '2026-06-09 14:49:25', 6);
 INSERT INTO `sys_oper_log` VALUES (126, '维保订单管理', 2, 'com.ruoyi.web.controller.business.StadMaintenanceOrderController.edit()', 'PUT', 1, 'admin', '研发部门', '/business/maintenance/order', '127.0.0.1', '内网IP', '{\"contactName\":\"刘师傅\",\"contactPhone\":\"13400004444\",\"createTime\":\"2026-05-20 14:00:00\",\"expectDate\":\"2026-05-28 00:00:00\",\"expectTimeSlot\":\"pm\",\"nickName\":\"李车主\",\"orderId\":2,\"orderNo\":\"MO20260520000002\",\"orderStatus\":\"1\",\"paidAmount\":0,\"params\":{},\"payStatus\":\"0\",\"serviceItem\":\"空调清洗+轮胎更换\",\"servicePrice\":880,\"shopAddress\":\"山东省济南市历城区 工业北路88号汽车产业园\",\"shopId\":2,\"shopName\":\"济南鑫维保-工业北路店\",\"totalAmount\":880,\"updateBy\":\"admin\",\"userId\":3,\"vehicleId\":2,\"vehicleName\":\"2025款 特斯拉 Model Y 长续航全轮驱动版\"} ', NULL, 1, '\r\n### Error updating database.  Cause: java.sql.SQLSyntaxErrorException: Unknown column \'update_by\' in \'field list\'\r\n### The error may exist in file [D:\\NEV_Life\\NEV_main\\ruoyi-system\\target\\classes\\mapper\\business\\StadMaintenanceOrderMapper.xml]\r\n### The error may involve com.ruoyi.business.mapper.StadMaintenanceOrderMapper.updateStadMaintenanceOrder-Inline\r\n### The error occurred while setting parameters\r\n### SQL: update stad_maintenance_order          SET order_no = ?,             user_id = ?,             shop_id = ?,             vehicle_id = ?,             service_item = ?,             service_price = ?,             total_amount = ?,             paid_amount = ?,             expect_date = ?,             expect_time_slot = ?,             order_status = ?,                                                                 pay_status = ?,                          update_by = ?,             update_time = sysdate()          where order_id = ?\r\n### Cause: java.sql.SQLSyntaxErrorException: Unknown column \'update_by\' in \'field list\'\n; bad SQL grammar []', '2026-06-09 14:49:29', 12);
 INSERT INTO `sys_oper_log` VALUES (127, '维保订单管理', 2, 'com.ruoyi.web.controller.business.StadMaintenanceOrderController.edit()', 'PUT', 1, 'admin', '研发部门', '/business/maintenance/order', '127.0.0.1', '内网IP', '{\"contactName\":\"刘师傅\",\"contactPhone\":\"13400004444\",\"createTime\":\"2026-05-20 14:00:00\",\"expectDate\":\"2026-05-28 00:00:00\",\"expectTimeSlot\":\"pm\",\"nickName\":\"李车主\",\"orderId\":2,\"orderNo\":\"MO20260520000002\",\"orderStatus\":\"1\",\"paidAmount\":0,\"params\":{},\"payStatus\":\"1\",\"serviceItem\":\"空调清洗+轮胎更换\",\"servicePrice\":880,\"shopAddress\":\"山东省济南市历城区 工业北路88号汽车产业园\",\"shopId\":2,\"shopName\":\"济南鑫维保-工业北路店\",\"totalAmount\":880,\"updateBy\":\"admin\",\"userId\":3,\"vehicleId\":2,\"vehicleName\":\"2025款 特斯拉 Model Y 长续航全轮驱动版\"} ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-09 15:03:19', 23);
+INSERT INTO `sys_oper_log` VALUES (128, '收藏', 3, 'com.ruoyi.web.controller.mine.AppFavoriteController.cancelCollectionByTarget()', 'DELETE', 1, 'admin', '研发部门', '/app/collection/target', '127.0.0.1', '内网IP', '{\"targetId\":\"1\",\"targetType\":\"article\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-10 01:10:00', 32);
+INSERT INTO `sys_oper_log` VALUES (129, '收藏', 1, 'com.ruoyi.web.controller.mine.AppFavoriteController.addCollection()', 'POST', 1, 'admin', '研发部门', '/app/collection', '127.0.0.1', '内网IP', '{\"favoriteId\":1016,\"params\":{},\"targetId\":1,\"targetType\":\"article\",\"userId\":1} ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-10 01:10:02', 26);
+INSERT INTO `sys_oper_log` VALUES (130, '收藏', 3, 'com.ruoyi.web.controller.mine.AppFavoriteController.cancelCollectionByTarget()', 'DELETE', 1, 'admin', '研发部门', '/app/collection/target', '127.0.0.1', '内网IP', '{\"targetId\":\"1\",\"targetType\":\"article\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-10 01:10:11', 24);
+INSERT INTO `sys_oper_log` VALUES (131, '收藏', 1, 'com.ruoyi.web.controller.mine.AppFavoriteController.addCollection()', 'POST', 1, 'admin', '研发部门', '/app/collection', '127.0.0.1', '内网IP', '{\"favoriteId\":1017,\"params\":{},\"targetId\":1,\"targetType\":\"article\",\"userId\":1} ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-10 01:13:57', 15);
+INSERT INTO `sys_oper_log` VALUES (132, '收藏', 3, 'com.ruoyi.web.controller.mine.AppFavoriteController.cancelCollection()', 'DELETE', 1, 'admin', '研发部门', '/app/collection/1008', '127.0.0.1', '内网IP', '1008 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-10 01:14:20', 15);
+INSERT INTO `sys_oper_log` VALUES (133, '收藏', 3, 'com.ruoyi.web.controller.mine.AppFavoriteController.cancelCollectionByTarget()', 'DELETE', 1, 'admin', '研发部门', '/app/collection/target', '127.0.0.1', '内网IP', '{\"targetId\":\"3\",\"targetType\":\"charging_station\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-10 01:14:31', 23);
+INSERT INTO `sys_oper_log` VALUES (134, '收藏', 1, 'com.ruoyi.web.controller.mine.AppFavoriteController.addCollection()', 'POST', 1, 'admin', '研发部门', '/app/collection', '127.0.0.1', '内网IP', '{\"favoriteId\":1018,\"params\":{},\"targetId\":3,\"targetType\":\"charging_station\",\"userId\":1} ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-10 01:14:32', 13);
+INSERT INTO `sys_oper_log` VALUES (135, '收藏', 3, 'com.ruoyi.web.controller.mine.AppFavoriteController.cancelCollectionByTarget()', 'DELETE', 1, 'admin', '研发部门', '/app/collection/target', '127.0.0.1', '内网IP', '{\"targetId\":\"2\",\"targetType\":\"station\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-10 01:21:25', 20);
+INSERT INTO `sys_oper_log` VALUES (136, '收藏', 1, 'com.ruoyi.web.controller.mine.AppFavoriteController.addCollection()', 'POST', 1, 'admin', '研发部门', '/app/collection', '127.0.0.1', '内网IP', '{\"favoriteId\":1019,\"params\":{},\"targetId\":2,\"targetType\":\"station\",\"userId\":1} ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-10 01:21:27', 25);
+INSERT INTO `sys_oper_log` VALUES (137, '用户头像', 2, 'com.ruoyi.web.controller.system.SysProfileController.avatar()', 'POST', 1, 'admin', '研发部门', '/system/user/profile/avatar', '127.0.0.1', '内网IP', '', '{\"msg\":\"操作成功\",\"imgUrl\":\"/profile/avatar/2026/06/10/9fb5924085cc4987bed8d594087f8d49.jpg\",\"code\":200}', 0, NULL, '2026-06-10 01:48:52', 116);
+INSERT INTO `sys_oper_log` VALUES (138, '用户头像', 2, 'com.ruoyi.web.controller.system.SysProfileController.avatar()', 'POST', 1, 'admin', '研发部门', '/system/user/profile/avatar', '127.0.0.1', '内网IP', '', '{\"msg\":\"操作成功\",\"imgUrl\":\"/profile/avatar/2026/06/10/6d3d8c953c234a5dad83f539dbe20008.jpg\",\"code\":200}', 0, NULL, '2026-06-10 01:51:40', 13);
+INSERT INTO `sys_oper_log` VALUES (139, '用户头像', 2, 'com.ruoyi.web.controller.system.SysProfileController.avatar()', 'POST', 1, 'admin', '研发部门', '/system/user/profile/avatar', '127.0.0.1', '内网IP', '', '{\"msg\":\"操作成功\",\"imgUrl\":\"/profile/avatar/2026/06/10/326df813bcd045c7af0f1169e2260831.jpg\",\"code\":200}', 0, NULL, '2026-06-10 01:53:08', 35);
+INSERT INTO `sys_oper_log` VALUES (140, '用户头像', 2, 'com.ruoyi.web.controller.system.SysProfileController.avatar()', 'POST', 1, 'admin', '研发部门', '/system/user/profile/avatar', '127.0.0.1', '内网IP', '', '{\"msg\":\"操作成功\",\"imgUrl\":\"/profile/avatar/2026/06/10/44c30e9e95ee4d49bcfcae22478fb3c7.jpg\",\"code\":200}', 0, NULL, '2026-06-10 01:53:49', 14);
+INSERT INTO `sys_oper_log` VALUES (141, '用户头像', 2, 'com.ruoyi.web.controller.system.SysProfileController.avatar()', 'POST', 1, 'admin', '研发部门', '/system/user/profile/avatar', '127.0.0.1', '内网IP', '', '{\"msg\":\"操作成功\",\"imgUrl\":\"/profile/avatar/2026/06/10/da9cca73ec6f4afd913dd2c72c577493.jpg\",\"code\":200}', 0, NULL, '2026-06-10 01:54:44', 25);
+INSERT INTO `sys_oper_log` VALUES (142, '用户头像', 2, 'com.ruoyi.web.controller.system.SysProfileController.avatar()', 'POST', 1, 'admin', '研发部门', '/system/user/profile/avatar', '127.0.0.1', '内网IP', '', '{\"msg\":\"操作成功\",\"imgUrl\":\"/profile/avatar/2026/06/10/0cb4b330aad141db9518afbfebe16a85.png\",\"code\":200}', 0, NULL, '2026-06-10 01:56:26', 66);
+INSERT INTO `sys_oper_log` VALUES (143, '用户头像', 2, 'com.ruoyi.web.controller.system.SysProfileController.avatar()', 'POST', 1, 'admin', '研发部门', '/system/user/profile/avatar', '127.0.0.1', '内网IP', '', '{\"msg\":\"操作成功\",\"imgUrl\":\"/profile/avatar/2026/06/10/c99c16562a4a4d9d9a32c440e6873e0c.jpg\",\"code\":200}', 0, NULL, '2026-06-10 01:56:56', 23);
+INSERT INTO `sys_oper_log` VALUES (144, '用户头像', 2, 'com.ruoyi.web.controller.system.SysProfileController.avatar()', 'POST', 1, 'admin', '研发部门', '/system/user/profile/avatar', '127.0.0.1', '内网IP', '', '{\"msg\":\"操作成功\",\"imgUrl\":\"/profile/avatar/2026/06/10/02e6b64889a54fb9a06ed158c572adb8.jpg\",\"code\":200}', 0, NULL, '2026-06-10 01:59:16', 13);
+INSERT INTO `sys_oper_log` VALUES (145, '充电结算', 2, 'com.ruoyi.web.controller.business.StadChargingSettlementController.edit()', 'PUT', 1, 'admin', '研发部门', '/business/chargingsettlement', '127.0.0.1', '内网IP', '{\"merchantId\":2,\"params\":{},\"platformCommission\":122.5,\"settleAmount\":2327.5,\"settleDate\":\"2026-05-21\",\"settlementId\":3,\"status\":\"0\",\"totalAmount\":2450,\"totalEnergy\":1680,\"totalOrders\":85,\"withdrawAmount\":0} ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-10 02:25:10', 99);
+INSERT INTO `sys_oper_log` VALUES (146, '商户管理', 2, 'com.ruoyi.web.controller.business.StadMerchantController.edit()', 'PUT', 1, 'admin', '研发部门', '/business/merchant', '127.0.0.1', '内网IP', '{\"address\":\"槐荫区经十西路500号\",\"auditRemark\":\"维保商资质审核通过\",\"auditTime\":\"2026-03-10 10:00:00\",\"bankAccount\":\"6228480012345678901\",\"bankName\":\"中国农业银行济南分行\",\"businessLicense\":\"/upload/biz/003.jpg\",\"city\":\"济南市\",\"closeTime\":\"17:30:00\",\"contactName\":\"孙经理\",\"contactPhone\":\"13500003333\",\"createTime\":\"2026-03-05 10:00:00\",\"idCard\":\"370112198505053456\",\"legalPerson\":\"孙大伟\",\"merchantId\":3,\"merchantName\":\"济南鑫维保汽车服务有限公司\",\"merchantType\":\"maintenance\",\"openTime\":\"09:30:00\",\"params\":{},\"pendingAmount\":30000,\"province\":\"山东省\",\"settledAmount\":120000,\"status\":\"1\",\"totalIncome\":150000,\"updateBy\":\"admin\",\"userId\":6,\"withdrawnAmount\":100000} ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-10 02:57:15', 23);
+INSERT INTO `sys_oper_log` VALUES (147, '充电结算', 2, 'com.ruoyi.web.controller.business.StadChargingSettlementController.edit()', 'PUT', 1, 'admin', '研发部门', '/business/chargingsettlement', '127.0.0.1', '内网IP', '{\"merchantId\":2,\"params\":{},\"platformCommission\":122.5,\"settleAmount\":2327.5,\"settleDate\":\"2026-05-29\",\"settlementId\":3,\"status\":\"0\",\"totalAmount\":2450,\"totalEnergy\":1680,\"totalOrders\":85,\"withdrawAmount\":0} ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-10 02:57:25', 13);
+INSERT INTO `sys_oper_log` VALUES (148, '充电结算', 2, 'com.ruoyi.web.controller.business.StadChargingSettlementController.edit()', 'PUT', 1, 'admin', '研发部门', '/business/chargingsettlement', '127.0.0.1', '内网IP', '{\"merchantId\":2,\"params\":{},\"platformCommission\":82.5,\"settleAmount\":1567.5,\"settleDate\":\"2026-05-22\",\"settleTime\":\"2026-05-21 10:00:00\",\"settlementId\":2,\"status\":\"1\",\"totalAmount\":1650,\"totalEnergy\":1120,\"totalOrders\":62,\"withdrawAmount\":1567.5,\"withdrawNo\":\"WD20260521000002\",\"withdrawStatus\":\"1\",\"withdrawTime\":\"2026-05-22 10:00:00\"} ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-10 02:57:34', 8);
+INSERT INTO `sys_oper_log` VALUES (149, '充电结算', 2, 'com.ruoyi.web.controller.business.StadChargingSettlementController.edit()', 'PUT', 1, 'admin', '研发部门', '/business/chargingsettlement', '127.0.0.1', '内网IP', '{\"merchantId\":2,\"params\":{},\"platformCommission\":122.5,\"settleAmount\":2327.5,\"settleDate\":\"2026-05-30\",\"settlementId\":3,\"status\":\"1\",\"totalAmount\":2450,\"totalEnergy\":1680,\"totalOrders\":85,\"withdrawAmount\":0} ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-10 02:58:06', 13);
+INSERT INTO `sys_oper_log` VALUES (150, '维保订单管理', 2, 'com.ruoyi.web.controller.business.StadMaintenanceOrderController.edit()', 'PUT', 1, 'admin', '研发部门', '/business/maintenance/order', '127.0.0.1', '内网IP', '{\"contactName\":\"刘师傅\",\"contactPhone\":\"13400004444\",\"createTime\":\"2026-06-09 15:51:54\",\"expectDate\":\"2026-07-14\",\"expectTimeSlot\":\"am\",\"nickName\":\"若依\",\"orderId\":4,\"orderNo\":\"WH20260609802699\",\"orderStatus\":\"0\",\"paidAmount\":0,\"params\":{},\"payStatus\":\"1\",\"serviceItem\":\"空调清洗\",\"servicePrice\":168,\"shopAddress\":\"山东省济南市历城区 工业北路88号汽车产业园\",\"shopId\":2,\"shopName\":\"济南鑫维保-工业北路店\",\"totalAmount\":168,\"updateBy\":\"admin\",\"userId\":1,\"vehicleId\":4,\"vehicleName\":\"2025款 小鹏 P7i 702 Max\"} ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-11 19:34:02', 36);
+INSERT INTO `sys_oper_log` VALUES (151, '维保订单管理', 2, 'com.ruoyi.web.controller.business.StadMaintenanceOrderController.edit()', 'PUT', 1, 'admin', '研发部门', '/business/maintenance/order', '127.0.0.1', '内网IP', '{\"contactName\":\"刘师傅\",\"contactPhone\":\"13400004444\",\"createTime\":\"2026-06-09 15:51:54\",\"expectDate\":\"2026-07-14\",\"expectTimeSlot\":\"am\",\"nickName\":\"若依\",\"orderId\":4,\"orderNo\":\"WH20260609802699\",\"orderStatus\":\"0\",\"paidAmount\":0,\"params\":{},\"payStatus\":\"1\",\"serviceItem\":\"空调清洗\",\"servicePrice\":168,\"shopAddress\":\"山东省济南市历城区 工业北路88号汽车产业园\",\"shopId\":2,\"shopName\":\"济南鑫维保-工业北路店\",\"totalAmount\":168,\"updateBy\":\"admin\",\"userId\":1,\"vehicleId\":4,\"vehicleName\":\"2025款 小鹏 P7i 702 Max\"} ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-11 20:11:31', 66);
+INSERT INTO `sys_oper_log` VALUES (152, '维保订单管理', 2, 'com.ruoyi.web.controller.business.StadMaintenanceOrderController.edit()', 'PUT', 1, 'admin', '研发部门', '/business/maintenance/order', '127.0.0.1', '内网IP', '{\"contactName\":\"刘师傅\",\"contactPhone\":\"13400004444\",\"createTime\":\"2026-06-09 15:51:54\",\"expectDate\":\"2026-07-14\",\"expectTimeSlot\":\"am\",\"nickName\":\"若依\",\"orderId\":4,\"orderNo\":\"WH20260609802699\",\"orderStatus\":\"2\",\"paidAmount\":0,\"params\":{},\"payStatus\":\"1\",\"serviceItem\":\"空调清洗\",\"servicePrice\":168,\"shopAddress\":\"山东省济南市历城区 工业北路88号汽车产业园\",\"shopId\":2,\"shopName\":\"济南鑫维保-工业北路店\",\"totalAmount\":168,\"updateBy\":\"admin\",\"userId\":1,\"vehicleId\":4,\"vehicleName\":\"2025款 小鹏 P7i 702 Max\"} ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-11 20:12:36', 19);
+INSERT INTO `sys_oper_log` VALUES (153, '用户头像', 2, 'com.ruoyi.web.controller.system.SysProfileController.avatar()', 'POST', 1, 'dealer_a', '研发部门', '/system/user/profile/avatar', '127.0.0.1', '内网IP', '', '{\"msg\":\"操作成功\",\"imgUrl\":\"/profile/avatar/2026/06/11/39e68a9fb9944288828f6477876d9efe.jpg\",\"code\":200}', 0, NULL, '2026-06-11 22:31:30', 152);
+INSERT INTO `sys_oper_log` VALUES (154, '购车订单管理', 2, 'com.ruoyi.web.controller.business.StadUnifiedOrderController.edit()', 'PUT', 1, 'admin', '研发部门', '/business/unified/order', '127.0.0.1', '内网IP', '{\"contactName\":\"好好\",\"contactPhone\":\"12313124144\",\"createTime\":\"2026-06-07 21:55:16\",\"insuranceInfo\":\"{\\\"name\\\":\\\"基础保障\\\",\\\"desc\\\":\\\"交强险+三者200万\\\",\\\"price\\\":5800}\",\"nickName\":\"若依\",\"oldValuation\":0,\"orderId\":6,\"orderNo\":\"PUR202606072155169166\",\"orderType\":\"purchase\",\"paidAmount\":0,\"params\":{},\"paymentMethod\":\"微信支付\",\"status\":\"1\",\"totalAmount\":219800.58,\"updateBy\":\"admin\",\"userId\":1,\"vehicleId\":1,\"vehiclePrice\":219800} ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-11 22:39:56', 36);
+INSERT INTO `sys_oper_log` VALUES (155, '商户审核', 2, 'com.ruoyi.web.controller.business.StadMerchantController.audit()', 'PUT', 1, 'admin', '研发部门', '/business/merchant/audit/7', '127.0.0.1', '内网IP', '7 {\"auditRemark\":\"3\",\"auditTime\":\"2026-06-11 23:20:36.228\",\"merchantId\":7,\"params\":{},\"status\":\"2\",\"updateBy\":\"admin\"} ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-11 23:20:36', 141);
+INSERT INTO `sys_oper_log` VALUES (156, '商户审核', 2, 'com.ruoyi.web.controller.business.StadMerchantController.audit()', 'PUT', 1, 'admin', '研发部门', '/business/merchant/audit/7', '127.0.0.1', '内网IP', '7 {\"auditRemark\":\"有问题\",\"auditTime\":\"2026-06-11 23:38:14.414\",\"merchantId\":7,\"params\":{},\"status\":\"2\",\"updateBy\":\"admin\"} ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-11 23:38:14', 42);
+INSERT INTO `sys_oper_log` VALUES (157, '收藏', 3, 'com.ruoyi.web.controller.mine.AppFavoriteController.cancelCollection()', 'DELETE', 1, 'admin', '研发部门', '/app/collection/1017', '127.0.0.1', '内网IP', '1017 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-11 23:39:29', 15);
+INSERT INTO `sys_oper_log` VALUES (158, '收藏', 3, 'com.ruoyi.web.controller.mine.AppFavoriteController.cancelCollection()', 'DELETE', 1, 'admin', '研发部门', '/app/collection/1013', '127.0.0.1', '内网IP', '1013 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-11 23:39:30', 11);
+INSERT INTO `sys_oper_log` VALUES (159, '订单', 2, 'com.ruoyi.web.controller.mine.AppOrderController.cancelOrder()', 'PUT', 1, 'admin', '研发部门', '/app/order/8/cancel', '127.0.0.1', '内网IP', '8 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-12 01:46:02', 28);
+INSERT INTO `sys_oper_log` VALUES (160, '订单', 3, 'com.ruoyi.web.controller.mine.AppOrderController.deleteOrder()', 'DELETE', 1, 'admin', '研发部门', '/app/order/8', '127.0.0.1', '内网IP', '8 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-12 01:46:06', 17);
+INSERT INTO `sys_oper_log` VALUES (161, '订单', 2, 'com.ruoyi.web.controller.mine.AppOrderController.cancelOrder()', 'PUT', 1, 'admin', '研发部门', '/app/order/7/cancel', '127.0.0.1', '内网IP', '7 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-12 01:46:08', 14);
+INSERT INTO `sys_oper_log` VALUES (162, '订单', 3, 'com.ruoyi.web.controller.mine.AppOrderController.deleteOrder()', 'DELETE', 1, 'admin', '研发部门', '/app/order/7', '127.0.0.1', '内网IP', '7 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-12 01:46:09', 12);
+INSERT INTO `sys_oper_log` VALUES (163, '订单', 2, 'com.ruoyi.web.controller.mine.AppOrderController.cancelOrder()', 'PUT', 1, 'admin', '研发部门', '/app/order/9/cancel', '127.0.0.1', '内网IP', '9 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-12 02:09:11', 21);
+INSERT INTO `sys_oper_log` VALUES (164, '订单', 3, 'com.ruoyi.web.controller.mine.AppOrderController.deleteOrder()', 'DELETE', 1, 'admin', '研发部门', '/app/order/9', '127.0.0.1', '内网IP', '9 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-12 02:09:13', 17);
+INSERT INTO `sys_oper_log` VALUES (165, '订单', 2, 'com.ruoyi.web.controller.mine.AppOrderController.cancelOrder()', 'PUT', 1, 'admin', '研发部门', '/app/order/10/cancel', '127.0.0.1', '内网IP', '10 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-12 02:22:58', 16);
+INSERT INTO `sys_oper_log` VALUES (166, '订单', 3, 'com.ruoyi.web.controller.mine.AppOrderController.deleteOrder()', 'DELETE', 1, 'admin', '研发部门', '/app/order/10', '127.0.0.1', '内网IP', '10 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-12 02:23:00', 16);
+INSERT INTO `sys_oper_log` VALUES (167, '订单', 2, 'com.ruoyi.web.controller.mine.AppOrderController.cancelOrder()', 'PUT', 1, 'admin', '研发部门', '/app/order/11/cancel', '127.0.0.1', '内网IP', '11 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-12 02:43:33', 19);
+INSERT INTO `sys_oper_log` VALUES (168, '订单', 3, 'com.ruoyi.web.controller.mine.AppOrderController.deleteOrder()', 'DELETE', 1, 'admin', '研发部门', '/app/order/11', '127.0.0.1', '内网IP', '11 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-12 02:43:35', 10);
+INSERT INTO `sys_oper_log` VALUES (169, '订单', 2, 'com.ruoyi.web.controller.mine.AppOrderController.cancelOrder()', 'PUT', 1, 'admin', '研发部门', '/app/order/12/cancel', '127.0.0.1', '内网IP', '12 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-12 02:46:07', 15);
+INSERT INTO `sys_oper_log` VALUES (170, '订单', 3, 'com.ruoyi.web.controller.mine.AppOrderController.deleteOrder()', 'DELETE', 1, 'admin', '研发部门', '/app/order/12', '127.0.0.1', '内网IP', '12 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-12 02:46:08', 16);
+INSERT INTO `sys_oper_log` VALUES (171, '订单', 2, 'com.ruoyi.web.controller.mine.AppOrderController.cancelOrder()', 'PUT', 1, 'admin', '研发部门', '/app/order/15/cancel', '127.0.0.1', '内网IP', '15 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-12 03:09:12', 11);
+INSERT INTO `sys_oper_log` VALUES (172, '订单', 3, 'com.ruoyi.web.controller.mine.AppOrderController.deleteOrder()', 'DELETE', 1, 'admin', '研发部门', '/app/order/15', '127.0.0.1', '内网IP', '15 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-12 03:09:15', 14);
+INSERT INTO `sys_oper_log` VALUES (173, '订单', 2, 'com.ruoyi.web.controller.mine.AppOrderController.cancelOrder()', 'PUT', 1, 'admin', '研发部门', '/app/order/14/cancel', '127.0.0.1', '内网IP', '14 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-12 03:09:16', 11);
+INSERT INTO `sys_oper_log` VALUES (174, '订单', 3, 'com.ruoyi.web.controller.mine.AppOrderController.deleteOrder()', 'DELETE', 1, 'admin', '研发部门', '/app/order/14', '127.0.0.1', '内网IP', '14 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-12 03:09:18', 15);
+INSERT INTO `sys_oper_log` VALUES (175, '订单', 2, 'com.ruoyi.web.controller.mine.AppOrderController.cancelOrder()', 'PUT', 1, 'admin', '研发部门', '/app/order/13/cancel', '127.0.0.1', '内网IP', '13 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-12 03:09:19', 8);
+INSERT INTO `sys_oper_log` VALUES (176, '订单', 3, 'com.ruoyi.web.controller.mine.AppOrderController.deleteOrder()', 'DELETE', 1, 'admin', '研发部门', '/app/order/13', '127.0.0.1', '内网IP', '13 ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-12 03:09:20', 13);
+INSERT INTO `sys_oper_log` VALUES (177, '碳积分', 1, 'com.ruoyi.web.controller.mine.AppCarbonController.awardPoints()', 'POST', 1, 'admin', '研发部门', '/app/carbon/award', '127.0.0.1', '内网IP', '{\"sourceId\":\"17\",\"sourceType\":\"1\",\"points\":\"500\"}', '{\"msg\":\"获得500碳积分\",\"code\":200}', 0, NULL, '2026-06-12 03:49:10', 50);
+INSERT INTO `sys_oper_log` VALUES (178, '碳积分', 1, 'com.ruoyi.web.controller.mine.AppCarbonController.awardPoints()', 'POST', 1, 'admin', '研发部门', '/app/carbon/award', '127.0.0.1', '内网IP', '{\"sourceId\":\"18\",\"sourceType\":\"1\",\"points\":\"500\"}', '{\"msg\":\"获得500碳积分\",\"code\":200}', 0, NULL, '2026-06-12 03:52:37', 25);
+INSERT INTO `sys_oper_log` VALUES (179, '碳积分', 1, 'com.ruoyi.web.controller.mine.AppCarbonController.awardPoints()', 'POST', 1, 'admin', '研发部门', '/app/carbon/award', '127.0.0.1', '内网IP', '{\"sourceId\":\"33\",\"sourceType\":\"0\",\"points\":\"288\"}', '{\"msg\":\"获得288碳积分\",\"code\":200}', 0, NULL, '2026-06-12 04:00:01', 28);
+INSERT INTO `sys_oper_log` VALUES (180, '收藏', 1, 'com.ruoyi.web.controller.mine.AppFavoriteController.addCollection()', 'POST', 1, 'admin', '研发部门', '/app/collection', '127.0.0.1', '内网IP', '{\"favoriteId\":1020,\"params\":{},\"targetId\":1,\"targetType\":\"article\",\"userId\":1} ', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-12 15:24:28', 36);
+INSERT INTO `sys_oper_log` VALUES (181, '收藏', 3, 'com.ruoyi.web.controller.mine.AppFavoriteController.cancelCollectionByTarget()', 'DELETE', 1, 'admin', '研发部门', '/app/collection/target', '127.0.0.1', '内网IP', '{\"targetId\":\"1\",\"targetType\":\"article\"}', '{\"msg\":\"操作成功\",\"code\":200}', 0, NULL, '2026-06-12 15:24:29', 26);
 
 -- ----------------------------
 -- Table structure for sys_post
@@ -3561,12 +3792,12 @@ CREATE TABLE `sys_user`  (
 -- ----------------------------
 -- Records of sys_user
 -- ----------------------------
-INSERT INTO `sys_user` VALUES (1, 103, 'admin', '若依', '00', 'ry@163.com', '15888888888', '1', '/profile/avatar/2026/06/06/fb976df9d294453e896598d41620066e.jpg', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2026-06-09 22:16:52', '2026-05-28 18:11:24', 'admin', '2026-05-28 18:11:24', '', '2026-06-06 21:03:14', '管理员');
+INSERT INTO `sys_user` VALUES (1, 103, 'admin', '若依', '00', 'ry@163.com', '15888888888', '1', '/profile/avatar/2026/06/10/02e6b64889a54fb9a06ed158c572adb8.jpg', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2026-06-12 15:58:23', '2026-05-28 18:11:24', 'admin', '2026-05-28 18:11:24', '', '2026-06-10 01:59:16', '管理员');
 INSERT INTO `sys_user` VALUES (2, 105, 'ry', '若依', '00', 'ry@qq.com', '15666666666', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2026-06-02 17:09:07', '2026-05-28 18:11:24', 'admin', '2026-05-28 18:11:24', '', NULL, '测试员');
 INSERT INTO `sys_user` VALUES (3, 103, 'lichezhu', '李车主', '00', 'li@qq.com', '13700000003', '0', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2026-06-01 18:41:15', '2026-06-01 18:41:15', 'admin', '2026-06-01 18:41:15', '', NULL, '李车主-普通用户');
-INSERT INTO `sys_user` VALUES (4, 103, 'dealer_a', '商户账号A', '00', 'dealera@qq.com', '13700000004', '1', '', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2026-06-09 19:22:52', '2026-06-01 18:41:15', 'admin', '2026-06-01 18:41:15', '', NULL, '经销商');
-INSERT INTO `sys_user` VALUES (5, 103, 'charger_b', '商户账号B', '00', 'chargerb@qq.com', '13700000005', '1', '/profile/avatar/2026/06/09/b6a881ce5f61466da8cb05e4d21e53bd.jpg', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2026-06-09 01:42:27', '2026-06-01 18:41:15', 'admin', '2026-06-01 18:41:15', '', '2026-06-09 01:43:25', '充电运营商');
-INSERT INTO `sys_user` VALUES (6, 103, 'maintainc', '商户账号C', '00', 'maintainc@qq.com', '13700000006', '1', '/profile/avatar/2026/06/09/4a4ae1b348e44165b70be581e74b7340.jpg', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2026-06-09 15:52:37', '2026-06-01 18:41:15', 'admin', '2026-06-01 18:41:15', '', '2026-06-09 01:42:11', '维保商');
+INSERT INTO `sys_user` VALUES (4, 103, 'dealer_a', '商户账号A', '00', 'dealera@qq.com', '13700000004', '1', '/profile/avatar/2026/06/11/39e68a9fb9944288828f6477876d9efe.jpg', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2026-06-12 15:53:45', '2026-06-01 18:41:15', 'admin', '2026-06-01 18:41:15', '', '2026-06-11 22:31:30', '经销商');
+INSERT INTO `sys_user` VALUES (5, 103, 'charger_b', '商户账号B', '00', 'chargerb@qq.com', '13700000005', '1', '/profile/avatar/2026/06/09/b6a881ce5f61466da8cb05e4d21e53bd.jpg', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2026-06-12 15:54:23', '2026-06-01 18:41:15', 'admin', '2026-06-01 18:41:15', '', '2026-06-09 01:43:25', '充电运营商');
+INSERT INTO `sys_user` VALUES (6, 103, 'maintainc', '商户账号C', '00', 'maintainc@qq.com', '13700000006', '1', '/profile/avatar/2026/06/09/4a4ae1b348e44165b70be581e74b7340.jpg', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', '2026-06-12 15:35:36', '2026-06-01 18:41:15', 'admin', '2026-06-01 18:41:15', '', '2026-06-09 01:42:11', '维保商');
 
 -- ----------------------------
 -- Table structure for sys_user_post

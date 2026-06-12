@@ -1569,9 +1569,9 @@ export default {
         font-size: 24rpx;
         font-weight: 600;
 
-        &.speed-fast { color: #fff; background: #ffa940; }
-        &.speed-slow { color: #fff; background: #07c160; }
-        &.speed-both { color: #fff; background: linear-gradient(90deg, #ffa940 0%, #07c160 100%); }
+        &.speed-fast { color: #fff; background: #1890ff; }
+        &.speed-slow { color: #fff; background: #69c0ff; }
+        &.speed-both { color: #fff; background: linear-gradient(90deg, #1890ff 0%, #69c0ff 100%); }
       }
 
       .pile-status-text {

@@ -55,6 +55,24 @@ public class ChargingOrderListVO extends BaseEntity {
     /** 支付方式 */
     private String paymentMethod;
 
+    /** 充电桩编号 */
+    private String pileCode;
+
+    /** 开始电量(%) */
+    private BigDecimal startSoc;
+
+    /** 结束电量(%) */
+    private BigDecimal endSoc;
+
+    /** 碳积分 */
+    private Integer carbonEarned;
+
+    /** 优惠金额 */
+    private BigDecimal discountAmount;
+
+    /** 交易流水号 */
+    private String transactionId;
+
     public Long getOrderId() { return orderId; }
     public void setOrderId(Long orderId) { this.orderId = orderId; }
 
@@ -99,4 +117,22 @@ public class ChargingOrderListVO extends BaseEntity {
 
     public String getPaymentMethod() { return paymentMethod; }
     public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
+
+    public String getPileCode() { return pileCode; }
+    public void setPileCode(String pileCode) { this.pileCode = pileCode; }
+
+    public BigDecimal getStartSoc() { return startSoc; }
+    public void setStartSoc(BigDecimal startSoc) { this.startSoc = startSoc; }
+
+    public BigDecimal getEndSoc() { return endSoc; }
+    public void setEndSoc(BigDecimal endSoc) { this.endSoc = endSoc; }
+
+    public Integer getCarbonEarned() { return carbonEarned; }
+    public void setCarbonEarned(Integer carbonEarned) { this.carbonEarned = carbonEarned; }
+
+    public BigDecimal getDiscountAmount() { return discountAmount; }
+    public void setDiscountAmount(BigDecimal discountAmount) { this.discountAmount = discountAmount; }
+
+    public String getTransactionId() { return transactionId; }
+    public void setTransactionId(String transactionId) { this.transactionId = transactionId; }
 }

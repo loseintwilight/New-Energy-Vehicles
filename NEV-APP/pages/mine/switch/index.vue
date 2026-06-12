@@ -68,7 +68,7 @@
           :class="{ active: selectedEnd === 'charging' }"
         >
           <view class="switch-icon charging-icon">
-            <uni-icons type="lightbulb" size="40" color="#fff"></uni-icons>
+            <image src="/static/images/充电桩 (2).png" class="switch-icon-img" mode="aspectFit" />
           </view>
           <view class="switch-info">
             <view class="switch-name">充电桩端</view>
@@ -433,6 +433,7 @@ export default {
       auditRemark: '',
       checkingIdentity: true,
       hasMaintenanceMerchant: false,
+      userMerchantType: '', // 从API获取的商户类型
       provinces: ['北京市', '天津市', '河北省', '山西省', '内蒙古自治区', '辽宁省', '吉林省', '黑龙江省', '上海市', '江苏省', '浙江省', '安徽省', '福建省', '江西省', '山东省', '河南省', '湖北省', '湖南省', '广东省', '广西壮族自治区', '海南省', '重庆市', '四川省', '贵州省', '云南省', '西藏自治区', '陕西省', '甘肃省', '青海省', '宁夏回族自治区', '新疆维吾尔自治区'],
       cityMap: {
         '北京市': ['东城区', '西城区', '朝阳区', '海淀区', '丰台区', '石景山区', '通州区', '顺义区', '昌平区', '大兴区', '房山区', '门头沟区', '怀柔区', '平谷区', '密云区', '延庆区'],
@@ -504,9 +505,14 @@ export default {
   },
   computed: {
     userEndType() {
-      // 根据用户名后缀映射身份类型
-      const map = { 'maintain_c': 'maintenance', 'charger_b': 'charging', 'dealer_a': 'business' }
-      return map[this.$store.state.user.name] || ''
+      // 身份完全来自数据库（通过 API 查询 stad_merchant 表）
+      if (this.userMerchantType) {
+        return this.userMerchantType
+      }
+      // API 加载完成但无商户身份
+      if (!this.checkingIdentity) return ''
+      // API 加载中，显示空
+      return ''
     },
     userIdentityName() {
       const names = {
@@ -751,12 +757,19 @@ export default {
       return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
     },
     checkMerchantIdentity() {
-      // 调后端 API 查 stad_merchant 表，判断用户是否有维保身份
+      // 调后端 API 查 stad_merchant 表，获取用户的商户身份
       this.checkingIdentity = true
       getMerchantIdentity().then(res => {
-        this.hasMaintenanceMerchant = res.data === true || (res.data && res.data.status === '1')
+        const data = res.data
+        if (data && data.hasIdentity) {
+          this.hasMaintenanceMerchant = data.merchantType === 'maintenance'
+          const typeMap = { 'maintenance': 'maintenance', 'charger': 'charging', 'dealer': 'business' }
+          this.userMerchantType = typeMap[data.merchantType] || ''
+        } else {
+          this.hasMaintenanceMerchant = false
+          this.userMerchantType = ''
+        }
       }).catch(() => {
-        // API 不可用时降级：默认无维保身份
         this.hasMaintenanceMerchant = false
       }).finally(() => {
         this.checkingIdentity = false
@@ -787,10 +800,24 @@ export default {
       })
     },
     handleReApply() {
-      this.cancelled = false
-      this.rejected = false
-      this.submitted = false
-      this.auditRemark = ''
+      // 先调用后端接口删除/取消被驳回的申请记录
+      uni.showLoading({ title: '取消原申请...' })
+      cancelEndSwitchApply().then(() => {
+        uni.hideLoading()
+        this.cancelled = false
+        this.rejected = false
+        this.submitted = false
+        this.auditRemark = ''
+        uni.showToast({ title: '已取消原申请，请重新填写', icon: 'success' })
+      }).catch(() => {
+        // 即使后端删除失败也允许重新申请（前端重置状态）
+        uni.hideLoading()
+        this.cancelled = false
+        this.rejected = false
+        this.submitted = false
+        this.auditRemark = ''
+        uni.showToast({ title: '已重置，请重新填写', icon: 'none' })
+      })
     }
   }
 }
@@ -1050,6 +1077,12 @@ page {
   align-items: center;
   justify-content: center;
   margin-right: 20rpx;
+  overflow: hidden;
+}
+.switch-icon-img {
+  width: 44rpx;
+  height: 44rpx;
+  filter: brightness(0) invert(1);
 }
 
 .maintenance-icon {

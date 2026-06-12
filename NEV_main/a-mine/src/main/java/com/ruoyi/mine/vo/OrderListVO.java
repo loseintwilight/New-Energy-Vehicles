@@ -63,6 +63,30 @@ public class OrderListVO {
     /** 支付方式 */
     private String paymentMethod;
 
+    /** 以旧换新 - 旧车估值 */
+    private BigDecimal oldValuation;
+
+    /** 以旧换新 - 旧车品牌 */
+    private String oldVehicleBrand;
+
+    /** 以旧换新 - 旧车车型 */
+    private String oldVehicleModel;
+
+    /** 以旧换新 - 旧车上牌年份 */
+    private String oldVehicleYear;
+
+    /** 以旧换新 - 旧车里程 */
+    private String oldVehicleMileage;
+
+    /** 以旧换新 - 新车车型名称 */
+    private String newVehicleModel;
+
+    /** 以旧换新 - 新车价格 */
+    private BigDecimal newVehiclePrice;
+
+    /** 以旧换新 - 补贴金额 */
+    private BigDecimal subsidyAmount;
+
     // ==================== 充电订单特有 ====================
     /** 充电站名称 */
     private String stationName;
@@ -159,6 +183,30 @@ public class OrderListVO {
 
     public String getPaymentMethod() { return paymentMethod; }
     public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
+
+    public BigDecimal getOldValuation() { return oldValuation; }
+    public void setOldValuation(BigDecimal oldValuation) { this.oldValuation = oldValuation; }
+
+    public String getOldVehicleBrand() { return oldVehicleBrand; }
+    public void setOldVehicleBrand(String oldVehicleBrand) { this.oldVehicleBrand = oldVehicleBrand; }
+
+    public String getOldVehicleModel() { return oldVehicleModel; }
+    public void setOldVehicleModel(String oldVehicleModel) { this.oldVehicleModel = oldVehicleModel; }
+
+    public String getOldVehicleYear() { return oldVehicleYear; }
+    public void setOldVehicleYear(String oldVehicleYear) { this.oldVehicleYear = oldVehicleYear; }
+
+    public String getOldVehicleMileage() { return oldVehicleMileage; }
+    public void setOldVehicleMileage(String oldVehicleMileage) { this.oldVehicleMileage = oldVehicleMileage; }
+
+    public String getNewVehicleModel() { return newVehicleModel; }
+    public void setNewVehicleModel(String newVehicleModel) { this.newVehicleModel = newVehicleModel; }
+
+    public BigDecimal getNewVehiclePrice() { return newVehiclePrice; }
+    public void setNewVehiclePrice(BigDecimal newVehiclePrice) { this.newVehiclePrice = newVehiclePrice; }
+
+    public BigDecimal getSubsidyAmount() { return subsidyAmount; }
+    public void setSubsidyAmount(BigDecimal subsidyAmount) { this.subsidyAmount = subsidyAmount; }
 
     public String getStationName() { return stationName; }
     public void setStationName(String stationName) { this.stationName = stationName; }

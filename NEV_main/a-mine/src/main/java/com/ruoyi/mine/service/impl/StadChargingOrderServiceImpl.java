@@ -129,6 +129,12 @@ public class StadChargingOrderServiceImpl implements IStadChargingOrderService {
         vo.setOrderStatus(item.getOrderStatus());
         vo.setPayStatus(item.getPayStatus());
         vo.setPaymentMethod(item.getPaymentMethod());
+        vo.setPileCode(item.getPileCode());
+        vo.setStartSoc(item.getStartSoc());
+        vo.setEndSoc(item.getEndSoc());
+        vo.setCarbonEarned(item.getCarbonEarned());
+        vo.setDiscountAmount(item.getDiscountAmount());
+        vo.setTransactionId(item.getTransactionId());
         vo.setCreateTime(item.getCreateTime());
         return vo;
     }

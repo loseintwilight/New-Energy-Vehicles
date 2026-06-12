@@ -44,8 +44,7 @@
             <view class="card-price">
               <text class="price-symbol">¥</text>
               <text class="price-num">{{ car.guidePrice }}</text>
-              <text class="price-unit">万</text>
-              <text class="price-original">¥{{ car.originalPrice }}万</text>
+              <text class="price-original">¥{{ car.originalPrice }}</text>
             </view>
             <view class="card-actions">
               <text class="card-delivery">{{ car.deliveryTime }}</text>

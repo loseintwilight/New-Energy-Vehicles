@@ -93,6 +93,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="oldVehicleId != null">old_vehicle_id,</if>
             <if test="oldValuation != null">old_valuation,</if>
             <if test="status != null">status,</if>
+            <if test="cancelReason != null">cancel_reason,</if>
             <if test="createBy != null">create_by,</if>
             create_time
         </trim>

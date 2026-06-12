@@ -28,13 +28,11 @@ public class AppEndSwitchController extends BaseController {
     private IStadMerchantService stadMerchantService;
 
     /**
-     * 查询当前用户的维保商户身份
-     * 
-     * 后端查 stad_merchant 表：
-     *   SELECT * FROM stad_merchant
-     *   WHERE user_id = ? AND merchant_type = 'maintenance' AND status = '1'
-     * 
-     * @return { data: true/false }
+     * 查询当前用户的商户身份信息
+     *
+     * 查 stad_merchant 表返回用户的商户类型和审核状态
+     *
+     * @return { data: { hasIdentity: boolean, merchantType: string|null, status: string|null } }
      */
     @GetMapping("/merchant/identity")
     public AjaxResult getMerchantIdentity() {
@@ -43,13 +41,19 @@ public class AppEndSwitchController extends BaseController {
             return error("未获取到用户信息");
         }
 
-        // 查用户是否有已上线的维保商户身份
         StadMerchant merchant = stadMerchantService.selectStadMerchantByUserId(userId);
-        boolean hasMaintenanceIdentity = merchant != null
-                && "maintenance".equals(merchant.getMerchantType())
-                && "1".equals(merchant.getStatus());
+        Map<String, Object> result = new HashMap<>();
+        if (merchant != null && "1".equals(merchant.getStatus())) {
+            result.put("hasIdentity", true);
+            result.put("merchantType", merchant.getMerchantType());
+            result.put("merchantId", merchant.getMerchantId());
+        } else {
+            result.put("hasIdentity", false);
+            result.put("merchantType", merchant != null ? merchant.getMerchantType() : null);
+        }
+        result.put("status", merchant != null ? merchant.getStatus() : null);
 
-        return success(hasMaintenanceIdentity);
+        return success(result);
     }
 
     /**
@@ -192,7 +196,7 @@ public class AppEndSwitchController extends BaseController {
     /**
      * 取消端切换申请
      * 
-     * 删除用户状态为"待审核"的商户申请记录
+     * 删除用户状态为"待审核"或"已驳回"的商户申请记录
      */
     @PostMapping("/end-switch/cancel")
     public AjaxResult cancel() {
@@ -202,7 +206,7 @@ public class AppEndSwitchController extends BaseController {
         }
 
         StadMerchant merchant = stadMerchantService.selectStadMerchantByUserId(userId);
-        if (merchant != null && "0".equals(merchant.getStatus())) {
+        if (merchant != null && ("0".equals(merchant.getStatus()) || "2".equals(merchant.getStatus()))) {
             stadMerchantService.deleteStadMerchantByIds(new Long[] { merchant.getMerchantId() });
             return success("取消申请成功");
         }

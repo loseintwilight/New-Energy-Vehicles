@@ -9,7 +9,7 @@ import defAva from '@/static/images/profile.jpg'
 const baseUrl = config.baseUrl
 
 const endTypeMap = {
-  'maintain_c': 'merchant',
+  'maintainc': 'merchant',
   'dealer_a': 'business',
   'charger_b': 'charging'
 }

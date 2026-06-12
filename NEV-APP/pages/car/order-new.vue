@@ -5,7 +5,7 @@
         <image class="hero-img" :src="car.image" mode="aspectFill"></image>
         <view class="hero-overlay">
           <text class="hero-model">{{ car.modelName }}</text>
-          <text class="hero-price">¥{{ car.guidePrice }}万起</text>
+          <text class="hero-price">¥{{ car.guidePrice }}起</text>
           <text class="hero-tag">{{ car.typeLabel }} · {{ car.deliveryTime }}</text>
         </view>
       </view>
@@ -154,7 +154,7 @@
         <text class="footer-label">预估总计</text>
         <text class="footer-total">
           <text class="footer-symbol">¥</text>
-          {{ totalPrice }}<text class="footer-unit">万</text>
+          {{ totalPrice }}
         </text>
       </view>
       <view class="footer-fav-btn" :class="{ on: isFavorited }" @click="toggleFavorite">
@@ -188,8 +188,8 @@ export default {
       ],
       wheelOptions: [
         { icon: '/static/images/car/icon/star.png', name: '19英寸钻石轮毂', desc: '续航700km', price: '标配' },
-        { icon: '/static/images/car/icon/stars.png', name: '20英寸梅花轮毂', desc: '续航680km', price: '+¥0.8万' },
-        { icon: '/static/images/car/icon/starss.png', name: '21英寸运动轮毂', desc: '续航650km', price: '+¥1.6万' }
+        { icon: '/static/images/car/icon/stars.png', name: '20英寸梅花轮毂', desc: '续航680km', price: '+¥0.8' },
+        { icon: '/static/images/car/icon/starss.png', name: '21英寸运动轮毂', desc: '续航650km', price: '+¥1.6' }
       ],
       deliveryOptions: [
         { icon: '/static/images/car/icon/city.png', name: '门店自提', desc: '到店验车后提车，约2小时' },
@@ -233,7 +233,7 @@ export default {
         vehicleId: 'N001',
         modelName: '小米SU7 后驱 标准版',
         guidePrice: 21.59,
-        image: '/static/images/car-placeholder.png',
+        image: '/static/images/car/car1.png',
         typeLabel: '全新现车',
         deliveryTime: '7天内提车',
         color: '海湾蓝',
@@ -294,7 +294,7 @@ export default {
       }
       uni.showModal({
         title: '确认订购',
-        content: `订购车型：${this.car.modelName}\n预估总价：¥${this.totalPrice}万`,
+        content: `订购车型：${this.car.modelName}\n预估总价：¥${this.totalPrice}`,
         success: (res) => {
           if (res.confirm) {
             uni.showLoading({ title: '提交中' })

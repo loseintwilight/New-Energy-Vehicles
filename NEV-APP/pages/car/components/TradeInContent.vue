@@ -72,7 +72,7 @@
           </view>
           <view class="form-row">
             <text class="form-label">上牌年份</text>
-            <picker mode="selector" :range="years" @change="onYearChange">
+            <picker class="form-picker-wrap" mode="selector" :range="years" @change="onYearChange">
               <view class="form-picker">
                 <text :class="['form-picker-text', { placeholder: !oldCar.year }]">{{ oldCar.year || '请选择' }}</text>
                 <text class="arrow">></text>
@@ -111,9 +111,27 @@
           </view>
           <view class="form-row">
             <text class="form-label">选择门店</text>
-            <picker @change="onStoreChange" :value="storeIndex" :range="storeList">
+            <picker class="form-picker-wrap" @change="onStoreChange" :value="storeIndex" :range="storeList">
               <view class="form-picker">
                 <text class="form-picker-text">{{ storeList[storeIndex] || '请选择门店' }}</text>
+                <text class="arrow">></text>
+              </view>
+            </picker>
+          </view>
+        </view>
+      </view>
+
+      <view class="section">
+        <view class="section-hd">
+          <text class="section-title">心仪新车</text>
+          <text class="section-sub">选择您想置换的新能源车型</text>
+        </view>
+        <view class="form-card">
+          <view class="form-row">
+            <text class="form-label">选择车型</text>
+            <picker class="form-picker-wrap" @change="onNewCarChange" :value="selectedNewCar" :range="newCarNames">
+              <view class="form-picker">
+                <text :class="['form-picker-text', { placeholder: selectedNewCar < 0 }]">{{ newCarNames[selectedNewCar] || '请选择新车' }}</text>
                 <text class="arrow">></text>
               </view>
             </picker>
@@ -164,11 +182,84 @@
 
       <view style="height:40rpx;"></view>
     </scroll-view>
+
+    <!-- AI估价弹窗 -->
+    <view class="eval-mask" v-if="showEvalPopup" @click="closeEvalPopup">
+      <view class="eval-popup" @click.stop>
+        <view class="eval-popup-header">
+          <text class="eval-popup-title">AI 智能估价</text>
+          <text class="eval-popup-close" @click="closeEvalPopup">✕</text>
+        </view>
+        <view class="eval-popup-body" v-if="evalLoading">
+          <view class="eval-loading">
+            <view class="eval-loading-spinner"></view>
+            <text class="eval-loading-text">AI正在分析车辆价值...</text>
+          </view>
+        </view>
+        <view class="eval-popup-body" v-else>
+          <view class="eval-car-info">
+            <text class="eval-car-text">{{ oldCar.brand }} {{ oldCar.model }} · {{ oldCar.year }}年 · {{ oldCar.mileage || '0' }}万公里</text>
+          </view>
+          <view class="eval-price-row">
+            <text class="eval-price-symbol">¥</text>
+            <text class="eval-price-num">{{ displayEvaluationPrice }}</text>
+          </view>
+          <view class="eval-bar">
+            <view class="eval-bar-fill" :style="{ width: evalPercent + '%' }"></view>
+          </view>
+          <view class="eval-detail">
+            <view class="eval-detail-item">
+              <text class="eval-detail-label">市场行情价</text>
+              <text class="eval-detail-value">¥{{ displayBasePrice }}</text>
+            </view>
+            <view class="eval-detail-item">
+              <text class="eval-detail-label">车况调整</text>
+              <text class="eval-detail-value" :class="conditionAdjust >= 0 ? 'adj-up' : 'adj-down'">{{ conditionAdjust >= 0 ? '+' : '' }}¥{{ displayConditionAdjust }}</text>
+            </view>
+            <view class="eval-detail-item">
+              <text class="eval-detail-label">里程调整</text>
+              <text class="eval-detail-value adj-down">-¥{{ displayMileageAdjust }}</text>
+            </view>
+            <view class="eval-detail-item eval-total">
+              <text class="eval-detail-label">AI 最终估价</text>
+              <text class="eval-detail-value eval-final">¥{{ displayEvaluationPrice }}</text>
+            </view>
+          </view>
+          <view class="eval-trade-calc" v-if="selectedNewCarInfo">
+            <view class="eval-trade-title">置换价格计算</view>
+            <view class="eval-trade-row">
+              <text class="eval-trade-label">{{ selectedNewCarInfo.modelName }}</text>
+              <text class="eval-trade-value">¥{{ displayNewCarPrice }}</text>
+            </view>
+            <view class="eval-trade-row">
+              <text class="eval-trade-label">旧车抵扣</text>
+              <text class="eval-trade-value adj-down">-¥{{ displayEvaluationPrice }}</text>
+            </view>
+            <view class="eval-trade-row">
+              <text class="eval-trade-label">置换补贴</text>
+              <text class="eval-trade-value adj-down">-¥{{ displaySubsidy }}</text>
+            </view>
+            <view class="eval-trade-row eval-trade-total">
+              <text class="eval-trade-label">应付金额</text>
+              <text class="eval-trade-value eval-final">¥{{ displayTradeFinalPrice }}</text>
+            </view>
+          </view>
+          <view class="eval-notice">
+            <text class="eval-notice-icon">ℹ</text>
+            <text class="eval-notice-text">此估价为AI参考价，最终成交价以门店实车检测为准</text>
+          </view>
+          <view class="eval-popup-btns">
+            <view class="eval-btn-cancel" @click="closeEvalPopup">重新填写</view>
+            <view class="eval-btn-confirm" @click="confirmSubmit">确认提交</view>
+          </view>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
 <script>
-import { createTradeInOrder, getStores } from '@/api/car/car'
+import { createTradeInOrder, getCarList, getStores } from '@/api/car/car'
 
 export default {
   data() {
@@ -185,25 +276,144 @@ export default {
       storeList: [],
       storeIndex: 0,
       contactName: '',
-      contactPhone: ''
+      contactPhone: '',
+      // 新车选择
+      newCars: [],
+      selectedNewCar: -1,
+      // AI估价弹窗相关
+      showEvalPopup: false,
+      evalLoading: true,
+      evaluationPrice: '0.00',
+      basePrice: '0.00',
+      conditionAdjust: '0.00',
+      mileageAdjust: '0.00',
+      orderData: null
     }
   },
 
-  onLoad() {
+  computed: {
+    /** 新车名称列表（供picker使用） */
+    newCarNames() {
+      return this.newCars.map(c => c.modelName + ' ¥' + (c.guidePrice || 0))
+    },
+    evalPercent() {
+      const base = 50000
+      const val = parseFloat(this.evaluationPrice) || 0
+      return Math.min((val / base) * 100, 100)
+    },
+    /** 选中的新车信息 */
+    selectedNewCarInfo() {
+      if (this.selectedNewCar >= 0 && this.newCars[this.selectedNewCar]) {
+        return this.newCars[this.selectedNewCar]
+      }
+      return null
+    },
+    /** 新车价格（原始值，数据库存储单位） */
+    newCarPriceRaw() {
+      if (this.selectedNewCarInfo) {
+        return parseFloat(this.selectedNewCarInfo.guidePrice) || 0
+      }
+      return 0
+    },
+    /** 显示用：新车价格（元） */
+    displayNewCarPrice() {
+      return (this.newCarPriceRaw).toFixed(2)
+    },
+    /** 显示用：AI估价（元） */
+    displayEvaluationPrice() {
+      return (parseFloat(this.evaluationPrice) || 0).toFixed(2)
+    },
+    /** 显示用：市场行情价（元） */
+    displayBasePrice() {
+      return (parseFloat(this.basePrice) || 0).toFixed(2)
+    },
+    /** 显示用：车况调整（元） */
+    displayConditionAdjust() {
+      const v = parseFloat(this.conditionAdjust) || 0
+      return (v >= 0 ? '+' : '') + v.toFixed(2)
+    },
+    /** 显示用：里程调整（元） */
+    displayMileageAdjust() {
+      const v = parseFloat(this.mileageAdjust) || 0
+      return (v >= 0 ? '+' : '') + v.toFixed(2)
+    },
+    /** 显示用：置换补贴（元） */
+    displaySubsidy() {
+      return '8000.00'
+    },
+    /** 显示用：置换后应付金额（元）= 新车价 - 旧车估价 - 补贴 */
+    displayTradeFinalPrice() {
+      const newPrice = this.newCarPriceRaw
+      const oldVal = parseFloat(this.evaluationPrice) || 0
+      const subsidy = 8000
+      return Math.max(newPrice - oldVal - subsidy, 0).toFixed(2)
+    },
+    /** 置换后应付金额（用于后端提交） */
+    tradeFinalPrice() {
+      const newPrice = this.newCarPriceRaw
+      const oldVal = parseFloat(this.evaluationPrice) || 0
+      const subsidy = 8000
+      return Math.max(newPrice - oldVal - subsidy, 0).toFixed(2)
+    }
+  },
+
+  created() {
     this.fetchStores()
+    this.fetchNewCars()
   },
 
   methods: {
     fetchStores() {
       getStores().then(res => {
-        this.storeList = res.data || []
-      }).catch(() => {})
+        const data = res.data || res || []
+        this.storeList = Array.isArray(data) ? data : []
+        if (!this.storeList.length) {
+          console.warn('门店列表为空，请检查数据库 stad_merchant 表中是否有 merchant_type=dealer 的记录')
+        }
+      }).catch(err => {
+        console.error('获取门店列表失败:', err)
+      })
+    },
+    fetchNewCars() {
+      // 车型名称 → 图片映射（数据库无image字段时的兜底）
+      const imageMap = {
+        '比亚迪汉EV冠军版': '/static/images/car/main/比亚迪汉EV冠军版 .jpg',
+        '比亚迪汉EV创世版': '/static/images/car/main/比亚迪汉EV 创世版.jpg',
+        '特斯拉Model Y': '/static/images/car/main/特斯拉Model Y.png',
+        '特斯拉Model3': '/static/images/car/main/特斯拉Model3.jpg',
+        '蔚来ES6': '/static/images/car/main/蔚来ES6.jpg',
+        '小鹏P7i': '/static/images/car/main/小鹏p7i.jpeg',
+        '五菱宏光MINI EV马卡龙': '/static/images/car/main/五菱宏光MINI EV 马卡龙.jpg',
+        '理想L7': '/static/images/car/main/理想L7.jpg'
+      }
+      getCarList().then(res => {
+        const rows = res.rows || res.data || []
+        if (rows.length > 0) {
+          this.newCars = rows.map((c, i) => {
+            const name = (c.modelName || '').replace(/\s+/g, '')
+            // guidePrice 已是元（如219800）
+            return {
+              vehicleId: c.vehicleId,
+              modelName: c.modelName,
+              guidePrice: parseFloat(c.guidePrice) || 0,
+              image: c.image || imageMap[name] || c.coverImage || '/static/images/car/car1.png'
+            }
+          })
+        } else {
+          console.warn('新车列表为空，请检查数据库 stad_vehicle 表中是否有 vehicle_type=new 且 status=1 的记录')
+        }
+      }).catch(err => {
+        console.error('获取新车列表失败:', err)
+      })
     },
     onYearChange(e) {
       this.oldCar.year = this.years[e.detail.value]
     },
     onStoreChange(e) {
       this.storeIndex = e.detail.value
+    },
+    onNewCarChange(e) {
+      this.selectedNewCar = e.detail.value
     },
     submitTradeIn() {
       if (!this.oldCar.brand || !this.oldCar.model || !this.oldCar.year) {
@@ -218,18 +428,68 @@ export default {
         uni.showToast({ title: '请输入正确手机号', icon: 'none' })
         return
       }
-      const data = {
+      if (this.selectedNewCar < 0 || !this.newCars[this.selectedNewCar]) {
+        uni.showToast({ title: '请选择意向新车', icon: 'none' })
+        return
+      }
+
+      // 保存订单数据供确认后提交
+      this.orderData = {
         orderType: 'trade_in',
         oldVehicleBrand: this.oldCar.brand,
         oldVehicleModel: this.oldCar.model,
         oldVehicleYear: this.oldCar.year,
+        mileage: this.oldCar.mileage,
+        condition: this.oldCar.condition >= 0 ? this.conditions[this.oldCar.condition] : '',
         contactName: this.contactName,
-        contactPhone: this.contactPhone
+        contactPhone: this.contactPhone,
+        storeName: this.storeList[this.storeIndex] || ''
       }
+
+      // 附带新车信息（传原始值，后端统一计算）
+      if (this.selectedNewCar >= 0 && this.newCars[this.selectedNewCar]) {
+        const nc = this.newCars[this.selectedNewCar]
+        this.orderData.newVehicleId = nc.vehicleId
+        this.orderData.newVehicleModel = nc.modelName
+        this.orderData.newVehiclePrice = nc.guidePrice
+      }
+
+      // 显示估价弹窗并开始AI估价
+      this.showEvalPopup = true
+      this.evalLoading = true
+      this.doEvaluation()
+    },
+    doEvaluation() {
+      // 前端随机生成旧车估价：30000 ~ 50000 元
+      const valuation = Math.floor(Math.random() * 20001) + 30000
+      // 市场行情价 = 估价 + 随机溢价 2000~8000
+      const basePrice = valuation + Math.floor(Math.random() * 6001) + 2000
+      // 车况调整：根据车况档次随机
+      const conditionMap = [2000, 0, -3000] // 良好/一般/较差
+      const condIdx = this.oldCar.condition >= 0 ? this.oldCar.condition : 1
+      const conditionAdjust = conditionMap[condIdx] || 0
+      // 里程调整：模拟
+      const mileage = parseFloat(this.oldCar.mileage) || 5
+      const mileageAdjust = mileage > 8 ? -3000 : (mileage > 5 ? -1500 : 0)
+
+      this.basePrice = basePrice.toFixed(2)
+      this.evaluationPrice = valuation.toFixed(2)
+      this.conditionAdjust = conditionAdjust.toFixed(2)
+      this.mileageAdjust = mileageAdjust.toFixed(2)
+      this.evalLoading = false
+      // 将估价结果存入订单数据（元）
+      this.orderData.oldValuation = String(valuation)
+    },
+    closeEvalPopup() {
+      this.showEvalPopup = false
+      this.evalLoading = true
+    },
+    confirmSubmit() {
+      this.showEvalPopup = false
       uni.showLoading({ title: '提交中' })
-      createTradeInOrder(data).then(() => {
+      createTradeInOrder(this.orderData).then(() => {
         uni.hideLoading()
-        uni.showToast({ title: '申请成功', icon: 'success' })
+        uni.showToast({ title: '发送申请成功', icon: 'success' })
         setTimeout(() => uni.navigateBack(), 1500)
       }).catch(() => {
         uni.hideLoading()
@@ -379,26 +639,34 @@ export default {
 .form-row {
   display: flex;
   align-items: center;
-  padding: 20rpx 0;
+  padding: 0 0;
   border-bottom: 1rpx solid #eee;
+  height: 110rpx;
 }
 .form-row:last-child {
   border-bottom: none;
 }
 .form-label {
-  width: 160rpx;
-  font-size: 26rpx;
-  color: #888;
+  width: 180rpx;
+  font-size: 28rpx;
+  color: #555;
   flex-shrink: 0;
-  font-weight: 500;
+  font-weight: 600;
+  text-align: right;
+  padding-right: 20rpx;
+  line-height: 110rpx;
+  height: 110rpx;
 }
 .form-input {
   flex: 1;
-  padding: 12rpx 0;
   font-size: 28rpx;
   background: transparent;
   border-radius: 0;
   color: #1a1a1a;
+  height: 110rpx;
+  line-height: 110rpx;
+  padding: 0;
+  margin: 0;
 }
 .form-input-wrap {
   flex: 1;
@@ -407,12 +675,16 @@ export default {
   background: transparent;
   border-radius: 0;
   padding-right: 0;
+  height: 110rpx;
 }
 .form-input.flex-1 {
-  padding: 12rpx 0;
   font-size: 28rpx;
   background: transparent;
   flex: 1;
+  height: 110rpx;
+  line-height: 110rpx;
+  padding: 0;
+  margin: 0;
 }
 .form-unit {
   font-size: 24rpx;
@@ -424,13 +696,25 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12rpx 0;
+  padding: 0;
+  height: 110rpx;
+  line-height: 110rpx;
   background: transparent;
   border-radius: 0;
+  min-width: 0;
+}
+.form-picker-wrap {
+  flex: 1;
+  min-width: 0;
 }
 .form-picker-text {
+  flex: 1;
   font-size: 28rpx;
   color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 .form-picker-text.placeholder {
   color: #bbb;
@@ -438,6 +722,8 @@ export default {
 .arrow {
   color: #ccc;
   font-size: 28rpx;
+  flex-shrink: 0;
+  margin-left: 12rpx;
 }
 .condition-group {
   display: flex;
@@ -455,18 +741,18 @@ export default {
   color: #fff;
   background: linear-gradient(135deg, #3072f6, #1a5cdb);
 }
+// 新车选择列表（已废弃，现在使用picker下拉框）
 .benefit-icon-img {
   width: 36rpx;
   height: 36rpx;
 }
 .benefits-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
 }
 .benefit-item {
-  width: calc(50% - 8rpx);
-  padding: 24rpx 16rpx;
+  padding: 32rpx 16rpx;
   background: #f8f9fb;
   border-radius: 14rpx;
   text-align: center;
@@ -509,5 +795,221 @@ export default {
   color: #fff;
   background: linear-gradient(135deg, #3072f6, #1a5cdb);
   box-shadow: 0 4rpx 16rpx rgba(48,114,246,0.3);
+}
+
+// AI估价弹窗样式
+.eval-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+.eval-popup {
+  width: 620rpx;
+  max-height: 80vh;
+  background: #fff;
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+.eval-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28rpx 32rpx 20rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+.eval-popup-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+.eval-popup-close {
+  font-size: 32rpx;
+  color: #999;
+  padding: 8rpx;
+}
+.eval-popup-body {
+  padding: 28rpx 32rpx 32rpx;
+}
+.eval-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60rpx 0;
+}
+.eval-loading-spinner {
+  width: 64rpx;
+  height: 64rpx;
+  border: 4rpx solid #e8e8e8;
+  border-top-color: #3072f6;
+  border-radius: 50%;
+  animation: eval-spin 0.8s linear infinite;
+}
+@keyframes eval-spin {
+  to { transform: rotate(360deg); }
+}
+.eval-loading-text {
+  margin-top: 24rpx;
+  font-size: 26rpx;
+  color: #999;
+}
+.eval-car-info {
+  text-align: center;
+  margin-bottom: 20rpx;
+}
+.eval-car-text {
+  font-size: 26rpx;
+  color: #666;
+  background: #f5f5f7;
+  padding: 10rpx 24rpx;
+  border-radius: 20rpx;
+}
+.eval-price-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  margin-bottom: 16rpx;
+}
+.eval-price-symbol {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #3072f6;
+}
+.eval-price-num {
+  font-size: 72rpx;
+  font-weight: 800;
+  color: #3072f6;
+  line-height: 1;
+}
+.eval-bar {
+  height: 8rpx;
+  background: #f0f0f0;
+  border-radius: 4rpx;
+  margin-bottom: 24rpx;
+  overflow: hidden;
+}
+.eval-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3072f6, #34c759);
+  border-radius: 4rpx;
+  transition: width 0.6s ease;
+}
+.eval-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+  padding: 20rpx;
+  background: #f8f9fb;
+  border-radius: 14rpx;
+  margin-bottom: 20rpx;
+}
+.eval-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.eval-detail-label {
+  font-size: 24rpx;
+  color: #888;
+}
+.eval-detail-value {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+.eval-detail-value.adj-up {
+  color: #34c759;
+}
+.eval-detail-value.adj-down {
+  color: #f5a623;
+}
+.eval-total {
+  padding-top: 14rpx;
+  border-top: 1rpx dashed #e0e0e0;
+}
+.eval-final {
+  font-size: 32rpx !important;
+  color: #3072f6 !important;
+}
+// 置换价格计算
+.eval-trade-calc {
+  padding: 20rpx;
+  background: #f0f4ff;
+  border-radius: 14rpx;
+  margin-bottom: 20rpx;
+}
+.eval-trade-title {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #3072f6;
+  margin-bottom: 14rpx;
+}
+.eval-trade-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8rpx 0;
+}
+.eval-trade-label {
+  font-size: 24rpx;
+  color: #666;
+}
+.eval-trade-value {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+.eval-trade-total {
+  padding-top: 14rpx;
+  margin-top: 8rpx;
+  border-top: 1rpx dashed #c8d6f8;
+}
+.eval-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8rpx;
+  padding: 16rpx;
+  background: #fff8e6;
+  border-radius: 10rpx;
+  margin-bottom: 24rpx;
+}
+.eval-notice-icon {
+  font-size: 24rpx;
+  flex-shrink: 0;
+}
+.eval-notice-text {
+  font-size: 22rpx;
+  color: #b8860b;
+  line-height: 1.5;
+}
+.eval-popup-btns {
+  display: flex;
+  gap: 20rpx;
+}
+.eval-btn-cancel {
+  flex: 1;
+  padding: 22rpx 0;
+  border-radius: 12rpx;
+  text-align: center;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #666;
+  background: #f5f5f7;
+}
+.eval-btn-confirm {
+  flex: 1;
+  padding: 22rpx 0;
+  border-radius: 12rpx;
+  text-align: center;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #3072f6, #1a5cdb);
 }
 </style>

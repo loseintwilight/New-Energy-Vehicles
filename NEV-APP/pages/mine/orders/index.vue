@@ -83,7 +83,7 @@
                   {{ order.shopAddress }}
                 </text>
               </view>
-              <view class="type-info" v-if="order.bizType === 'unified'">
+              <view class="type-info" v-if="order.bizType === 'unified' && order.unifiedType !== 'trade_in'">
                 <text class="info-item" v-if="order.contactName">
                   <uni-icons type="person" size="12" color="#3b82f6"></uni-icons>
                   {{ order.contactName }} {{ order.contactPhone }}
@@ -93,12 +93,25 @@
                   {{ order.paymentMethod }}
                 </text>
               </view>
+              <!-- 以旧换新专属信息 -->
+              <view class="type-info tradein-info" v-if="order.bizType === 'unified' && order.unifiedType === 'trade_in'">
+                <text class="info-item" v-if="order.oldVehicleBrand || order.oldVehicleModel">
+                  <uni-icons type="loop" size="12" color="#8b5cf6"></uni-icons>
+                  旧车 {{ order.oldVehicleBrand }} {{ order.oldVehicleModel }}
+                  <text v-if="order.oldVehicleYear"> · {{ order.oldVehicleYear }}年</text>
+                  <text v-if="order.oldVehicleMileage"> · {{ order.oldVehicleMileage }}万公里</text>
+                </text>
+                <text class="info-item" v-if="order.newVehicleModel">
+                  <uni-icons type="cart" size="12" color="#3b82f6"></uni-icons>
+                  换新 {{ order.newVehicleModel }}
+                </text>
+              </view>
             </view>
 
             <!-- 价格 -->
             <view class="body-price">
               <text class="price-symbol">¥</text>
-              <text class="price-num">{{ order.totalAmount || 0 }}</text>
+              <text class="price-num">{{ formatPrice(order.totalAmount) }}</text>
             </view>
           </view>
 
@@ -109,7 +122,7 @@
               {{ order.createTime }}
             </text>
             <view class="order-actions">
-              <view v-if="order.status === 'unpaid'" class="action-btn" @click.stop="handleCancel(order)">
+              <view v-if="order.status === 'pending_confirm'" class="action-btn" @click.stop="handleCancel(order)">
                 <text>取消订单</text>
               </view>
               <view v-if="order.status === 'cancelled' || order.status === 'completed'" class="action-btn danger" @click.stop="handleDelete(order)">
@@ -149,8 +162,9 @@ export default {
       activeTab: 'all',
       tabs: [
         { label: '全部', value: 'all' },
-        { label: '待支付', value: 'unpaid' },
-        { label: '待服务', value: 'pending' },
+        { label: '待确认', value: 'pending_confirm' },
+        { label: '已确认', value: 'confirmed' },
+        { label: '服务中', value: 'in_service' },
         { label: '已完成', value: 'completed' },
         { label: '已取消', value: 'cancelled' }
       ],
@@ -179,22 +193,23 @@ export default {
     this.loadOrders()
   },
   onShow() {
-    // 每次返回列表页时重置分页，确保重新加载完整数据
+    // 返回列表页时刷新数据，但不清空列表避免闪烁
     this.page = 1
     this.hasMore = true
-    this.orders = []
     this.loadOrders()
   },
   methods: {
+    formatPrice(val) {
+      const n = parseFloat(val) || 0
+      return n.toFixed(2)
+    },
     goHome() {
       uni.switchTab({ url: '/pages/index' })
     },
     switchTab(value) {
       this.activeTab = value
-      // 切换标签时重置分页，重新从后端请求
       this.page = 1
       this.hasMore = true
-      this.orders = []
       this.loadOrders()
     },
     async onRefresh() {
@@ -212,10 +227,11 @@ export default {
     async loadOrders(append = false) {
       this.loading = true
       try {
-        const params = { pageNum: this.page, pageSize: 10 }
+        const params = { pageNum: this.page, pageSize: 50 }
         if (this.activeTab !== 'all') {
-          const statusMap = { unpaid: '0', pending: '1', completed: '2', cancelled: '3' }
-          params.status = statusMap[this.activeTab] || this.activeTab
+          // 前端状态key → 后端数字状态
+          const beStatusMap = { pending_confirm: '0', confirmed: '1', in_service: '2', completed: '3', cancelled: '4' }
+          params.status = beStatusMap[this.activeTab] || this.activeTab
         }
         const res = await getOrderList(params)
         const data = res.data || res
@@ -251,9 +267,9 @@ export default {
         unified: 'cart',
         default: 'list'
       }
-      // 后端数字状态 → 前端英文状态
-      const statusMap = { '0': 'unpaid', '1': 'pending', '2': 'completed', '3': 'cancelled' }
-      const status = statusMap[order.status] || order.status || 'pending'
+      // 后端数字状态(0-4) → 前端状态key
+      const statusMap = { '0': 'pending_confirm', '1': 'confirmed', '2': 'in_service', '3': 'completed', '4': 'cancelled' }
+      const status = statusMap[order.status] || order.status || 'pending_confirm'
 
       return {
         id: order.orderId || order.id,
@@ -284,7 +300,17 @@ export default {
         contactName: order.contactName,
         contactPhone: order.contactPhone,
         paymentMethod: order.paymentMethod,
-        unifiedType: order.unifiedType
+        unifiedType: order.unifiedType,
+        // 以旧换新字段
+        oldVehicleBrand: order.oldVehicleBrand || '',
+        oldVehicleModel: order.oldVehicleModel || '',
+        oldVehicleYear: order.oldVehicleYear || '',
+        oldVehicleMileage: order.oldVehicleMileage || '',
+        newVehicleModel: order.newVehicleModel || '',
+        vehiclePrice: order.vehiclePrice || 0,
+        oldValuation: order.oldValuation || 0,
+        newVehiclePrice: order.newVehiclePrice || 0,
+        subsidyAmount: order.subsidyAmount || 0
       }
     },
     handleOrderDetail(order) {
@@ -504,11 +530,14 @@ page {
   background-color: rgba(255,255,255,0.9);
 }
 
-.status-unpaid {
+.status-pending_confirm {
   background: linear-gradient(135deg, #ff6b35, #f7931e);
 }
-.status-pending {
+.status-confirmed {
   background: linear-gradient(135deg, #2563eb, #3b82f6);
+}
+.status-in_service {
+  background: linear-gradient(135deg, #00bcd4, #26c6da);
 }
 .status-completed {
   background: linear-gradient(135deg, #10b981, #34d399);

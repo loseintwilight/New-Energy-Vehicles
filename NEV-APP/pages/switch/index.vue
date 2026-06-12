@@ -432,7 +432,7 @@ export default {
   computed: {
     userEndType() {
       // 根据用户名后缀映射身份类型
-      const map = { 'maintain_c': 'maintenance', 'charger_b': 'charging', 'dealer_a': 'business' }
+      const map = { 'maintainc': 'maintenance', 'charger_b': 'charging', 'dealer_a': 'business' }
       return map[this.$store.state.user.name] || ''
     },
     userIdentityName() {

@@ -17,11 +17,11 @@
           <view class="info-price">
             <text class="info-price-symbol">¥</text>
             <text class="info-price-num">{{ car.guidePrice }}</text>
-            <text class="info-price-unit">万</text>
+            <text class="info-price-unit"></text>
           </view>
           <view class="info-original" v-if="car.originalPrice">
             <text class="info-original-label">新车指导价</text>
-            <text class="info-original-price">¥{{ car.originalPrice }}万</text>
+            <text class="info-original-price">¥{{ car.originalPrice }}</text>
           </view>
         </view>
       </view>
@@ -140,7 +140,7 @@
 
     <view class="footer">
       <view class="footer-info">
-        <text class="footer-price">¥{{ car.guidePrice }}万</text>
+        <text class="footer-price">¥{{ car.guidePrice }}</text>
         <text class="footer-fee">含过户费·整备费</text>
       </view>
       <view class="footer-btn" @click="submitOrder">立即订购</view>
@@ -186,7 +186,7 @@ export default {
         vehicleId: 'U001',
         modelName: '小米SU7 后驱 标准版',
         guidePrice: 20.51,
-        image: '/static/images/car/car1.png',
+        image: '/static/images/car/car2.png',
         typeLabel: '官方认证二手车',
         tags: '优惠5%',
         originalPrice: 21.59,
@@ -252,7 +252,7 @@ export default {
       }
       uni.showModal({
         title: '确认订购',
-        content: `订购车型：${this.car.modelName}\n售价：¥${this.car.guidePrice}万`,
+        content: `订购车型：${this.car.modelName}\n售价：¥${this.car.guidePrice}`,
         success: (res) => {
           if (res.confirm) {
             uni.showLoading({ title: '提交中' })

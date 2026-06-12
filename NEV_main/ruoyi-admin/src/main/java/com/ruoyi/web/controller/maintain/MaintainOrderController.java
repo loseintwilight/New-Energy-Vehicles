@@ -143,6 +143,15 @@ public class MaintainOrderController extends BaseController {
         if (params.containsKey("expect_time_slot")) {
             order.setExpectTimeSlot((String) params.get("expect_time_slot"));
         }
+        if (params.containsKey("pay_status")) {
+            order.setPayStatus((String) params.get("pay_status"));
+        }
+        if (params.containsKey("paid_amount")) {
+            order.setPaidAmount(new BigDecimal(params.get("paid_amount").toString()));
+        }
+        if (params.containsKey("payment_method")) {
+            order.setPaymentMethod((String) params.get("payment_method"));
+        }
 
         int rows = orderService.updateStadMaintenanceOrder(order);
         return rows > 0 ? R.ok("修改成功") : R.fail("修改失败");

@@ -37,8 +37,8 @@
               <text class="charge-station">{{ item.stationName || '--' }}</text>
               <text class="charge-time">{{ item.startTime || '--' }}</text>
             </view>
-            <view class="charge-status" :class="item.status === 'completed' ? 'c-completed' : 'c-ongoing'">
-              {{ item.status === 'completed' ? '已完成' : '充电中' }}
+            <view class="charge-status" :class="item.status === 'completed' ? 'c-completed' : item.status === 'pending_payment' ? 'c-pending' : 'c-ongoing'">
+              {{ item.status === 'completed' ? '已完成' : item.status === 'pending_payment' ? '待付款' : '充电中' }}
             </view>
           </view>
           
@@ -90,7 +90,7 @@
 </template>
 
 <script>
-import { getChargingRecords, getChargingStatistics, getChargingDetail } from '@/api/mine/charging'
+import { getChargingRecords, getChargingStatistics } from '@/api/mine/charging'
 
 export default {
   data() {
@@ -156,8 +156,11 @@ export default {
     formatRecord(item) {
       // item 字段来自后端 ChargingOrderListVO
       let status = 'ongoing'
-      if (item.orderStatus === '1' || item.orderStatus === 1) status = 'completed'
-      else if (item.orderStatus === '2' || item.orderStatus === 2) status = 'cancelled'
+      if (item.orderStatus === '1' || item.orderStatus === 1) {
+        // 已完成但未支付 → 待付款
+        if (item.payStatus === '0') status = 'pending_payment'
+        else status = 'completed'
+      } else if (item.orderStatus === '2' || item.orderStatus === 2) status = 'cancelled'
 
       return {
         id: item.orderId || item.id,
@@ -184,7 +187,7 @@ export default {
     },
     handleDetail(item) {
       uni.navigateTo({
-        url: '/pages/mine/charging/detail?id=' + item.id
+        url: '/pages/mine/orders/detail?id=' + item.id + '&bizType=charging'
       })
     }
   }
@@ -374,9 +377,14 @@ page {
   color: #2ecc71;
 }
 
-.charge-status.c-ongoing {
+.charge-status.c-pending {
   background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-  color: #ff9800;
+  color: #ff6b35;
+}
+
+.charge-status.c-ongoing {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  color: #1976d2;
 }
 
 .charge-body {

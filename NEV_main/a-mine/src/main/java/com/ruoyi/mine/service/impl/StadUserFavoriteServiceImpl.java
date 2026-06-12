@@ -95,12 +95,10 @@ public class StadUserFavoriteServiceImpl implements IStadUserFavoriteService {
                 // 从数据库获取真实续航（range_km）和电池容量（battery_capacity）
                 vo.setRange(item.getTargetRange() != null ? item.getTargetRange() : 0);
                 vo.setBattery(item.getTargetBattery() != null ? item.getTargetBattery() : BigDecimal.ZERO);
-                // 价格：guide_price(分) -> 万元
-                if (item.getTargetPrice() != null) {
-                    vo.setPrice(item.getTargetPrice().divide(new BigDecimal(10000), 2, BigDecimal.ROUND_HALF_UP));
-                } else {
-                    vo.setPrice(BigDecimal.ZERO);
-                }
+                // 价格：直接使用元（数据库guide_price已是元）
+                vo.setPrice(item.getTargetPrice() != null ? item.getTargetPrice() : BigDecimal.ZERO);
+                // 车辆图片
+                vo.setImage(item.getTargetImage());
             } else if ("station".equals(targetType) || "charging_station".equals(targetType)) {
                 vo.setType("charge");
                 vo.setStationName(item.getTargetName());

@@ -88,11 +88,11 @@ public class StadCarbonLedgerServiceImpl implements IStadCarbonLedgerService {
     @Override
     public List<Map<String, Object>> getCarbonEarnWays() {
         List<Map<String, Object>> ways = new ArrayList<>();
-        
+
         Map<String, Object> way1 = new HashMap<>();
         way1.put("type", "charge");
         way1.put("name", "充电获得");
-        way1.put("desc", "每充电1kWh获得10积分");
+        way1.put("desc", "订单支付后每1kWh获得10积分");
         way1.put("points", 10);
         ways.add(way1);
 
@@ -106,10 +106,10 @@ public class StadCarbonLedgerServiceImpl implements IStadCarbonLedgerService {
         Map<String, Object> way3 = new HashMap<>();
         way3.put("type", "purchase");
         way3.put("name", "购车获得");
-        way3.put("desc", "购买新能源车获得积分");
+        way3.put("desc", "支付完成后一次性获得500积分");
         way3.put("points", 500);
         ways.add(way3);
-        
+
         Map<String, Object> way4 = new HashMap<>();
         way4.put("type", "read");
         way4.put("name", "阅读获得");

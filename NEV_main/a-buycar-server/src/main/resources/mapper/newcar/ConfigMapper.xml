@@ -9,7 +9,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <select id="selectStores" resultType="string">
-        SELECT shop_name FROM stad_maintenance_shop ORDER BY shop_name
+        SELECT merchant_name FROM stad_merchant WHERE merchant_type = 'dealer' ORDER BY merchant_name
     </select>
 
     <select id="selectDistinctColors" resultType="string">

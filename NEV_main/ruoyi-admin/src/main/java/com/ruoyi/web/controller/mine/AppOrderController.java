@@ -13,6 +13,8 @@ import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.business.domain.StadMaintenanceOrder;
 import com.ruoyi.business.service.IStadMaintenanceOrderService;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.newcar.domain.NewCar;
+import com.ruoyi.newcar.service.NewCarService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,13 +38,26 @@ public class AppOrderController extends BaseController {
     @Autowired
     private IStadMaintenanceOrderService stadMaintenanceOrderService;
 
-    // ==================== 订单状态文字映射 ====================
+    @Autowired
+    private NewCarService newCarService;
+
+    // ==================== 订单状态文字映射（维保/充电订单）====================
     private static final Map<String, String> STATUS_TEXT = new HashMap<>();
     static {
-        STATUS_TEXT.put("0", "待支付");
-        STATUS_TEXT.put("1", "待服务");
-        STATUS_TEXT.put("2", "已完成");
-        STATUS_TEXT.put("3", "已取消");
+        STATUS_TEXT.put("0", "待确认");
+        STATUS_TEXT.put("1", "已确认");
+        STATUS_TEXT.put("2", "服务中");
+        STATUS_TEXT.put("3", "已完成");
+        STATUS_TEXT.put("4", "已取消");
+    }
+
+    // ==================== 购车/统一订单独立状态文字映射 ====================
+    private static final Map<String, String> UNIFIED_STATUS_TEXT = new HashMap<>();
+    static {
+        UNIFIED_STATUS_TEXT.put("0", "待付款");
+        UNIFIED_STATUS_TEXT.put("1", "已付款");
+        UNIFIED_STATUS_TEXT.put("3", "已完成");
+        UNIFIED_STATUS_TEXT.put("4", "已取消");
     }
 
     // ==================== 订单类型标签映射 ====================
@@ -115,12 +130,12 @@ public class AppOrderController extends BaseController {
     }
 
     /**
-     * 获取订单状态统计（合并所有类型订单）
+     * 获取订单状态统计（合并所有类型订单，与PC端维保5态一致）
      */
     @GetMapping("/status")
     public AjaxResult getOrderStatusCount() {
         Long userId = SecurityUtils.getUserId();
-        int unpaid = 0, pending = 0, completed = 0, cancelled = 0;
+        int pendingConfirm = 0, confirmed = 0, inService = 0, completed = 0, cancelled = 0;
 
         // 统一订单统计
         MineStadUnifiedOrder uq = new MineStadUnifiedOrder();
@@ -128,10 +143,11 @@ public class AppOrderController extends BaseController {
         for (MineStadUnifiedOrder o : stadUnifiedOrderService.selectStadUnifiedOrderList(uq)) {
             String s = normalizeUnifiedStatus(o.getStatus());
             switch (s) {
-                case "0": unpaid++; break;
-                case "1": pending++; break;
-                case "2": completed++; break;
-                case "3": cancelled++; break;
+                case "0": pendingConfirm++; break;
+                case "1": confirmed++; break;
+                case "2": inService++; break;
+                case "3": completed++; break;
+                case "4": cancelled++; break;
             }
         }
 
@@ -139,35 +155,34 @@ public class AppOrderController extends BaseController {
         MineStadChargingOrder cq = new MineStadChargingOrder();
         cq.setUserId(userId);
         for (MineStadChargingOrder o : stadChargingOrderService.selectStadChargingOrderList(cq)) {
-            // 已完成但未支付 → 待支付
-            if ("1".equals(o.getOrderStatus()) && "0".equals(o.getPayStatus())) {
-                unpaid++;
-                continue;
-            }
-            String s = normalizeChargeStatus(o.getOrderStatus());
+            String s = normalizeChargeStatus(o.getOrderStatus(), o.getPayStatus());
             switch (s) {
-                case "1": pending++; break;
-                case "2": completed++; break;
-                case "3": cancelled++; break;
+                case "0": pendingConfirm++; break;
+                case "1": confirmed++; break;
+                case "2": inService++; break;
+                case "3": completed++; break;
+                case "4": cancelled++; break;
             }
         }
 
-        // 维保订单统计
+        // 维保订单统计（直接使用原始 order_status）
         StadMaintenanceOrder mq = new StadMaintenanceOrder();
         mq.setUserId(userId);
         for (StadMaintenanceOrder o : stadMaintenanceOrderService.selectStadMaintenanceOrderList(mq)) {
             String s = normalizeMaintStatus(o.getOrderStatus());
             switch (s) {
-                case "0": unpaid++; break;
-                case "1": pending++; break;
-                case "2": completed++; break;
-                case "3": cancelled++; break;
+                case "0": pendingConfirm++; break;
+                case "1": confirmed++; break;
+                case "2": inService++; break;
+                case "3": completed++; break;
+                case "4": cancelled++; break;
             }
         }
 
         Map<String, Object> result = new HashMap<>();
-        result.put("unpaid", unpaid);
-        result.put("pending", pending);
+        result.put("pending_confirm", pendingConfirm);
+        result.put("confirmed", confirmed);
+        result.put("in_service", inService);
         result.put("completed", completed);
         result.put("cancelled", cancelled);
         return AjaxResult.success(result);
@@ -256,9 +271,8 @@ public class AppOrderController extends BaseController {
         vo.setBizType("unified");
         vo.setBizTypeLabel(typeLabel);
         vo.setStatus(normStatus);
-        vo.setStatusText(STATUS_TEXT.getOrDefault(normStatus, "处理中"));
+        vo.setStatusText(UNIFIED_STATUS_TEXT.getOrDefault(normStatus, "处理中"));
         vo.setShopName(o.getMerchantName() != null ? o.getMerchantName() : "官方店铺");
-        vo.setTotalAmount(o.getTotalAmount());
         vo.setPaidAmount(o.getPaidAmount());
         vo.setCreateTime(formatDate(o.getCreateTime()));
         vo.setTitle(getOrderTypeName(o.getOrderType()));
@@ -271,20 +285,64 @@ public class AppOrderController extends BaseController {
         vo.setVehicleId(o.getVehicleId());
         vo.setVehiclePrice(o.getVehiclePrice());
         vo.setPaymentMethod(o.getPaymentMethod());
+
+        // 以旧换新专属字段
+        if ("trade_in".equals(o.getOrderType())) {
+            // 旧车估值
+            BigDecimal oldVal = o.getOldValuation() != null ? o.getOldValuation() : BigDecimal.ZERO;
+            vo.setOldValuation(oldVal);
+            // 从 insurance_info 解析旧车信息和门店
+            String insuranceInfo = o.getInsuranceInfo();
+            if (insuranceInfo != null && !insuranceInfo.isEmpty()) {
+                String[] parts = insuranceInfo.split(";");
+                for (String part : parts) {
+                    String[] kv = part.split(":", 2);
+                    if (kv.length == 2) {
+                        switch (kv[0].trim()) {
+                            case "品牌": vo.setOldVehicleBrand(kv[1].trim()); break;
+                            case "车型": vo.setOldVehicleModel(kv[1].trim()); break;
+                            case "年份": vo.setOldVehicleYear(kv[1].trim()); break;
+                            case "里程": vo.setOldVehicleMileage(kv[1].trim()); break;
+                            case "门店": vo.setShopName(kv[1].trim()); break;
+                        }
+                    }
+                }
+            }
+            // 新车信息：价格优先用订单中的 vehiclePrice，否则从新车表按 vehicleId 查询
+            BigDecimal vp = o.getVehiclePrice();
+            String newModel = o.getExpectTimeSlot();
+            if (o.getVehicleId() != null) {
+                if (vp == null || vp.compareTo(BigDecimal.ZERO) == 0) {
+                    try {
+                        NewCar nc = newCarService.selectCarById(o.getVehicleId());
+                        if (nc != null && nc.getGuidePrice() != null) {
+                            // guidePrice 已是元（如219800）
+                            vp = BigDecimal.valueOf(nc.getGuidePrice());
+                        }
+                        if (nc != null && nc.getModelName() != null && (newModel == null || newModel.isEmpty())) {
+                            newModel = nc.getModelName();
+                        }
+                    } catch (Exception ignored) {}
+                }
+            }
+            // 始终设置新车信息到 VO
+            vo.setNewVehiclePrice(vp);
+            vo.setNewVehicleModel(newModel != null ? newModel : "新能源车型");
+            // 订单显示价格 = 新车价格 - 旧车估值（不含补贴）
+            if (vp == null) vp = BigDecimal.ZERO;
+            BigDecimal displayPrice = vp.subtract(oldVal);
+            vo.setTotalAmount(displayPrice.compareTo(BigDecimal.ZERO) > 0 ? displayPrice : BigDecimal.ZERO);
+            // 补贴金额（默认8000，用于详情页展示）
+            vo.setSubsidyAmount(new BigDecimal("8000"));
+        } else {
+            vo.setTotalAmount(o.getTotalAmount());
+        }
         return vo;
     }
 
     /** 充电订单 → VO */
     private OrderListVO buildFromCharging(MineStadChargingOrder o) {
-        // 已完成但未支付 → 待支付
-        String rawStatus = o.getOrderStatus();
-        String payStatus = o.getPayStatus();
-        String normStatus;
-        if ("1".equals(rawStatus) && "0".equals(payStatus)) {
-            normStatus = "0"; // 未支付
-        } else {
-            normStatus = normalizeChargeStatus(rawStatus);
-        }
+        String normStatus = normalizeChargeStatus(o.getOrderStatus(), o.getPayStatus());
         OrderListVO vo = new OrderListVO();
         vo.setOrderId(o.getOrderId());
         vo.setOrderNo(o.getOrderNo());
@@ -370,43 +428,49 @@ public class AppOrderController extends BaseController {
     }
 
     /**
-     * 统一订单状态归一化
+     * 统一订单状态归一化（映射到维保5态）
+     * 0-待支付 → 待确认, 1-待服务 → 已确认, 2-已取消 → 已取消, 3-已完成 → 已完成
      */
     private String normalizeUnifiedStatus(String s) {
         if (s == null) return "0";
         switch (s) {
-            case "0": return "0";  // 待支付 → unpaid
-            case "1": return "1";  // 待服务 → pending
-            case "2": return "3";  // 已取消 → cancelled
-            case "3": return "2";  // 已完成 → completed
+            case "0": return "0";  // 待支付 → 待确认
+            case "1": return "1";  // 待服务 → 已确认
+            case "2": return "4";  // 已取消 → 已取消
+            case "3": return "3";  // 已完成 → 已完成
             default: return "0";
         }
     }
 
     /**
-     * 充电订单状态归一化
+     * 充电订单状态归一化（映射到维保5态）
+     * 充电中(0)→服务中, 已完成但未支付(1+payStatus=0)→待付款(0), 已完成已支付(1+payStatus=1)→已完成(3), 已取消(2)→已取消(4)
      */
-    private String normalizeChargeStatus(String s) {
-        if (s == null) return "1";
-        switch (s) {
-            case "0": return "1";  // 充电中 → pending
-            case "1": return "2";  // 已完成 → completed
-            case "2": return "3";  // 已取消 → cancelled
-            default: return "1";
+    private String normalizeChargeStatus(String orderStatus, String payStatus) {
+        if (orderStatus == null) return "2"; // 默认服务中
+        switch (orderStatus) {
+            case "0": return "2";  // 充电中 → 服务中
+            case "1":
+                // 已完成但未支付 → 待付款
+                if ("0".equals(payStatus)) return "0";
+                return "3";  // 已支付 → 已完成
+            case "2": return "4";  // 已取消 → 已取消
+            default: return "2";
         }
     }
 
     /**
-     * 维保订单状态归一化
+     * 维保订单状态归一化（直接透传原始状态）
+     * 0-待确认, 1-已确认, 2-服务中, 3-已完成, 4-已取消
      */
     private String normalizeMaintStatus(String s) {
         if (s == null) return "0";
         switch (s) {
             case "0": return "0";
             case "1": return "1";
-            case "2": return "1";
-            case "3": return "2";
-            case "4": return "3";
+            case "2": return "2";
+            case "3": return "3";
+            case "4": return "4";
             default: return "0";
         }
     }

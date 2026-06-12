@@ -2,7 +2,7 @@
   <view class="page-container">
     <scroll-view scroll-y class="content-scroll" v-if="order">
       <!-- ======== 订单状态卡片 ======== -->
-      <view class="status-card" :class="'status-' + order.status">
+      <view class="status-card" :class="['status-' + order.status, order.bizType === 'unified' ? 'card-unified' : '']">
         <view class="status-bg"></view>
         <view class="status-content">
           <view class="status-icon-wrap">
@@ -26,7 +26,7 @@
       </view>
 
       <!-- ======== 进度条（已取消不显示） ======== -->
-      <view class="progress-section" v-if="order.status !== 'cancelled'">
+      <view class="progress-section" :class="order.bizType === 'unified' ? 'progress-unified' : ''" v-if="order.status !== 'cancelled'">
         <view class="progress-bar">
           <view 
             v-for="(step, index) in progressSteps" 
@@ -172,6 +172,54 @@
         </view>
       </view>
 
+      <!-- 以旧换新订单专属 -->
+      <view class="section" v-if="order.unifiedType === 'trade_in'">
+        <view class="section-header">
+          <view class="header-left">
+            <view class="section-icon icon-tradein">
+              <uni-icons type="loop" size="20" color="#fff"></uni-icons>
+            </view>
+            <text class="section-title">置换详情</text>
+          </view>
+        </view>
+        <view class="type-detail-grid">
+          <!-- 旧车信息 -->
+          <view class="detail-item full">
+            <text class="detail-label">旧车信息</text>
+            <text class="detail-value">
+              {{ order.oldVehicleBrand || '未知品牌' }} {{ order.oldVehicleModel || '' }}
+              <text v-if="order.oldVehicleYear"> · {{ order.oldVehicleYear }}年</text>
+              <text v-if="order.oldVehicleMileage"> · {{ order.oldVehicleMileage }}万公里</text>
+            </text>
+          </view>
+          <!-- 旧车估价 -->
+          <view class="detail-item">
+            <text class="detail-label">旧车估价</text>
+            <text class="detail-value tradein-deduct">-¥{{ formatPrice(order.oldValuation) }}</text>
+          </view>
+          <!-- 新车车型 -->
+          <view class="detail-item">
+            <text class="detail-label">新车车型</text>
+            <text class="detail-value">{{ order.newVehicleModel || '新能源车型' }}</text>
+          </view>
+          <!-- 新车价格 -->
+          <view class="detail-item">
+            <text class="detail-label">新车价格</text>
+            <text class="detail-value">¥{{ formatPrice(order.vehiclePrice) }}</text>
+          </view>
+          <!-- 置换补贴 -->
+          <view class="detail-item">
+            <text class="detail-label">置换补贴</text>
+            <text class="detail-value tradein-deduct">-¥{{ formatPrice(order.subsidyAmount) }}</text>
+          </view>
+          <!-- 差价合计 -->
+          <view class="detail-item highlight full">
+            <text class="detail-label">差价合计</text>
+            <text class="detail-value tradein-final">¥{{ formatPrice(order.totalAmount) }}</text>
+          </view>
+        </view>
+      </view>
+
       <!-- ======== 订单信息 ======== -->
       <view class="section">
         <view class="section-header">
@@ -214,7 +262,7 @@
         <view class="amount-list">
           <view class="amount-item">
             <text class="amount-label">订单金额</text>
-            <text class="amount-value">¥{{ order.totalAmount || 0 }}</text>
+            <text class="amount-value">¥{{ formatPrice(order.totalAmount) }}</text>
           </view>
           <view class="amount-item" v-if="order.discount > 0">
             <text class="amount-label">优惠</text>
@@ -225,7 +273,7 @@
             <text class="amount-label">实付金额</text>
             <view class="total-value">
               <text class="total-symbol">¥</text>
-              <text class="total-num">{{ order.paidAmount || order.totalAmount || 0 }}</text>
+              <text class="total-num">{{ formatPrice(order.paidAmount || order.totalAmount) }}</text>
             </view>
           </view>
         </view>
@@ -241,16 +289,20 @@
         <text class="total-label">实付款</text>
         <view class="total-amount">
           <text class="amount-symbol">¥</text>
-          <text class="amount-num">{{ order.paidAmount || order.totalAmount || 0 }}</text>
+          <text class="amount-num">{{ formatPrice(order.paidAmount || order.totalAmount) }}</text>
         </view>
       </view>
       <view class="bar-actions">
-        <view v-if="order.status === 'unpaid'" class="action-btn" @click="handleCancel">取消订单</view>
-        <view v-if="order.status === 'unpaid'" class="action-btn primary" @click="handlePay">
+        <view v-if="order.status === 'pending_confirm'" class="action-btn" @click="handleCancel">取消订单</view>
+        <view v-if="order.status === 'pending_confirm'" class="action-btn primary" @click="handlePay">
           <uni-icons type="wallet" size="16" color="#fff"></uni-icons>
           <text>立即支付</text>
         </view>
-        <view v-if="order.status === 'pending'" class="action-btn primary" @click="handleContact">
+        <view v-if="order.status === 'confirmed'" class="action-btn primary" @click="handleContact">
+          <uni-icons type="phone" size="16" color="#fff"></uni-icons>
+          <text>联系商家</text>
+        </view>
+        <view v-if="order.status === 'in_service'" class="action-btn primary" @click="handleContact">
           <uni-icons type="phone" size="16" color="#fff"></uni-icons>
           <text>联系商家</text>
         </view>
@@ -324,14 +376,28 @@ export default {
     },
     /** 状态图标 */
     statusIcon() {
-      const map = { unpaid: 'info', pending: 'clock', completed: 'checkmark', cancelled: 'close' }
+      if (this.order?.bizType === 'unified') {
+        const map = { pending_confirm: 'wallet', confirmed: 'checkbox', completed: 'checkmarkempty', cancelled: 'close' }
+        return map[this.order?.status] || 'info'
+      }
+      const map = { pending_confirm: 'info', confirmed: 'clock', in_service: 'loop', completed: 'checkmark', cancelled: 'close' }
       return map[this.order?.status] || 'info'
     },
     /** 状态提示语 */
     statusTip() {
+      if (this.bizType === 'unified') {
+        const map = {
+          pending_confirm: '请尽快完成支付',
+          confirmed: '已付款，等待商家处理',
+          completed: '订单已完成',
+          cancelled: '订单已取消'
+        }
+        return map[this.order?.status] || ''
+      }
       const map = {
-        unpaid: '请尽快完成支付',
-        pending: this.bizType === 'charging' ? '充电进行中' : this.bizType === 'maintenance' ? '维保服务进行中' : '商家正在为您准备',
+        pending_confirm: '请等待商家确认',
+        confirmed: '商家已确认，即将开始服务',
+        in_service: this.bizType === 'charging' ? '充电进行中' : this.bizType === 'maintenance' ? '维保服务进行中' : '服务进行中',
         completed: '订单已完成',
         cancelled: '订单已取消'
       }
@@ -340,15 +406,16 @@ export default {
     /** 进度步骤 */
     progressSteps() {
       if (this.bizType === 'charging') return ['下单', '充电中', '已完成']
-      if (this.bizType === 'maintenance') return ['预约', '服务中', '已完成']
+      if (this.bizType === 'maintenance') return ['待确认', '已确认', '服务中', '已完成']
+      if (this.bizType === 'unified') return ['下单', '付款', '完成']
       return ['下单', '支付', '服务', '完成']
     },
     /** 当前进度步骤索引 */
     currentStep() {
       const map = {
-        charging: { unpaid: 0, pending: 1, completed: 2, cancelled: -1 },
-        maintenance: { unpaid: 0, pending: 1, completed: 2, cancelled: -1 },
-        unified: { unpaid: 0, pending: 2, completed: 3, cancelled: -1 }
+        charging: { pending_confirm: 0, confirmed: 0, in_service: 1, completed: 2, cancelled: -1 },
+        maintenance: { pending_confirm: 0, confirmed: 1, in_service: 2, completed: 3, cancelled: -1 },
+        unified: { pending_confirm: 0, confirmed: 1, completed: 2, cancelled: -1 }
       }
       const steps = map[this.bizType] || map.unified
       return steps[this.order?.status] ?? 0
@@ -367,6 +434,10 @@ export default {
     }
   },
   methods: {
+    formatPrice(val) {
+      const n = parseFloat(val) || 0
+      return n.toFixed(2)
+    },
     goBack() { uni.navigateBack() },
     copyOrderNo() {
       uni.setClipboardData({
@@ -391,12 +462,16 @@ export default {
     },
     /** 将后端 OrderListVO 映射为前端详情数据 */
     formatOrder(order) {
-      const statusMap = { 0: 'unpaid', 1: 'pending', 2: 'completed', 3: 'cancelled' }
-      const statusTextMap = { unpaid: '待支付', pending: '待服务', completed: '已完成', cancelled: '已取消' }
+      const statusMap = { 0: 'pending_confirm', 1: 'confirmed', 2: 'in_service', 3: 'completed', 4: 'cancelled' }
+      const unifiedStatusTextMap = { pending_confirm: '待付款', confirmed: '已付款', completed: '已完成', cancelled: '已取消' }
+      const statusTextMap = { pending_confirm: '待确认', confirmed: '已确认', in_service: '服务中', completed: '已完成', cancelled: '已取消' }
       const typeLabelMap = { charging: '充电', maintenance: '维保', unified: '车辆' }
 
       const bizType = this.bizType || order.bizType || 'unified'
-      const status = statusMap[order.status] || order.status || 'pending'
+      const status = statusMap[order.status] || order.status || 'pending_confirm'
+      const statusText = bizType === 'unified'
+        ? (unifiedStatusTextMap[status] || order.statusText || '处理中')
+        : (statusTextMap[status] || order.statusText || '处理中')
 
       return {
         // 公共字段
@@ -405,7 +480,7 @@ export default {
         bizType,
         bizTypeLabel: typeLabelMap[bizType] || order.bizTypeLabel || '订单',
         status,
-        statusText: statusTextMap[status] || order.statusText || '处理中',
+        statusText: statusText,
         shopName: order.shopName || order.merchantName || order.stationName || '官方店铺',
         shopAddress: order.shopAddress || order.stationAddress || '',
         title: order.title || order.serviceItem || '订单',
@@ -434,7 +509,16 @@ export default {
         contactName: order.contactName,
         contactPhone: order.contactPhone,
         vehicleId: order.vehicleId,
-        vehiclePrice: order.vehiclePrice
+        vehiclePrice: order.vehiclePrice || order.newVehiclePrice || 0,
+        // 以旧换新字段
+        oldValuation: order.oldValuation || 0,
+        oldVehicleBrand: order.oldVehicleBrand || '',
+        oldVehicleModel: order.oldVehicleModel || '',
+        oldVehicleYear: order.oldVehicleYear || '',
+        oldVehicleMileage: order.oldVehicleMileage || '',
+        newVehicleModel: order.newVehicleModel || '',
+        newVehiclePrice: order.newVehiclePrice || order.vehiclePrice || 0,
+        subsidyAmount: order.subsidyAmount || 0
       }
     },
     handleContact() {
@@ -442,12 +526,45 @@ export default {
         url: `/pages/mine/contact/index?orderId=${this.orderId || ''}&type=order`
       })
     },
-    handlePay() {
+    async handlePay() {
       uni.showModal({
         title: '确认支付',
         content: '确认支付 ¥' + (this.order.paidAmount || this.order.totalAmount || 0) + '？',
-        success: (res) => {
-          if (res.confirm) uni.showToast({ title: '支付功能开发中', icon: 'none' })
+        success: async (res) => {
+          if (!res.confirm) return
+          uni.showLoading({ title: '支付中...' })
+          // 模拟支付成功，发放碳积分
+          const { awardCarbonPoints } = await import('@/api/mine/carbon')
+          let points = 0
+          let sourceType = 0
+          try {
+            if (this.order.bizType === 'charging') {
+              sourceType = 0
+              const energy = parseFloat(this.order.totalEnergy) || 0
+              points = Math.round(energy * 10)
+              if (points > 0) {
+                await awardCarbonPoints(sourceType, this.order.id, points)
+              }
+            } else if (this.order.bizType === 'unified') {
+              sourceType = 1
+              points = 500
+              await awardCarbonPoints(sourceType, this.order.id, points)
+            }
+          } catch (e) {
+            console.error('碳积分发放失败', e)
+          }
+          uni.hideLoading()
+          if (points > 0) {
+            uni.showModal({
+              title: '支付成功',
+              content: '获得' + points + '碳积分',
+              showCancel: false
+            })
+          } else {
+            uni.showToast({ title: '支付成功', icon: 'success' })
+          }
+          this.order.status = 'confirmed'
+          this.order.statusText = '已付款'
         }
       })
     },
@@ -522,10 +639,16 @@ page {
   border-radius: 50%;
 }
 
-.status-unpaid    { background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); }
-.status-pending   { background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%); }
+.status-pending_confirm { background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); }
+.status-confirmed   { background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%); }
+.status-in_service  { background: linear-gradient(135deg, #00bcd4 0%, #26c6da 100%); }
 .status-completed { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); }
 .status-cancelled { background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%); }
+/* 购车订单独立配色 */
+.card-unified.status-pending_confirm { background: linear-gradient(135deg, #dc2626 0%, #f97316 100%); }
+.card-unified.status-confirmed   { background: linear-gradient(135deg, #059669 0%, #10b981 100%); }
+.card-unified.status-completed { background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%); }
+.card-unified.status-cancelled { background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%); }
 
 .status-content {
   position: relative;
@@ -562,8 +685,9 @@ page {
   flex-shrink: 0;
 }
 
-.dot-unpaid    { background-color: #ff6b35; }
-.dot-pending   { background-color: #2563eb; }
+.dot-pending_confirm { background-color: #ff6b35; }
+.dot-confirmed   { background-color: #2563eb; }
+.dot-in_service  { background-color: #00bcd4; }
 .dot-completed { background-color: #10b981; }
 .dot-cancelled { background-color: #9ca3af; }
 
@@ -618,6 +742,19 @@ page {
   padding: 24rpx;
   background-color: #fff;
   border-radius: 16rpx;
+}
+/* 购车订单进度条配色 */
+.progress-unified .step-dot {
+  background-color: #f0f0f0;
+}
+.progress-unified .progress-step.active .step-dot {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+}
+.progress-unified .progress-step.active .step-text {
+  color: #059669;
+}
+.progress-unified .progress-step.active .step-line {
+  background: linear-gradient(90deg, #059669 0%, #e5e5e5 100%);
 }
 
 .progress-bar {
@@ -722,6 +859,7 @@ page {
 .icon-charging    { background: linear-gradient(135deg, #10b981, #34d399); }
 .icon-maintenance { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
 .icon-unified     { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
+.icon-tradein     { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
 
 .section-title {
   font-size: 28rpx;
@@ -838,6 +976,16 @@ page {
 .sub-purchase   { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
 .sub-test_drive { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
 .sub-trade_in   { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+
+// 以旧换新专属样式
+.tradein-deduct {
+  color: #f59e0b !important;
+}
+.tradein-final {
+  color: #3072f6 !important;
+  font-size: 32rpx !important;
+  font-weight: 700;
+}
 
 // ==================== 信息列表 ====================
 .info-list { padding: 0 8rpx; }

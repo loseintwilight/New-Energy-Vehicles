@@ -32,6 +32,8 @@ public class NewCar {
 
     private String status;
 
+    private String image;
+
     private Date publishTime;
 
     private Date createTime;

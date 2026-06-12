@@ -602,7 +602,7 @@ export default {
       if (this.$refs.orderPopup) this.$refs.orderPopup.open()
     },
 
-    /** 支付处理 → 调后端API */
+    /** 支付处理 → 调后端API + 发放碳积分 */
     async handlePay() {
       if (this.paying) return
       this.paying = true
@@ -612,15 +612,28 @@ export default {
           orderId: this.orderNo,
           payMethod: '微信支付'
         })
-
-        uni.showToast({ title: '支付成功', icon: 'success' })
         if (this.$refs.orderPopup) this.$refs.orderPopup.close()
 
-        setTimeout(() => {
-          uni.redirectTo({
-            url: '/pages/mine/orders/index'
-          })
-        }, 1000)
+        // 发放碳积分：用电量 × 10
+        const { awardCarbonPoints } = await import('@/api/mine/carbon')
+        const energy = parseFloat(this.payData.energy) || 0
+        const points = Math.round(energy * 10)
+        if (points > 0) {
+          try {
+            await awardCarbonPoints(0, this.orderNo, points)
+          } catch (e) {
+            console.error('碳积分发放失败', e)
+          }
+        }
+
+        uni.showModal({
+          title: '支付成功',
+          content: '获得' + points + '碳积分',
+          showCancel: false,
+          success: () => {
+            uni.redirectTo({ url: '/pages/mine/orders/index' })
+          }
+        })
       } catch (e) {
         uni.showToast({ title: '支付失败，请重试', icon: 'none' })
       } finally {

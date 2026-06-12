@@ -94,8 +94,8 @@
 				<!-- ===== 【恢复并修改】正文与推荐之间的操作栏 ===== -->
 				<view class="section-action-bar" v-if="type === 'science' || type === 'policy'">
 					<view class="action-item" @click="handleLike">
-						<image class="action-icon-img" :src="isLiked ? '/static/images/index/upvote2.png' : '/static/images/index/upvote1.png'" mode="aspectFit"></image>
-						<text class="action-num">{{ likeCount }}</text>
+						<uni-icons type="hand-thumbsup" size="24" :color="isLiked ? '#e74c3c' : '#666'"></uni-icons>
+						<text class="action-num" :class="{ liked: isLiked }">{{ likeCount }}</text>
 					</view>
 					<view class="action-item" @click="handleComment">
 						<image class="action-icon-img" src="/static/images/index/preview.png" mode="aspectFit"></image>
@@ -135,12 +135,12 @@
 				</view>
 				<view class="bottom-actions">
 					<view class="bottom-action" @click="handleLike">
-						<image class="action-icon-img" :src="isLiked ? '/static/images/index/upvote2.png' : '/static/images/index/upvote1.png'" mode="aspectFit"></image>
-						<text class="action-text">赞</text>
+						<uni-icons type="hand-thumbsup" size="26" :color="isLiked ? '#e74c3c' : '#999'"></uni-icons>
+						<text class="action-text" :class="{ liked: isLiked }">赞</text>
 					</view>
 					<view class="bottom-action" @click="toggleFavorite">
 						<uni-icons type="star-filled" size="24" :color="isFavorited ? '#ffc107' : '#999'"></uni-icons>
-						<text class="action-text">收藏</text>
+						<text class="action-text" :class="{ favorited: isFavorited }">收藏</text>
 					</view>
 				</view>
 			</view>
@@ -513,11 +513,14 @@ import { addCollection, getFavoriteStatus, cancelCollectionByTarget } from '@/ap
 	.bottom-action .action-icon-img {
 		width: 40rpx;
 		height: 40rpx;
-		filter: grayscale(1);
 	}
 	.bottom-action .action-text {
 		font-size: 20rpx;
 		color: #666;
 		margin-top: 2rpx;
+	}
+	.bottom-action .action-text.liked,
+	.section-action-bar .action-num.liked {
+		color: #e74c3c !important;
 	}
 </style>

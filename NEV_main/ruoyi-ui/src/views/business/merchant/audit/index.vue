@@ -19,7 +19,7 @@
         <el-select v-model="queryParams.status" placeholder="审核状态" clearable>
           <el-option label="待审核" value="0" />
           <el-option label="已入驻" value="1" />
-          <el-option label="已停用" value="2" />
+          <el-option label="已驳回" value="2" />
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -65,7 +65,7 @@
       <el-table-column label="状态" align="center" prop="status" width="90">
           <template slot-scope="scope">
             <el-tag :type="scope.row.status === '1' ? 'success' : scope.row.status === '0' ? 'warning' : 'danger'" size="small">
-              {{ {'0':'待审核','1':'已入驻','2':'已停用'}[scope.row.status] || scope.row.status }}
+              {{ {'0':'待审核','1':'已入驻','2':'已驳回'}[scope.row.status] || scope.row.status }}
             </el-tag>
           </template>
         </el-table-column>
@@ -140,7 +140,7 @@
         <el-descriptions-item label="银行账号">{{ detailForm.bankAccount }}</el-descriptions-item>
         <el-descriptions-item label="状态">
           <el-tag :type="detailForm.status === '1' ? 'success' : detailForm.status === '0' ? 'warning' : 'danger'" size="small">
-            {{ {'0':'待审核','1':'已入驻','2':'已停用'}[detailForm.status] || detailForm.status }}
+            {{ {'0':'待审核','1':'已入驻','2':'已驳回'}[detailForm.status] || detailForm.status }}
           </el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="审核备注" :span="2">{{ detailForm.auditRemark || '-' }}</el-descriptions-item>
@@ -160,7 +160,7 @@
         </el-form-item>
         <el-form-item label="审核结果">
           <el-tag :type="auditForm.status === '1' ? 'success' : 'danger'" size="medium">
-            {{ {'0':'待审核','1':'已入驻','2':'已停用'}[auditForm.status] || auditForm.status }}
+            {{ {'0':'待审核','1':'已入驻','2':'已驳回'}[auditForm.status] || auditForm.status }}
           </el-tag>
         </el-form-item>
         <el-form-item label="审核备注" prop="auditRemark">

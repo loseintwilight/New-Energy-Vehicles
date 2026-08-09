@@ -66,7 +66,7 @@ public class MinioUtils
         log.info("MinIO 上传成功: bucket={}, object={}", minioConfig.getBucketName(), objectName);
 
         // 返回简洁的存储路径（不带签名参数），拼接为可直接访问的URL
-        String url = minioConfig.getEndpoint() + "/" + minioConfig.getBucketName() + "/" + objectName;
+        String url = minioConfig.getPublicEndpoint() + "/" + minioConfig.getBucketName() + "/" + objectName;
         return url;
     }
 

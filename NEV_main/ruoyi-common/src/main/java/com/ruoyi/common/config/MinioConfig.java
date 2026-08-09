@@ -25,6 +25,9 @@ public class MinioConfig
     @Value("${minio.bucketName}")
     private String bucketName;
 
+    @Value("${minio.publicEndpoint:}")
+    private String publicEndpoint;
+
     public String getEndpoint()
     {
         return endpoint;
@@ -43,6 +46,11 @@ public class MinioConfig
     public String getBucketName()
     {
         return bucketName;
+    }
+
+    public String getPublicEndpoint()
+    {
+        return publicEndpoint != null && !publicEndpoint.isEmpty() ? publicEndpoint : endpoint;
     }
 
     @Bean

@@ -250,7 +250,7 @@
         <el-descriptions-item label="所在城市">{{ detailForm.city }}</el-descriptions-item>
         <el-descriptions-item label="详细地址" :span="2">{{ detailForm.address }}</el-descriptions-item>
         <el-descriptions-item label="营业执照">
-          <img v-if="detailForm.businessLicense && detailForm.businessLicense.startsWith('http')" :src="detailForm.businessLicense" style="max-width:200px;max-height:120px;border-radius:4px;cursor:pointer" @click="previewImg(detailForm.businessLicense)" />
+          <img v-if="detailForm.businessLicense" :src="detailForm.businessLicense" style="max-width:200px;max-height:120px;border-radius:4px;cursor:pointer" @click="previewImg(detailForm.businessLicense)" />
           <span v-else>{{ detailForm.businessLicense || '-' }}</span>
         </el-descriptions-item>
         <el-descriptions-item label="法人代表">{{ detailForm.legalPerson }}</el-descriptions-item>

@@ -3,16 +3,11 @@ import storage from '@/utils/storage'
 import constant from '@/utils/constant'
 import { isHttp, isEmpty } from "@/utils/validate"
 import { login, logout, getInfo } from '@/api/login'
+import { getMerchantIdentity } from '@/api/system/endSwitch'
 import { getToken, setToken, removeToken } from '@/utils/auth'
 import defAva from '@/static/images/profile.jpg'
 
 const baseUrl = config.baseUrl
-
-const endTypeMap = {
-  'maintainc': 'merchant',
-  'dealer_a': 'business',
-  'charger_b': 'charging'
-}
 
 const user = {
   state: {
@@ -100,12 +95,24 @@ const user = {
           commit('SET_AVATAR', avatar)
           commit('SET_PHONENUMBER', user.phonenumber || '')
 
+          // 从数据库查询商户身份（替代硬编码的 endTypeMap）
           if (state.currentEnd === 'auto') {
-            const endType = endTypeMap[username]
-            commit('SET_CURRENT_END', endType || 'user')
+            getMerchantIdentity().then(idRes => {
+              const idData = idRes.data
+              if (idData && idData.merchantType) {
+                const typeMap = { 'maintenance': 'merchant', 'charger': 'charging', 'dealer': 'business' }
+                commit('SET_CURRENT_END', typeMap[idData.merchantType] || 'user')
+              } else {
+                commit('SET_CURRENT_END', 'user')
+              }
+              resolve(res)
+            }).catch(() => {
+              commit('SET_CURRENT_END', 'user')
+              resolve(res)
+            })
+          } else {
+            resolve(res)
           }
-
-          resolve(res)
         }).catch(error => {
           reject(error)
         })

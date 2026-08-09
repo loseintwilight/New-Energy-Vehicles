@@ -24,6 +24,16 @@ public class StadMerchantServiceImpl implements IStadMerchantService {
     }
 
     @Override
+    public List<StadMerchant> selectStadMerchantListByUserId(Long userId) {
+        return stadMerchantMapper.selectStadMerchantListByUserId(userId);
+    }
+
+    @Override
+    public StadMerchant selectStadMerchantByUserIdAndType(Long userId, String merchantType) {
+        return stadMerchantMapper.selectStadMerchantByUserIdAndType(userId, merchantType);
+    }
+
+    @Override
     public List<StadMerchant> selectStadMerchantList(StadMerchant merchant) {
         return stadMerchantMapper.selectStadMerchantList(merchant);
     }

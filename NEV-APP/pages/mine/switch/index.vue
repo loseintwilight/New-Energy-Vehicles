@@ -54,9 +54,11 @@
             <view class="switch-name">维保服务端</view>
             <view class="switch-desc">提供车辆维修、保养服务管理</view>
           </view>
-          <view class="switch-radio">
-            <view class="radio-circle" :class="{ checked: selectedEnd === 'maintenance' }">
-              <view v-if="selectedEnd === 'maintenance'" class="radio-dot"></view>
+          <view class="switch-right">
+            <view class="switch-radio">
+              <view class="radio-circle" :class="{ checked: selectedEnd === 'maintenance' }">
+                <view v-if="selectedEnd === 'maintenance'" class="radio-dot"></view>
+              </view>
             </view>
           </view>
         </view>
@@ -74,9 +76,11 @@
             <view class="switch-name">充电桩端</view>
             <view class="switch-desc">提供充电桩运营、管理服务</view>
           </view>
-          <view class="switch-radio">
-            <view class="radio-circle" :class="{ checked: selectedEnd === 'charging' }">
-              <view v-if="selectedEnd === 'charging'" class="radio-dot"></view>
+          <view class="switch-right">
+            <view class="switch-radio">
+              <view class="radio-circle" :class="{ checked: selectedEnd === 'charging' }">
+                <view v-if="selectedEnd === 'charging'" class="radio-dot"></view>
+              </view>
             </view>
           </view>
         </view>
@@ -94,9 +98,11 @@
             <view class="switch-name">商家端</view>
             <view class="switch-desc">提供商家运营、服务管理</view>
           </view>
-          <view class="switch-radio">
-            <view class="radio-circle" :class="{ checked: selectedEnd === 'business' }">
-              <view v-if="selectedEnd === 'business'" class="radio-dot"></view>
+          <view class="switch-right">
+            <view class="switch-radio">
+              <view class="radio-circle" :class="{ checked: selectedEnd === 'business' }">
+                <view v-if="selectedEnd === 'business'" class="radio-dot"></view>
+              </view>
             </view>
           </view>
         </view>
@@ -432,8 +438,11 @@ export default {
       auditStatus: '',
       auditRemark: '',
       checkingIdentity: true,
-      hasMaintenanceMerchant: false,
-      userMerchantType: '', // 从API获取的商户类型
+      // 已通过审核的身份集合：{ maintenance: true, charging: true, business: true }
+      approvedTypes: {},
+      // 用户所有身份的完整列表
+      allIdentities: [],
+      userMerchantType: '',
       provinces: ['北京市', '天津市', '河北省', '山西省', '内蒙古自治区', '辽宁省', '吉林省', '黑龙江省', '上海市', '江苏省', '浙江省', '安徽省', '福建省', '江西省', '山东省', '河南省', '湖北省', '湖南省', '广东省', '广西壮族自治区', '海南省', '重庆市', '四川省', '贵州省', '云南省', '西藏自治区', '陕西省', '甘肃省', '青海省', '宁夏回族自治区', '新疆维吾尔自治区'],
       cityMap: {
         '北京市': ['东城区', '西城区', '朝阳区', '海淀区', '丰台区', '石景山区', '通州区', '顺义区', '昌平区', '大兴区', '房山区', '门头沟区', '怀柔区', '平谷区', '密云区', '延庆区'],
@@ -505,13 +514,10 @@ export default {
   },
   computed: {
     userEndType() {
-      // 身份完全来自数据库（通过 API 查询 stad_merchant 表）
       if (this.userMerchantType) {
         return this.userMerchantType
       }
-      // API 加载完成但无商户身份
       if (!this.checkingIdentity) return ''
-      // API 加载中，显示空
       return ''
     },
     userIdentityName() {
@@ -520,7 +526,7 @@ export default {
         charging: '充电桩管理人员',
         business: '商家管理人员'
       }
-      return names[this.userEndType] || (this.isMaintenanceUser ? '维保服务人员' : '普通用户')
+      return names[this.userEndType] || '普通用户'
     },
     selectedEndLabel() {
       const labels = {
@@ -530,29 +536,15 @@ export default {
       }
       return labels[this.selectedEnd] || ''
     },
-    // 根据当前选中的省份动态获取城市列表
     cities() {
       return this.cityMap[this.currentProvince] || []
     },
-    isMaintenanceUser() {
-      return this.hasMaintenanceMerchant || this.userEndType === 'maintenance'
-    },
-    isChargingUser() {
-      return this.userEndType === 'charging'
-    },
-    isBusinessUser() {
-      return this.userEndType === 'business'
-    },
     canDirectSwitch() {
-      // 根据用户身份判断是否能直接切换
-      if (this.selectedEnd === 'maintenance' && this.isMaintenanceUser) return true
-      if (this.selectedEnd === 'charging' && this.isChargingUser) return true
-      if (this.selectedEnd === 'business' && this.isBusinessUser) return true
-      return false
+      // 所选端已有已通过的身份，可直接切换
+      return !!this.approvedTypes[this.selectedEnd]
     },
     canSubmit() {
       if (!this.selectedEnd) return false
-
       if (this.selectedEnd === 'maintenance') {
         const m = this.form.maintenance
         return m.businessLicense && m.shop_name && m.legal_person && m.province && m.city && m.address && m.contact_name && m.contact_phone
@@ -568,22 +560,29 @@ export default {
   },
   onLoad() {
     this.checkMerchantIdentity()
-    this.checkEndSwitchStatus()
   },
   onShow() {
-    // 页面显示时重新检查身份和审核状态
     this.checkMerchantIdentity()
-    this.checkEndSwitchStatus()
   },
   methods: {
+    isApprovedType(endType) {
+      return !!this.approvedTypes[endType]
+    },
     handleBack() {
       uni.navigateBack()
     },
     handleSelectEnd(end) {
       this.selectedEnd = end
+      // 重置当前所选端的状态
+      this.submitted = false
+      this.rejected = false
+      this.cancelled = false
+      this.auditRemark = ''
+      this.submitTime = ''
+      // 按端类型独立查询审核状态
+      this.checkEndSwitchStatus(end)
     },
     handleConfirmProvince() {
-      // 切换省份时重置已选城市
       this.currentCity = ''
       if (this.selectedEnd === 'maintenance') {
         this.form.maintenance.province = this.currentProvince
@@ -616,17 +615,14 @@ export default {
       this.submitting = true
       uni.showLoading({ title: '提交中...' })
 
-      // 构建提交数据（同时发送 snake_case 和 camelCase，确保后端能正确匹配）
       const formData = this.form[this.selectedEnd]
 
       const submitData = {
-        // 公共字段
         userId: this.$store.state.user.id,
         username: this.$store.state.user.name,
         endType: this.selectedEnd,
         endName: this.selectedEndLabel,
 
-        // 商户名称（同时传两种格式）
         shop_name: formData.shop_name,
         shopName: formData.shop_name,
         station_name: formData.station_name,
@@ -634,42 +630,34 @@ export default {
         business_name: formData.business_name,
         businessName: formData.business_name,
 
-        // 营业执照
         businessLicense: formData.businessLicense,
 
-        // 法人代表（同时传两种格式）
         legal_person: formData.legal_person,
         legalPerson: formData.legal_person,
 
-        // 联系方式（同时传两种格式）
         contact_name: formData.contact_name,
         contactName: formData.contact_name,
         contact_phone: formData.contact_phone,
         contactPhone: formData.contact_phone,
 
-        // 公共字段
         province: formData.province,
         city: formData.city,
         address: formData.address
       }
 
-      // 调用 API 提交给 PC 管理端审核
       submitEndSwitchApply(submitData).then(res => {
         uni.hideLoading()
         this.submitting = false
         this.submitted = true
         this.auditStatus = 'pending'
         this.submitTime = this.getNowTime()
-
         uni.showToast({ title: '提交成功，等待审核', icon: 'success' })
       }).catch(err => {
         uni.hideLoading()
         this.submitting = false
-        // 如果请求工具已弹出了错误提示，这里不再重复弹
         console.error('提交失败:', err)
       })
     },
-    // 上传营业执照图片
     handleUploadLicense(type) {
       uni.chooseImage({
         count: 1,
@@ -678,8 +666,6 @@ export default {
         success: (res) => {
           const tempPath = res.tempFilePaths[0]
           uni.showLoading({ title: '上传中...' })
-
-          // 使用封装好的 upload 工具（自动携带 token，上传到 MinIO）
           upload({
             url: '/common/upload/minio',
             filePath: tempPath,
@@ -695,12 +681,12 @@ export default {
         }
       })
     },
-    // 查询后端审核状态
-    checkEndSwitchStatus() {
-      getEndSwitchStatus().then(res => {
+    // 按端类型查询审核状态（各类型独立）
+    checkEndSwitchStatus(endType) {
+      if (!endType) return
+      getEndSwitchStatus(endType).then(res => {
         const data = res.data
         if (!data) {
-          // 无申请记录
           this.submitted = false
           this.rejected = false
           this.cancelled = false
@@ -715,7 +701,6 @@ export default {
             this.cancelled = false
             break
           case 'approved':
-            // PC端已审核通过，刷新身份
             this.submitted = false
             this.rejected = false
             this.cancelled = false
@@ -728,15 +713,12 @@ export default {
             this.cancelled = false
             break
         }
-      }).catch(() => {
-        // 后端不可用时，不覆盖本地状态
-      })
+      }).catch(() => {})
     },
     handleDirectSwitch() {
       const endType = this.selectedEnd
       const label = this.selectedEndLabel
 
-      // 导航到对应端的管理台页面
       let url = ''
       if (endType === 'maintenance') {
         url = '/pages/mine/service/index'
@@ -757,20 +739,38 @@ export default {
       return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
     },
     checkMerchantIdentity() {
-      // 调后端 API 查 stad_merchant 表，获取用户的商户身份
       this.checkingIdentity = true
       getMerchantIdentity().then(res => {
         const data = res.data
-        if (data && data.hasIdentity) {
-          this.hasMaintenanceMerchant = data.merchantType === 'maintenance'
+        // 解析 identities 数组，标记已通过的身份
+        const approved = {}
+        if (data && data.identities && Array.isArray(data.identities)) {
+          this.allIdentities = data.identities
+          data.identities.forEach(function(item) {
+            if (item.status === '1') {
+              approved[item.endType] = true
+            }
+          })
+        } else {
+          this.allIdentities = []
+        }
+        this.approvedTypes = approved
+
+        // 当前端：取第一个已通过的身份
+        if (data && data.merchantType) {
           const typeMap = { 'maintenance': 'maintenance', 'charger': 'charging', 'dealer': 'business' }
           this.userMerchantType = typeMap[data.merchantType] || ''
         } else {
-          this.hasMaintenanceMerchant = false
           this.userMerchantType = ''
         }
+
+        // 如果当前已选中某个端，刷新它的状态
+        if (this.selectedEnd) {
+          this.checkEndSwitchStatus(this.selectedEnd)
+        }
       }).catch(() => {
-        this.hasMaintenanceMerchant = false
+        this.approvedTypes = {}
+        this.allIdentities = []
       }).finally(() => {
         this.checkingIdentity = false
       })
@@ -778,11 +778,11 @@ export default {
     handleCancel() {
       uni.showModal({
         title: '取消申请',
-        content: '确定要取消当前端切换申请吗？',
+        content: '确定要取消当前' + this.selectedEndLabel + '申请吗？',
         success: (res) => {
           if (res.confirm) {
             uni.showLoading({ title: '取消中...' })
-            cancelEndSwitchApply().then(() => {
+            cancelEndSwitchApply({ endType: this.selectedEnd }).then(() => {
               uni.hideLoading()
               this.submitted = false
               this.cancelled = true
@@ -800,9 +800,8 @@ export default {
       })
     },
     handleReApply() {
-      // 先调用后端接口删除/取消被驳回的申请记录
       uni.showLoading({ title: '取消原申请...' })
-      cancelEndSwitchApply().then(() => {
+      cancelEndSwitchApply({ endType: this.selectedEnd }).then(() => {
         uni.hideLoading()
         this.cancelled = false
         this.rejected = false
@@ -810,7 +809,6 @@ export default {
         this.auditRemark = ''
         uni.showToast({ title: '已取消原申请，请重新填写', icon: 'success' })
       }).catch(() => {
-        // 即使后端删除失败也允许重新申请（前端重置状态）
         uni.hideLoading()
         this.cancelled = false
         this.rejected = false
@@ -1115,6 +1113,21 @@ page {
 
 .switch-radio {
   margin-left: 16rpx;
+}
+
+.switch-right {
+  display: flex;
+  align-items: center;
+  margin-left: 16rpx;
+}
+
+.approved-badge {
+  font-size: 22rpx;
+  color: #27ae60;
+  background: #eafaf1;
+  padding: 6rpx 16rpx;
+  border-radius: 20rpx;
+  font-weight: 500;
 }
 
 .radio-circle {

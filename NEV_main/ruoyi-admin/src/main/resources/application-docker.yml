@@ -5,7 +5,7 @@ spring:
       master:
         url: jdbc:mysql://mysql:3306/new_energy?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
         username: ${MYSQL_USER:root}
-        password: ${MYSQL_PASSWORD:666666}
+        password: ${MYSQL_PASSWORD:changeme}
   data:
     redis:
       host: redis
@@ -20,6 +20,6 @@ ruoyi:
 minio:
   endpoint: http://minio:9000
   publicEndpoint: /minio-files
-  accessKey: ${MINIO_ACCESS_KEY:minioadmin}
-  secretKey: ${MINIO_SECRET_KEY:minioadmin}
+  accessKey: ${MINIO_ACCESS_KEY:changeme}
+  secretKey: ${MINIO_SECRET_KEY:changeme}
   bucketName: newenergy

@@ -1,0 +1,25 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables (contains secrets — never commit)
+.env
+*.env.local
+
+# Logs
+*.log
+logs/
+
+# Build output
+NEV_main/ruoyi-ui/dist/
+NEV_main/ruoyi-ui/node_modules/
+NEV-APP/unpackage/dist/
+target/
+
+# Upload files
+uploadPath/

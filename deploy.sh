@@ -66,7 +66,7 @@ build_and_start() {
     echo "  后端API:    http://localhost:8080"
     echo "  Swagger:    http://localhost:8080/swagger-ui.html"
     echo "  MinIO控制台: http://localhost:9001"
-    echo "    (账号: minioadmin / 密码: minioadmin)"
+    echo "    (账号/密码请参见 .env 文件)"
     echo "============================================"
 }
 

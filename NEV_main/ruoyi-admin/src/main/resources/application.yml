@@ -97,7 +97,7 @@ token:
   # 令牌自定义标识
   header: Authorization
   # 令牌密钥
-  secret: abcdefghijklmnopqrstuvwxyz
+  secret: ${TOKEN_SECRET:change-me-in-production}
   # 令牌有效期（默认30分钟）
   expireTime: 30
 
@@ -151,8 +151,8 @@ minio:
   # 服务地址
   endpoint: http://localhost:9000
   # 访问密钥
-  accessKey: minioadmin
+  accessKey: ${MINIO_ACCESS_KEY:minioadmin}
   # 秘密密钥
-  secretKey: minioadmin
+  secretKey: ${MINIO_SECRET_KEY:minioadmin}
   # 桶名称
   bucketName: newenergy
